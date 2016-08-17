@@ -79,6 +79,8 @@ class Market(object):
         # by default: pass the market data request to MarketDataGenerator
         return self.market_data_generator.fetch_market_data(md_request)
 
+########################################################################################################################
+
 """
 FXCrossFactory
 
@@ -317,7 +319,14 @@ class FXCrossFactory(object):
             return cross_vals
 
 
-#######
+#######################################################################################################################
+
+"""
+FXVolFactory
+
+Class generates FX implied volatility time series and surfaces (using very simple interpolation!).
+
+"""
 
 import pandas
 

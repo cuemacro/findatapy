@@ -13,9 +13,9 @@ __author__ = 'saeedamen' # Saeed Amen
 #
 
 """
-loaderweb
+DataVendorWeb
 
-Contains implementations of LoaderTemplate for
+Contains implementations of DataVendor for
 
 Quandl (free/premium data source) - LoaderQuandl
 Pandas Data Reader (free data source - includes FRED, World Bank, Yahoo) - LoaderPandasWeb
@@ -25,7 +25,7 @@ DukasCopy (retail FX broker - has historical tick data) - LoaderDukasCopy
 #######################################################################################################################
 
 """
-LoaderQuandl
+DataVendorQuandl
 
 Class for reading in data from Quandl into Pyfindatapy library
 
@@ -108,7 +108,7 @@ class DataVendorQuandl(DataVendor):
 #######################################################################################################################
 
 """
-LoaderPandasWeb
+DataVendorPandasWeb
 
 Class for reading in data from various web sources into Pyfindatapy library including
 
@@ -185,7 +185,7 @@ class DataVendorPandasWeb(DataVendor):
 ########################################################################################################################
 
 """
-LoaderDukascopy
+DataVendorDukascopy
 
 Class for downloading tick data from DukasCopy (note: past month of data is not available). Selecting very large
 histories is not recommended as you will likely run out memory given the amount of data requested.
