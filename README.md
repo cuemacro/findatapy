@@ -32,6 +32,7 @@ market data part of that library. However, I've totally rewritten the API to mak
 standalone package, so you can more easily use it with whatever libraries you have for analysing market data (although I'd recommend
 my own finmarketpy package if you are doing backtesting of trading strategies).
 
+A few things to note:
 * Please bear in mind at present findatapy is currently a highly experimental alpha project and isn't yet fully 
 documented
 * Uses Apache 2.0 licence
