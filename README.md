@@ -19,7 +19,8 @@ Here we see how to download tick data from DukasCopy, wih the same API calls and
 
 ```
 md_request = MarketDataRequest(start_date='14 Jun 2016', finish_date='15 Jun 2016',
-                                   category='fx', fields=['bid', 'ask'], freq='tick', data_source='dukascopy', tickers=['EURUSD'])
+                                   category='fx', fields=['bid', 'ask'], freq='tick', 
+                                   data_source='dukascopy', tickers=['EURUSD'])
 
 df = market.fetch_market(md_request)
 print(df.tail(n=10))
