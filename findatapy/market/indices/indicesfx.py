@@ -104,7 +104,3 @@ class IndicesFX:
                 total_return_index_agg = total_return_index_agg.join(total_return_index, how = 'outer')
 
         return total_return_index_agg
-
-if __name__ == '__main__':
-    pass
-    # see pythalesians_examples/markets/indicesfx_examples.py
