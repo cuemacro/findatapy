@@ -1,0 +1,32 @@
+category.source.freq.fields,ticker,cut.postfix,sourceticker,midfix,postmidfix
+fx-implied-vol.bloomberg.daily.close,EURUSD,NYC.CMPN Curncy,,V,ON
+,GBPUSD,BGN.BGN Curncy,,25R,1W
+,AUDUSD,LDN.CMPL Curncy,,10R,2W
+,NZDUSD,TOK.CMPT Curncy,,25B,3W
+,USDCAD,10AM.F100 Curncy,,10B,1M
+,USDCHF,,,,2M
+,EURNOK,,,,3M
+,EURSEK,,,,4M
+,USDJPY,,,,6M
+,USDNOK,,,,9M
+,USDSEK,,,,1Y
+,EURJPY,,,,2Y
+,AUDJPY,,,,3Y
+,NZDJPY,,,,5Y
+,EURGBP,,,,
+,EURCHF,,,,
+,USDTRY,,,,
+,USDZAR,,,,
+,USDMXN,,,,
+,EURPLN,,,,
+,EURHUF,,,,
+,USDPLN,,,,
+,USDHUF,,,,
+,USDBRL,,,,
+,USDRUB,,,,
+,USDKRW,,,,
+,USDCNY,,,,
+,USDCNH,,,,
+,XAUUSD,,,,
+,XAGUSD,,,,
+,XPTUSD,,,,

@@ -1,0 +1,15 @@
+category,source,freq,cut,fields,startdate
+fx,quandl,daily,NYC,close,1-Jan-70
+fx,dukascopy,tick,NYC,"bid,ask,bidv,askv,volume",1-Jan-03
+fx,bloomberg,daily,BGN,"close,open,high,low",1-Jan-70
+fx,bloomberg,daily,NYC,"close,open,high,low",1-Jan-70
+fx,bloomberg,daily,TOK,"close,open,high,low",1-Jan-70
+fx,bloomberg,daily,LDN,"close,open,high,low",1-Jan-70
+fx-tot,bloomberg,daily,NYC,"close,open,high,low",1-Jan-70
+fx,bloomberg,intraday,NYC,"close,open,high,low,volume,events",1-Jan-03
+events,bloomberg,daily,NYC,"close,actual-release,survey-median,survey-average,survey-high,survey-low,survey-high,number-observations,release-dt,release-date-time-full,first-revision,first-revision-date",1-Jan-99
+fx-implied-vol,bloomberg,daily,NYC,close,1-Jan-95
+fx-implied-vol,bloomberg,daily,BGN,close,1-Jan-95
+fx-implied-vol,bloomberg,daily,TOK,close,1-Jan-95
+fx-implied-vol,bloomberg,daily,LDN,close,1-Jan-95
+fx-implied-vol,bloomberg,daily,10AM,close,1-Jan-09
