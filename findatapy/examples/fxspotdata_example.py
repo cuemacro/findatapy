@@ -94,15 +94,15 @@ if run_example == 3 or run_example == 0:
     # now we will try various examples with Bloomberg
     # only works if you have Bloomberg terminal installed and the Python API!
     md_request = MarketDataRequest(start_date='week', category='fx', data_source='bloomberg', tickers=['AUDJPY'])
-    # df = market.fetch_market(md_request)
+    df = market.fetch_market(md_request)
 
-    # print(df.tail(n=10))
+    print(df.tail(n=10))
 
     # let's now try downloading 1 minute intraday data for the past week from Bloomberg
     md_request = MarketDataRequest(start_date='week', freq='intraday', category='fx', data_source='bloomberg', tickers=['AUDJPY'])
 
-    # df = market.fetch_market(md_request)
-    # print(df.tail(n=10))
+    df = market.fetch_market(md_request)
+    print(df.tail(n=10))
 
     # let's now try downloading 1 minute intraday data for the past week from Bloomberg, directly specifying tickers
     # bypassing our config file
