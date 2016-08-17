@@ -29,8 +29,8 @@ print(df.tail(n=10))
 
 I had previously written the open source PyThalesians financial library. This new findatapy library has similar functionality to the 
 market data part of that library. However, I've totally rewritten the API to make it much cleaner and easier to use. It is also now a fully
-standalone package, so you can more easily use it with whatever libraries you have for analysing market data (although I'd recommend
-my own finmarketpy package if you are doing backtesting of trading strategies).
+standalone package, so you can more easily use it with whatever libraries you have for analysing market data or doing your backtesting (although I'd recommend
+my own finmarketpy package if you are doing backtesting of trading strategies!).
 
 A few things to note:
 * Please bear in mind at present findatapy is currently a highly experimental alpha project and isn't yet fully 
@@ -47,7 +47,7 @@ Major requirements
 * Required: Python 3.4, 3.5
 * Required: pandas, numpy etc.
 * Recommended: Bloomberg Python Open API
-    * To use Bloomberg you will need to have a licence
+    * To use Bloomberg you will need to have a licence (either to access Desktop API or Server API)
     * Use experimental Python 3.4 version from Bloomberg http://www.bloomberglabs.com/api/libraries/
     * Also download C++ version of Bloomberg API and extract into any location
         * eg. C:\blp\blpapi_cpp_3.9.10.1
