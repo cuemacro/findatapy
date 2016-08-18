@@ -61,7 +61,7 @@ Major requirements
         * python setup.py install
     * For Python 3.4 - prebuilt executable can be run, which means we can skip the build steps above
         * Might need to tweak registry to avoid "Python 3.4 not found in registry error" (blppython.reg example) when using this executable 
-    * Alternatively to access Bloomberg, the software also supports the old COM API (but I'm going to remove it because very slow)
+    * The library doesn't support the old Bloomberg COM API (since much slower than the new Open API)
 * Recommended: chartpy for funky interactive plots (https://github.com/cuemacro/chartpy) and 
 * Recommended: multiprocessor_on_dill because standard multiprocessing library pickle causes issues 
 (from https://github.com/sixty-north/multiprocessing_on_dill)
