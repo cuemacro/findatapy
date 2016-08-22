@@ -95,21 +95,21 @@ class DataConstants(object):
     TWITTER_OAUTH_TOKEN_SECRET	 = "x"
 
 
-# or we can store credentials (or anything else) in a file "datacred.py" in the same folder, which will overwrite the above
-try:
-    import findatapy.util.datacred as cred
+    # or we can store credentials (or anything else) in a file "datacred.py" in the same folder, which will overwrite the above
+    try:
+        import findatapy.util.datacred as cred
 
-    folder_historic_CSV = cred.folder_historic_CSV
-    folder_time_series_data = cred.folder_time_series_data
+        folder_historic_CSV = cred.folder_historic_CSV
+        folder_time_series_data = cred.folder_time_series_data
 
-    default_market_data_generator = cred.default_market_data_generator
+        default_market_data_generator = cred.default_market_data_generator
 
-    TWITTER_APP_KEY = cred.TWITTER_APP_KEY
-    TWITTER_APP_SECRET = cred.TWITTER_APP_SECRET
-    TWITTER_OAUTH_TOKEN = cred.TWITTER_OAUTH_TOKEN
-    TWITTER_OAUTH_TOKEN_SECRET = cred.TWITTER_OAUTH_TOKEN_SECRET
+        TWITTER_APP_KEY = cred.TWITTER_APP_KEY
+        TWITTER_APP_SECRET = cred.TWITTER_APP_SECRET
+        TWITTER_OAUTH_TOKEN = cred.TWITTER_OAUTH_TOKEN
+        TWITTER_OAUTH_TOKEN_SECRET = cred.TWITTER_OAUTH_TOKEN_SECRET
 
-    quandl_api_key = cred.quandl_api_key
+        quandl_api_key = cred.quandl_api_key
 
-except:
-    pass
+    except:
+        pass
