@@ -104,6 +104,18 @@ class DataConstants(object):
         folder_historic_CSV = cred.folder_historic_CSV
         folder_time_series_data = cred.folder_time_series_data
 
+        time_series_categories_fields = cred.time_series_categories_fields
+
+        # we can have multiple tickers files (separated by ";")
+        time_series_tickers_list = cred.time_series_tickers_list
+
+        time_series_fields_list = cred.time_series_fields_list
+
+        # config file for long term econ data
+        all_econ_tickers = cred.all_econ_tickers
+        econ_country_codes = cred.econ_country_codes
+        econ_country_groups = cred.econ_country_groups
+
         default_market_data_generator = cred.default_market_data_generator
 
         TWITTER_APP_KEY = cred.TWITTER_APP_KEY
