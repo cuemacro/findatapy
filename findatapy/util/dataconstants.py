@@ -97,7 +97,9 @@ class DataConstants(object):
 
     # or we can store credentials (or anything else) in a file "datacred.py" in the same folder, which will overwrite the above
     try:
-        import findatapy.util.datacred as cred
+        from findatapy.util.datacred import DataCred
+
+        cred = DataCred()
 
         folder_historic_CSV = cred.folder_historic_CSV
         folder_time_series_data = cred.folder_time_series_data
