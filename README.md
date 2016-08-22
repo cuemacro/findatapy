@@ -85,6 +85,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 22 Aug 2016 - Added credentials file
 * 17 Aug 2016 - Uploaded first code
 
 End of note

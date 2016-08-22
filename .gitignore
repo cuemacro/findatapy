@@ -5,6 +5,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Credential files
+*cred.py
+
 # Distribution / packaging
 .Python
 env/
