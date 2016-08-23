@@ -36,13 +36,13 @@ class Filter(object):
         self.logger = LoggerManager().getLogger(__name__)
         return
 
-    def filter_time_series(self, time_series_request, data_frame):
+    def filter_time_series(self, market_data_request, data_frame):
         """
         filter_time_series - Filters a time series given a set of criteria (like start/finish date and tickers)
 
         Parameters
         ----------
-        time_series_request : TimeSeriesRequest
+        market_data_request : MarketDataRequest
             defining time series filtering
         data_frame : DataFrame
             time series to be filtered
@@ -51,13 +51,13 @@ class Filter(object):
         -------
         DataFrame
         """
-        start_date = time_series_request.start_date
-        finish_date = time_series_request.finish_date
+        start_date = market_data_request.start_date
+        finish_date = market_data_request.finish_date
 
         data_frame = self.filter_time_series_by_date(start_date, finish_date, data_frame)
 
         # filter by ticker.field combinations requested
-        columns = self.create_tickers_fields_list(time_series_request)
+        columns = self.create_tickers_fields_list(market_data_request)
         data_frame = self.filter_time_series_by_columns(columns, data_frame)
 
         return data_frame
@@ -534,21 +534,21 @@ class Filter(object):
         """
         return data_frame.loc[data_frame.index.minute % freq == 0]
 
-    def create_tickers_fields_list(self, time_series_request):
+    def create_tickers_fields_list(self, market_data_request):
         """
-        create_ticker_field_list - Creates a list of tickers concatenated with fields from a TimeSeriesRequest
+        create_ticker_field_list - Creates a list of tickers concatenated with fields from a MarketDataRequest
 
         Parameters
         ----------
-        time_series_request : TimeSeriesRequest
+        market_data_request : MarketDataRequest
             request to be expanded
 
         Returns
         -------
         list(str)
         """
-        tickers = time_series_request.tickers
-        fields = time_series_request.fields
+        tickers = market_data_request.tickers
+        fields = market_data_request.fields
 
         if isinstance(tickers, str): tickers = [tickers]
         if isinstance(fields, str): fields = [fields]
