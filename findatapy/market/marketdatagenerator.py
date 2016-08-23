@@ -76,6 +76,14 @@ class MarketDataGenerator(object):
             from findatapy.market.datavendorweb import DataVendorQuandl
             data_vendor = DataVendorQuandl()
 
+        elif source == 'ons':
+            from findatapy.market.datavendorweb import DataVendorONS
+            data_vendor = DataVendorONS()
+
+        elif source == 'boe':
+            from findatapy.market.datavendorweb import DataVendorBOE
+            data_vendor = DataVendorBOE()
+
         elif source == 'dukascopy':
             from findatapy.market.datavendorweb  import DataVendorDukasCopy
             data_vendor = DataVendorDukasCopy()
