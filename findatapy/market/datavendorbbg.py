@@ -119,7 +119,12 @@ class DataVendorBBG(DataVendor):
                     return None
 
                 cols = data_frame.columns.values
-                data_frame = data_frame.tz_localize('UTC')
+
+                try:
+                    data_frame = data_frame.tz_localize('UTC')
+                except:
+                    data_frame = data_frame.tz_convert('UTC')
+
                 cols = market_data_request.tickers[0] + "." + cols
                 data_frame.columns = cols
 
