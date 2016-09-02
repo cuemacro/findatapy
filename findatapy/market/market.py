@@ -21,6 +21,7 @@ contains several other classes, which are for asset specific instances.
 """
 
 from findatapy.util import DataConstants
+from deco import *
 
 class Market(object):
 
@@ -169,7 +170,12 @@ class FXCrossFactory(object):
         if isinstance(cross, str):
             cross = [cross]
 
-        market_data_request = MarketDataRequest(freq_mult=1,
+        market_data_request_list = []
+        freq_list = []
+        type_list = []
+
+        for cr in cross:
+            market_data_request = MarketDataRequest(freq_mult=1,
                                                 cut=cut,
                                                 fields=['close'],
                                                 freq=freq,
@@ -179,145 +185,176 @@ class FXCrossFactory(object):
                                                 data_source=source,
                                                 environment=environment)
 
-        if freq == 'intraday':
-            market_data_request.gran_freq = "minute"                # intraday
+            market_data_request.type = type
+            market_data_request.cross = cr
 
-        elif freq == 'daily':
-            market_data_request.gran_freq = "daily"                 # daily
+            if freq == 'intraday':
+                market_data_request.gran_freq = "minute"                # intraday
 
-        import copy
+            elif freq == 'daily':
+                market_data_request.gran_freq = "daily"                 # daily
+
+            market_data_request_list.append(market_data_request)
 
         data_frame_agg = []
 
-        for cr in cross:
-            data_frame_agg.append(self._get_individual_fx_cross(cr, copy.copy(market_data_request), freq, type))
+        # depends on the nature of operation as to whether we should use threading or multiprocessing library
+        if DataConstants().market_thread_technique is "thread":
+            from multiprocessing.dummy import Pool
+        else:
+            # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
+            # must use the multiprocessing_on_dill library otherwise can't pickle objects correctly
+            # note: currently not very stable
+            from multiprocessing_on_dill import Pool
+
+        thread_no = DataConstants().market_thread_no['other']
+
+        if market_data_request_list[0].data_source in DataConstants().market_thread_no:
+            thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
+
+        if (thread_no > 0):
+            pool = Pool(thread_no)
+
+            # open the market data downloads in their own threads and return the results
+            result = pool.map_async(self._get_individual_fx_cross, market_data_request_list)
+            data_frame_agg = result.get()
+
+            pool.close()
+            pool.join()
+        else:
+            for md_request in market_data_request_list:
+                data_frame_agg.append(self._get_individual_fx_cross(md_request))
 
         data_frame_agg = self.calculations.pandas_outer_join(data_frame_agg)
 
         # strip the nan elements
         data_frame_agg = data_frame_agg.dropna()
+
         return data_frame_agg
 
-    def _get_individual_fx_cross(self, cr, market_data_request, freq, type):
-            base = cr[0:3]
-            terms = cr[3:6]
+    def _get_individual_fx_cross(self, market_data_request):
+        cr = market_data_request.cross
+        type = market_data_request.type
+        freq = market_data_request.freq
 
-            if (type == 'spot'):
-                # non-USD crosses
-                if base != 'USD' and terms != 'USD':
-                    base_USD = self.fxconv.correct_notation('USD' + base)
-                    terms_USD = self.fxconv.correct_notation('USD' + terms)
+        base = cr[0:3]
+        terms = cr[3:6]
 
-                    # TODO check if the cross exists in the database
+        if (type == 'spot'):
+            # non-USD crosses
+            if base != 'USD' and terms != 'USD':
+                base_USD = self.fxconv.correct_notation('USD' + base)
+                terms_USD = self.fxconv.correct_notation('USD' + terms)
 
-                    # download base USD cross
-                    market_data_request.tickers = base_USD
-                    market_data_request.category = 'fx'
+                # TODO check if the cross exists in the database
 
-                    if base_USD + '.close' in self.cache:
-                        base_vals = self.cache[base_USD + '.close']
-                    else:
-                        base_vals = self.market_data_generator.fetch_market_data(market_data_request)
-                        self.cache[base_USD + '.close'] = base_vals
+                # download base USD cross
+                market_data_request.tickers = base_USD
+                market_data_request.category = 'fx'
 
-                    # download terms USD cross
-                    market_data_request.tickers = terms_USD
-                    market_data_request.category = 'fx'
-
-                    if terms_USD + '.close' in self.cache:
-                        terms_vals = self.cache[terms_USD + '.close']
-                    else:
-                        terms_vals = self.market_data_generator.fetch_market_data(market_data_request)
-                        self.cache[terms_USD + '.close'] = terms_vals
-
-                    # if quoted USD/base flip to get USD terms
-                    if (base_USD[0:3] == 'USD'):
-                        if 'USD' + base in '.close' in self.cache:
-                            base_vals = self.cache['USD' + base + '.close']
-                        else:
-                            base_vals = 1 / base_vals
-                            self.cache['USD' + base + '.close'] = base_vals
-
-                    # if quoted USD/terms flip to get USD terms
-                    if (terms_USD[0:3] == 'USD'):
-                        if 'USD' + terms in '.close' in self.cache:
-                            terms_vals = self.cache['USD' + terms + '.close']
-                        else:
-                            terms_vals = 1 / terms_vals
-                            self.cache['USD' + terms + '.close'] = base_vals
-
-                    base_vals.columns = ['temp'];
-                    terms_vals.columns = ['temp']
-
-                    cross_vals = base_vals.div(terms_vals, axis = 'index')
-                    cross_vals.columns = [cr + '.close']
-
-                    base_vals.columns = [base_USD + '.close']
-                    terms_vals.columns = [terms_USD + '.close']
+                if base_USD + '.close' in self.cache:
+                    base_vals = self.cache[base_USD + '.close']
                 else:
-                    # if base == 'USD': non_USD = terms
-                    # if terms == 'USD': non_USD = base
+                    base_vals = self.market_data_generator.fetch_market_data(market_data_request)
+                    self.cache[base_USD + '.close'] = base_vals
 
-                    correct_cr = self.fxconv.correct_notation(cr)
+                # download terms USD cross
+                market_data_request.tickers = terms_USD
+                market_data_request.category = 'fx'
 
-                    market_data_request.tickers = correct_cr
-                    market_data_request.category = 'fx'
+                if terms_USD + '.close' in self.cache:
+                    terms_vals = self.cache[terms_USD + '.close']
+                else:
+                    terms_vals = self.market_data_generator.fetch_market_data(market_data_request)
+                    self.cache[terms_USD + '.close'] = terms_vals
 
-                    if correct_cr + '.close' in self.cache:
-                        cross_vals = self.cache[correct_cr + '.close']
+                # if quoted USD/base flip to get USD terms
+                if (base_USD[0:3] == 'USD'):
+                    if 'USD' + base in '.close' in self.cache:
+                        base_vals = self.cache['USD' + base + '.close']
                     else:
-                        cross_vals = self.market_data_generator.fetch_market_data(market_data_request)
+                        base_vals = 1 / base_vals
+                        self.cache['USD' + base + '.close'] = base_vals
 
-                        # flip if not convention
-                        if (correct_cr != cr):
-                            if cr + '.close' in self.cache:
-                                cross_vals = self.cache[cr + '.close']
-                            else:
-                                cross_vals = 1 / cross_vals
-                                self.cache[cr + '.close'] = cross_vals
-
-                        self.cache[correct_cr + '.close'] = cross_vals
-
-                    # cross_vals = self.market_data_generator.harvest_time_series(market_data_request)
-                    cross_vals.columns.names = [cr + '.close']
-
-            elif type[0:3] == "tot":
-                if freq == 'daily':
-                    # download base USD cross
-                    market_data_request.tickers = base + 'USD'
-                    market_data_request.category = 'fx-tot'
-
-                    if type == "tot":
-                        base_vals = self.market_data_generator.fetch_market_data(market_data_request)
+                # if quoted USD/terms flip to get USD terms
+                if (terms_USD[0:3] == 'USD'):
+                    if 'USD' + terms in '.close' in self.cache:
+                        terms_vals = self.cache['USD' + terms + '.close']
                     else:
-                        x = 0
+                        terms_vals = 1 / terms_vals
+                        self.cache['USD' + terms + '.close'] = base_vals
 
-                    # download terms USD cross
-                    market_data_request.tickers = terms + 'USD'
-                    market_data_request.category = 'fx-tot'
+                base_vals.columns = ['temp'];
+                terms_vals.columns = ['temp']
 
-                    if type == "tot":
-                        terms_vals = self.market_data_generator.fetch_market_data(market_data_request)
-                    else:
-                        pass
+                cross_vals = base_vals.div(terms_vals, axis='index')
+                cross_vals.columns = [cr + '.close']
 
-                    base_rets = self.calculations.calculate_returns(base_vals)
-                    terms_rets = self.calculations.calculate_returns(terms_vals)
+                base_vals.columns = [base_USD + '.close']
+                terms_vals.columns = [terms_USD + '.close']
+            else:
+                # if base == 'USD': non_USD = terms
+                # if terms == 'USD': non_USD = base
 
-                    cross_rets = base_rets.sub(terms_rets.iloc[:,0],axis=0)
+                correct_cr = self.fxconv.correct_notation(cr)
 
-                    # first returns of a time series will by NaN, given we don't know previous point
-                    cross_rets.iloc[0] = 0
+                market_data_request.tickers = correct_cr
+                market_data_request.category = 'fx'
 
-                    cross_vals = self.calculations.create_mult_index(cross_rets)
-                    cross_vals.columns = [cr + '-tot.close']
+                if correct_cr + '.close' in self.cache:
+                    cross_vals = self.cache[correct_cr + '.close']
+                else:
+                    cross_vals = self.market_data_generator.fetch_market_data(market_data_request)
 
-                elif freq == 'intraday':
-                    self.logger.info('Total calculated returns for intraday not implemented yet')
-                    return None
+                    # flip if not convention
+                    if (correct_cr != cr):
+                        if cr + '.close' in self.cache:
+                            cross_vals = self.cache[cr + '.close']
+                        else:
+                            cross_vals = 1 / cross_vals
+                            self.cache[cr + '.close'] = cross_vals
 
-            return cross_vals
+                    self.cache[correct_cr + '.close'] = cross_vals
 
+                # cross_vals = self.market_data_generator.harvest_time_series(market_data_request)
+                cross_vals.columns.names = [cr + '.close']
+
+        elif type[0:3] == "tot":
+            if freq == 'daily':
+                # download base USD cross
+                market_data_request.tickers = base + 'USD'
+                market_data_request.category = 'fx-tot'
+
+                if type == "tot":
+                    base_vals = self.market_data_generator.fetch_market_data(market_data_request)
+                else:
+                    x = 0
+
+                # download terms USD cross
+                market_data_request.tickers = terms + 'USD'
+                market_data_request.category = 'fx-tot'
+
+                if type == "tot":
+                    terms_vals = self.market_data_generator.fetch_market_data(market_data_request)
+                else:
+                    pass
+
+                base_rets = self.calculations.calculate_returns(base_vals)
+                terms_rets = self.calculations.calculate_returns(terms_vals)
+
+                cross_rets = base_rets.sub(terms_rets.iloc[:, 0], axis=0)
+
+                # first returns of a time series will by NaN, given we don't know previous point
+                cross_rets.iloc[0] = 0
+
+                cross_vals = self.calculations.create_mult_index(cross_rets)
+                cross_vals.columns = [cr + '-tot.close']
+
+            elif freq == 'intraday':
+                self.logger.info('Total calculated returns for intraday not implemented yet')
+                return None
+
+        return cross_vals
 
 #######################################################################################################################
 

@@ -230,7 +230,7 @@ class MarketDataGenerator(object):
 
         # single threaded version
         # handle intraday ticker calls separately one by one
-        if len(market_data_request.tickers) == 1 or DataConstants().time_series_factory_thread_no['other'] == 1:
+        if len(market_data_request.tickers) == 1 or DataConstants().market_thread_no['other'] == 1:
             for ticker in market_data_request.tickers:
                 market_data_request_single = copy.copy(market_data_request)
                 market_data_request_single.tickers = ticker
@@ -305,7 +305,7 @@ class MarketDataGenerator(object):
         data_frame_agg = None
 
         # depends on the nature of operation as to whether we should use threading or multiprocessing library
-        if DataConstants().time_series_factory_thread_technique is "thread":
+        if DataConstants().market_thread_technique is "thread":
             from multiprocessing.dummy import Pool
         else:
             # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
@@ -313,42 +313,25 @@ class MarketDataGenerator(object):
             # note: currently not very stable
             from multiprocessing_on_dill import Pool
 
-        thread_no = DataConstants().time_series_factory_thread_no['other']
+        thread_no = DataConstants().market_thread_no['other']
 
-        if market_data_request_list[0].data_source in DataConstants().time_series_factory_thread_no:
-            thread_no = DataConstants().time_series_factory_thread_no[market_data_request_list[0].data_source]
+        if market_data_request_list[0].data_source in DataConstants().market_thread_no:
+            thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
 
-        pool = Pool(thread_no)
+        if thread_no > 0:
+            pool = Pool(thread_no)
 
-        # open the market data downloads in their own threads and return the results
-        result = pool.map_async(self.fetch_single_time_series, market_data_request_list)
-        data_frame_group = result.get()
+            # open the market data downloads in their own threads and return the results
+            result = pool.map_async(self.fetch_single_time_series, market_data_request_list)
+            data_frame_group = result.get()
 
-        pool.close()
-        pool.join()
+            pool.close()
+            pool.join()
+        else:
+            data_frame_group = []
 
-        # data_frame_group = results.get()
-        # data_frame_group = results
-        # data_frame_group = None
-
-        # import multiprocessing as multiprocessing
-        # close the pool and wait for the work to finish
-
-        # processes = []
-
-        # for x in range(0, len(market_data_request_list)):
-        #    market_data_request = market_data_request_list[x]
-        # processes =   [multiprocessing.Process(target = self.fetch_single_time_series,
-        #                                           args = (x)) for x in market_data_request_list]
-
-        # pool.apply_async(tsf.harvest_category, args = (category_desc, environment, freq,
-        #             exclude_freq_cat, force_new_download_freq_cat, include_freq_cat))
-
-        # Run processes
-        # for p in processes: p.start()
-
-        # Exit the completed processes
-        # for p in processes: p.join()
+            for md_request in market_data_request_list:
+                data_frame_group.append(self.fetch_single_time_series(md_request))
 
         # collect together all the time series
         if data_frame_group is not None:
@@ -356,14 +339,6 @@ class MarketDataGenerator(object):
 
             if data_frame_group is not None:
                 data_frame_agg = self.calculations.pandas_outer_join(data_frame_group)
-
-            # for data_frame_single in data_frame_group:
-            #     # if you call for returning multiple tickers, be careful with memory considerations!
-            #     if data_frame_single is not None:
-            #         if data_frame_agg is not None:
-            #             data_frame_agg = data_frame_agg.join(data_frame_single, how='outer')
-            #         else:
-            #             data_frame_agg = data_frame_single
 
         return data_frame_agg
 
@@ -383,12 +358,12 @@ class MarketDataGenerator(object):
 
         # daily data does not include ticker in the key, as multiple tickers in the same file
 
-        if DataConstants().time_series_factory_thread_no['other'] == 1:
+        if DataConstants().market_thread_no['other'] == 1:
             data_frame_agg = data_vendor.load_ticker(market_data_request)
         else:
             market_data_request_list = []
 
-            group_size = int(len(market_data_request.tickers) / DataConstants().time_series_factory_thread_no['other'] - 1)
+            group_size = int(len(market_data_request.tickers) / DataConstants().market_thread_no['other'] - 1)
 
             if group_size == 0: group_size = 1
 
