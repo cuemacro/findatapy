@@ -120,10 +120,12 @@ class DataVendorBBG(DataVendor):
 
                 cols = data_frame.columns.values
 
+                import pytz
+
                 try:
-                    data_frame = data_frame.tz_localize('UTC')
+                    data_frame = data_frame.tz_localize(pytz.utc)
                 except:
-                    data_frame = data_frame.tz_convert('UTC')
+                    data_frame = data_frame.tz_convert(pytz.utc)
 
                 cols = market_data_request.tickers[0] + "." + cols
                 data_frame.columns = cols
