@@ -64,15 +64,16 @@ class DataConstants(object):
     # instances, but this has greater overhead (maybe more advisable when downloading very long time series)
 
     # "thread" or "multiprocessing" (experimental!) library to use when downloading data
-    time_series_factory_thread_technique = "thread"
+    market_thread_technique = "thread"
 
     # how many threads to use for loading external data (don't do too many on slow machines!)
     # also some data sources will complain if you start too many parallel threads to call data!
     # for some data providers might get better performance from 1 thread only!
-    time_series_factory_thread_no = {'quandl'      : 4,
+    market_thread_no = {             'quandl'      : 4,
                                      'bloomberg'   : 8,
                                      'yahoo'       : 8,
-                                     'other'       : 4}
+                                     'other'       : 4,
+                                     'dukascopy'   : 2}
 
     # log config file
     logging_conf = root_folder + "conf/logging.conf"
