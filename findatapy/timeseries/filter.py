@@ -294,14 +294,22 @@ class Filter(object):
             #     except:
             #         i = 0
 
+            try:
+                start_date = start_date.date()
+            except: pass
+
+            try:
+                finish_date = finish_date.date()
+            except: pass
+
             # if we have dates stored as opposed to TimeStamps (ie. daily data), we use a simple (slower) method
             # for filtering daily data
             if(start_date is not None):
-                 data_frame = data_frame.loc[start_date.date() < data_frame.index]
+                 data_frame = data_frame.loc[start_date < data_frame.index]
 
             if(finish_date is not None):
                  # filter by start_date and finish_date
-                 data_frame = data_frame.loc[data_frame.index < finish_date.date()]
+                 data_frame = data_frame.loc[data_frame.index < finish_date]
 
         return data_frame
 
