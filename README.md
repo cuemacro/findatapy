@@ -85,6 +85,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 02 Sep 2016 - Edits around Bloomberg event download
 * 23 Aug 2016 - Added skeletons for ONS and BOE data
 * 22 Aug 2016 - Added credentials file
 * 17 Aug 2016 - Uploaded first code
