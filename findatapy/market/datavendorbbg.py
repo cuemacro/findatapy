@@ -64,13 +64,16 @@ class DataVendorBBG(DataVendor):
                 # cause concurrency issues!)
                 datetime_data_frame = self.get_reference_data(market_data_request_vendor, market_data_request)
 
+                old_fields = copy.deepcopy(market_data_request.fields)
+                old_vendor_fields = copy.deepcopy(market_data_request_vendor.fields)
+
                 # remove fields 'release-date-time-full' from our request (and the associated field in the vendor)
                 # if they are there
                 try:
                     index = market_data_request.fields.index('release-date-time-full')
 
-                    market_data_request_vendor.fields.pop(index)
                     market_data_request.fields.pop(index)
+                    market_data_request_vendor.fields.pop(index)
                 except:
                     pass
 
@@ -88,6 +91,9 @@ class DataVendorBBG(DataVendor):
                     data_frame.index = temp
                 else:
                     data_frame = datetime_data_frame
+
+                market_data_request.fields = old_fields
+                market_data_request_vendor.fields = old_vendor_fields
 
             # for all other daily/monthly/quarter data, we can use HistoricalDataRequest to Bloomberg
             else:
