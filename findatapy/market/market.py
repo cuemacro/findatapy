@@ -373,6 +373,7 @@ from findatapy.timeseries import Calculations, Filter, Timezone
 
 class FXVolFactory(object):
     # types of quotation on vol surface
+    # ATM, 25d riskies, 10d riskies, 25d strangles, 10d strangles
     part = ["V", "25R", "10R", "25B", "10B"]
 
     # all the tenors on our vol surface
