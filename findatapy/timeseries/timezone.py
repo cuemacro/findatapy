@@ -135,7 +135,7 @@ class Timezone(object):
         # Now convert to naive DatetimeIndex
         data_frame.index = pandas.DatetimeIndex(datetime_index.values + tz_offset_td64)
 
-        return -1 #data_frame #(doesn't work)
+        return None #data_frame #(doesn't work)
 
     def tz_strip(self, data_frame):
         """
