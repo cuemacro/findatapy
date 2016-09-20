@@ -21,7 +21,7 @@ contains several other classes, which are for asset specific instances.
 """
 
 from findatapy.util import DataConstants
-from deco import *
+# from deco import *
 
 class Market(object):
 
