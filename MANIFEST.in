@@ -1,2 +1,2 @@
 recursive-include findatapy/ *.*
-recursive-include findatapy/conf/ *.*
+include findatapy/conf/*
