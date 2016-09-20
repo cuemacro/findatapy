@@ -1,2 +1,2 @@
 recursive-include findatapy/ *.*
-recursive-include *.csv *.xlsm
+recursive-include findatapy/conf/ *.*
