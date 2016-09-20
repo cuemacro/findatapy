@@ -4,6 +4,9 @@ quandl,open,open
 quandl,high,high
 quandl,low,low
 quandl,adj-close,adj-close
+quandl,settle,settle
+quandl,prev-day-open-interest,prev-day-open-interest
+quandl,volume,volume
 yahoo,Close,close
 yahoo,Open,open
 yahoo,High,high
