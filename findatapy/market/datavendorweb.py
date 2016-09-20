@@ -70,8 +70,6 @@ class DataVendorQuandl(DataVendor):
             returned_tickers = [x.replace('.', '/') for x in returned_tickers]
             returned_tickers = [x.split(' - ')[0] for x in returned_tickers]
 
-            print(returned_fields)
-
             fields = self.translate_from_vendor_field(returned_fields, market_data_request)
             tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
 
