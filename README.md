@@ -85,7 +85,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
-* 20 Sep 2016 - Removed deco dependency
+* 20 Sep 2016 - Removed deco dependency, fixed issue downloading Quandl fields
 * 02 Sep 2016 - Edits around Bloomberg event download, fixed issues with data downloading threading
 * 23 Aug 2016 - Added skeletons for ONS and BOE data
 * 22 Aug 2016 - Added credentials file
