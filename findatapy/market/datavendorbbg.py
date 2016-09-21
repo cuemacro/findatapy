@@ -238,7 +238,10 @@ import datetime
 import re
 
 import pandas
-import blpapi   # obtainable from Bloomberg website
+
+try:
+    import blpapi   # obtainable from Bloomberg website
+except: pass
 
 from findatapy.util.dataconstants import DataConstants
 from findatapy.market.datavendorbbg import DataVendorBBG
