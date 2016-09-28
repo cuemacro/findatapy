@@ -14,5 +14,6 @@ setup(name='findatapy',
                           'twython',
                           'pytz',
                           'requests',
-                          'numpy'],
+                          'numpy',
+                          'pandas_datareader'],
 	  zip_safe=False)
