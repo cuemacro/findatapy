@@ -73,6 +73,32 @@ class Market(object):
 
                     if df != []:
                         return Calculations().pandas_outer_join(df)
+            elif(md_request.category == 'fx-vol-market'):
+                if md_request.tickers is not None:
+                    df = []
+
+                    fxvf = FXVolFactory(market_data_generator=self.market_data_generator)
+                    rates = RatesFactory(market_data_generator=self.market_data_generator)
+
+                    for t in md_request.tickers:
+                        if len(t) == 6:
+                            df.append(fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
+                                                              cut=md_request.cut, source=md_request.data_source,
+                                                              part=fxvf.part,
+                                                              cache_algo=md_request.cache_algo))
+
+                            df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
+                                                              cut=md_request.cut, source=md_request.data_source,
+                                                              cache_algo=md_request.cache_algo))
+
+                    df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date, ["USD", "EUR", "CHF"], fxvf.tenor,
+                                                   cut=md_request.cut, source=md_request.data_source,
+                                                   cache_algo=md_request.cache_algo
+                                                   ))
+
+                    if df != []:
+                        return Calculations().pandas_outer_join(df)
+
 
             # TODO add more special examples here for different asset classes
             # the idea is that we do all the market data downloading here, rather than elsewhere
@@ -388,10 +414,12 @@ class FXVolFactory(object):
         self.filter = Filter()
         self.timezone = Timezone()
 
+        self.rates = RatesFactory()
+
         return
 
     def get_fx_implied_vol(self, start, end, cross, tenor, cut="BGN", source="bloomberg", part="V",
-                           cache_algo_return="internet_load_return"):
+                           cache_algo="internet_load_return"):
         """ get_implied_vol = get implied vol for specified cross, tenor and part of surface
 
         :param start: start date
@@ -408,10 +436,6 @@ class FXVolFactory(object):
         market_data_request = MarketDataRequest()
         market_data_generator = self.market_data_generator
 
-        market_data_request.data_source = source    # use bbg as a source
-        market_data_request.start_date = start      # start_date
-        market_data_request.finish_date = end       # finish_date
-
         if isinstance(cross, str): cross = [cross]
         if isinstance(tenor, str): tenor = [tenor]
         if isinstance(part, str): part = [part]
@@ -423,16 +447,17 @@ class FXVolFactory(object):
                 for pt in part:
                     tickers.append(cr + pt + tn)
 
-        market_data_request.tickers = tickers               # ticker (findatapy)
-        market_data_request.category = "fx-implied-vol"     # broad category
-        market_data_request.gran_freq = "daily"             # daily data
-        market_data_request.freq_mult = 1                   # 1 min
-        market_data_request.cut = cut                       # NYC ticker
-        market_data_request.fields = 'close'                # close field only
-        market_data_request.cache_algo = cache_algo_return  # cache_algo_only, cache_algo_return, internet_load
-
-        market_data_request.environment = 'backtest'
-
+        market_data_request = MarketDataRequest(
+            start_date=start, finish_date=end,
+            data_source=source,
+            category='fx-implied-vol',
+            freq='daily',
+            cut=cut,
+            tickers=tickers,
+            fields=['close'],
+            cache_algo=cache_algo,
+            environment='backtest'
+        )
         data_frame = market_data_generator.fetch_market_data(market_data_request)
         data_frame.index.name = 'Date'
 
@@ -479,3 +504,113 @@ class FXVolFactory(object):
             df_surf.ix["ATM", ten] = df.ix[date_index, cross + "V" + ten + ".close"]
 
         return df_surf
+
+#######################################################################################################################
+
+class RatesFactory(object):
+
+    def __init__(self, market_data_generator=None):
+        self.logger = LoggerManager().getLogger(__name__)
+
+        self.cache = {}
+
+        self.calculations = Calculations()
+        self.market_data_generator = market_data_generator
+
+        return
+
+    # all the tenors on our forwards
+    # forwards_tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
+
+    def get_base_depos(self, start, end, currencies, tenor, cut="NYC", source="bloomberg",
+                              cache_algo="internet_load_return"):
+        """ get_forward_points = get forward points for specified cross, tenor and part of surface
+
+        :param start: start date
+        :param end: end date
+        :param cross: asset to be calculated
+        :param tenor: tenor to calculate
+        :param cut: closing time of data
+        :param source: source of data eg. bloomberg
+
+        :return: forward points
+        """
+
+        market_data_request = MarketDataRequest()
+        market_data_generator = self.market_data_generator
+
+        if isinstance(currencies, str): currencies = [currencies]
+        if isinstance(tenor, str): tenor = [tenor]
+
+        tickers = []
+
+        for cr in currencies:
+            for tn in tenor:
+                tickers.append(cr + tn)
+
+        market_data_request = MarketDataRequest(
+            start_date=start, finish_date=end,
+            data_source=source,
+            category='base-depos',
+            freq='daily',
+            cut=cut,
+            tickers=tickers,
+            fields=['close'],
+            cache_algo=cache_algo,
+            environment='backtest'
+        )
+
+        data_frame = market_data_generator.fetch_market_data(market_data_request)
+        data_frame.index.name = 'Date'
+
+        return data_frame
+
+    def get_fx_forward_points(self, start, end, cross, tenor, cut="BGN", source="bloomberg",
+                           cache_algo="internet_load_return"):
+        """ get_forward_points = get forward points for specified cross, tenor and part of surface
+
+        :param start: start date
+        :param end: end date
+        :param cross: asset to be calculated
+        :param tenor: tenor to calculate
+        :param cut: closing time of data
+        :param source: source of data eg. bloomberg
+
+        :return: forward points
+        """
+
+        market_data_request = MarketDataRequest()
+        market_data_generator = self.market_data_generator
+
+        market_data_request.data_source = source  # use bbg as a source
+        market_data_request.start_date = start  # start_date
+        market_data_request.finish_date = end  # finish_date
+
+        if isinstance(cross, str): cross = [cross]
+        if isinstance(tenor, str): tenor = [tenor]
+
+        tenor = [x.replace('1Y', '12M') for x in tenor]
+
+        tickers = []
+
+        for cr in cross:
+            for tn in tenor:
+                tickers.append(cr + tn)
+
+        market_data_request = MarketDataRequest(
+            start_date = start, finish_date = end,
+            data_source = source,
+            category = 'fx-forwards',
+            freq = 'daily',
+            cut = cut,
+            tickers=tickers,
+            fields = ['close'],
+            cache_algo = cache_algo,
+            environment = 'backtest'
+        )
+
+        data_frame = market_data_generator.fetch_market_data(market_data_request)
+        data_frame.columns = [x.replace('12M', '1Y') for x in data_frame.columns]
+        data_frame.index.name = 'Date'
+
+        return data_frame
