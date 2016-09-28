@@ -6,7 +6,7 @@ market = Market(market_data_generator=MarketDataGenerator())
 # run_example = 1 - download implied volatility data from Bloomberg for FX
 # run_example = 2 - download implied volatility data (not in configuration file) from Bloomberg for FX
 
-run_example =0
+run_example = 0
 
 ###### download FX volatility quotations from Bloomberg
 if run_example == 1 or run_example == 0:
@@ -23,6 +23,12 @@ if run_example == 1 or run_example == 0:
 
     # we can also download the whole volatility surface for EURUSD, this way.. without having to define every point!
     md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-implied-vol',
+                                   tickers=['EURUSD'])
+
+    df = market.fetch_market(md_request)
+
+    # we can also download the whole all market data for EURUSD for pricing options (vol surface)
+    md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-vol-market',
                                    tickers=['EURUSD'])
 
     df = market.fetch_market(md_request)
