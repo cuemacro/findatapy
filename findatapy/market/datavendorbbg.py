@@ -152,7 +152,11 @@ class DataVendorBBG(DataVendor):
             returned_tickers = data_frame.columns.get_level_values(1)
 
             # TODO if empty try downloading again a year later
-            fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+            try:
+                fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+            except:
+                print('t')
+
             tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
 
             ticker_combined = []
