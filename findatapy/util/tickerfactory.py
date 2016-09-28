@@ -31,7 +31,7 @@ class TickerFactory(object):
 
         data_frame = pandas.read_csv(csv_file, dtype=object)
 
-        rows = 10000
+        rows = 100000
         #category	source	freq	ticker	cut	fields	sourceticker
 
         data_frame_out = pandas.DataFrame(index=numpy.arange(0, rows),
@@ -53,14 +53,22 @@ class TickerFactory(object):
                         postfix = spl1[1]
                         for ticker in data_frame['ticker']:
                             if isinstance(ticker, str):
-                                for midfix in data_frame['midfix']:
-                                    if isinstance(midfix, str):
-                                        for postmidfix in data_frame['postmidfix']:
-                                            if isinstance(postmidfix, str):
-                                                ticker_ext = ticker + midfix + postmidfix
-                                                sourceticker = ticker + midfix + postmidfix + ' ' + postfix
-                                                data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields, sourceticker]
-                                                i = i + 1
+                                if 'midfix' in data_frame.columns:
+                                    for midfix in data_frame['midfix']:
+                                        if isinstance(midfix, str):
+                                            for postmidfix in data_frame['postmidfix']:
+                                                if isinstance(postmidfix, str):
+                                                    ticker_ext = ticker + midfix + postmidfix
+                                                    sourceticker = ticker + midfix + postmidfix + ' ' + postfix
+                                                    data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields, sourceticker]
+                                                    i = i + 1
+                                else:
+                                    for postmidfix in data_frame['postmidfix']:
+                                        if isinstance(postmidfix, str):
+                                            ticker_ext = ticker + postmidfix
+                                            sourceticker = ticker + postmidfix + ' ' + postfix
+                                            data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields, sourceticker]
+                                            i = i + 1
 
 
         data_frame_out = data_frame_out[0:i]
@@ -81,8 +89,14 @@ if __name__ == '__main__':
     logger = LoggerManager.getLogger(__name__)
 
     tf = TickerFactory()
+    root = 'E:/Remote/canary/conf'
 
-    csv_file = 'E:/Local/canary/findatapy/conf/fx_vol_tickers_maker.csv'
-    out_csv_file = 'E:/Local/canary/findatapy/conf/fx_vol_tickers.csv'
+    # csv_file = root + '/fx_vol_tickers_maker.csv'
+    # out_csv_file = root + '/fx_vol_tickers.csv'
+    #
+    # tf.create_ticker(csv_file, out_csv_file)
+
+    csv_file = root + '/fx_forwards_tickers_maker.csv'
+    out_csv_file = root + '/fx_forwards_tickers.csv'
 
     tf.create_ticker(csv_file, out_csv_file)

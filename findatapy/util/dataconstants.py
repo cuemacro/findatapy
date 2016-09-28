@@ -39,7 +39,10 @@ class DataConstants(object):
 
     # we can have multiple tickers files (separated by ";")
     time_series_tickers_list = root_folder + "conf/time_series_tickers_list.csv;" + \
-                               root_folder + "conf/fx_vol_tickers.csv"
+                               root_folder + "conf/fx_vol_tickers.csv;" + \
+                               root_folder + "conf/fx_forwards_tickers.csv;" + \
+                               root_folder + "conf/base_depos_tickers_list.csv"
+
 
     time_series_fields_list = root_folder + "conf/time_series_fields_list.csv"
 
