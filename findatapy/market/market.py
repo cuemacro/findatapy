@@ -239,6 +239,10 @@ class FXCrossFactory(object):
         if market_data_request_list[0].data_source in DataConstants().market_thread_no:
             thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
 
+        # fudge, whilst investigating the issue with threading!
+        if self.market_data_generator.__class__.__name__ == 'CachedMarketDataGenerator':
+            thread_no = 0
+
         if (thread_no > 0):
             pool = Pool(thread_no)
 
@@ -434,7 +438,6 @@ class FXVolFactory(object):
         :return: realised volatility
         """
 
-        market_data_request = MarketDataRequest()
         market_data_generator = self.market_data_generator
 
         if isinstance(cross, str): cross = [cross]
