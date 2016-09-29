@@ -73,7 +73,8 @@ class Market(object):
 
                     if df != []:
                         return Calculations().pandas_outer_join(df)
-            elif(md_request.category == 'fx-vol-market'):
+
+            if(md_request.category == 'fx-vol-market'):
                 if md_request.tickers is not None:
                     df = []
 
@@ -536,7 +537,6 @@ class RatesFactory(object):
         :return: forward points
         """
 
-        market_data_request = MarketDataRequest()
         market_data_generator = self.market_data_generator
 
         if isinstance(currencies, str): currencies = [currencies]
