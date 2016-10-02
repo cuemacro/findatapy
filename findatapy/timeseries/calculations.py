@@ -389,6 +389,9 @@ class Calculations(object):
         rolling_sum = pandas.rolling_apply(data_frame, periods, foo, min_periods=1)
         rolling_non_nans = pandas.stats.moments.rolling_count(data_frame, periods, freq=None, center=False, how=None)
 
+        # For pandas 0.18 onwards (TODO)
+        # rolling_non_nans = data_frame.rolling(span=periods, freq=None, center=False, how=None).count()
+
         return rolling_sum / rolling_non_nans
 
     def rolling_sparse_sum(self, data_frame, periods):
@@ -562,9 +565,7 @@ class Calculations(object):
 
         # df_list = [dd.from_pandas(df) for df in df_list]
 
-        df_list = df_list[0].join(df_list[1:], how="outer")
-
-        return df_list
+        return df_list[0].join(df_list[1:], how="outer")
 
     def functional_outer_join(self, df_list):
         def join_dfs(ldf, rdf):
@@ -573,25 +574,34 @@ class Calculations(object):
         return functools.reduce(join_dfs, df_list)
 
     # experimental!
-    def iterative_outer_join(self, df_list):
+    def iterative_outer_join(self, df_list, pool = None):
+
+        if pool is None:
+            from multiprocessing.dummy import Pool
+            pool = Pool(4)
+
         while(True):
             # split into two
             length = len(df_list)
 
             if length == 1: break
 
-            # mid_point = length // 2
-            df_mini = []
+            job_args = [(item_a, df_list) for i, item_a in enumerate(range(0, length, 2))]
 
-            for i in range(0, length, 2):
-                if i == length - 1:
-                    df_mini.append(df_list[i])
-                else:
-                    df_mini.append(df_list[i].join(df_list[i+1], how="outer"))
+            df_list = pool.map_async(self.join_aux_helper, job_args).get()
 
-            df_list = df_mini
+        pool.close()
+        pool.join()
 
         return df_list[0]
+
+    def join_aux_helper(self, args):
+        return self.join_aux(*args)
+
+    def join_aux(self, i, df_list):
+        if i == len(df_list) - 1: return df_list[i]
+
+        return df_list[i].join(df_list[i + 1], how="outer")
 
     def linear_regression(self, df_y, df_x):
         return pandas.stats.api.ols(y = df_y, x = df_x)
