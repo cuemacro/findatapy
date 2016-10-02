@@ -60,7 +60,7 @@ class Market(object):
                      environment = md_request.environment)
 
             if (md_request.category == 'fx-implied-vol'):
-                if md_request.tickers is not None:
+                if md_request.tickers is not None and md_request.freq == 'daily':
                     df = []
 
                     fxvf = FXVolFactory(market_data_generator=self.market_data_generator)
@@ -239,24 +239,29 @@ class FXCrossFactory(object):
         if market_data_request_list[0].data_source in DataConstants().market_thread_no:
             thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
 
-        # fudge, whilst investigating the issue with threading!
-        if self.market_data_generator.__class__.__name__ == 'CachedMarketDataGenerator':
-            thread_no = 0
+        # fudge, issue with multithreading and accessing HDF5 files
+        # if self.market_data_generator.__class__.__name__ == 'CachedMarketDataGenerator':
+        #    thread_no = 0
 
         if (thread_no > 0):
             pool = Pool(thread_no)
 
             # open the market data downloads in their own threads and return the results
             result = pool.map_async(self._get_individual_fx_cross, market_data_request_list)
-            data_frame_agg = result.get()
+            data_frame_agg = self.calculations.iterative_outer_join(result.get())
 
-            pool.close()
-            pool.join()
+            # data_frame_agg = self.calculations.pandas_outer_join(result.get())
+
+            # pool would have already been closed earlier
+            # try:
+            #    pool.close()
+            #    pool.join()
+            # except: pass
         else:
             for md_request in market_data_request_list:
                 data_frame_agg.append(self._get_individual_fx_cross(md_request))
 
-        data_frame_agg = self.calculations.pandas_outer_join(data_frame_agg)
+            data_frame_agg = self.calculations.pandas_outer_join(data_frame_agg)
 
         # strip the nan elements
         data_frame_agg = data_frame_agg.dropna()
