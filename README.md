@@ -62,7 +62,8 @@ Major requirements
     * For Python 3.4 - prebuilt executable can be run, which means we can skip the build steps above
         * Might need to tweak registry to avoid "Python 3.4 not found in registry error" (blppython.reg example) when using this executable 
     * The library doesn't support the old Bloomberg COM API (since much slower than the new Open API)
-* Recommended: chartpy for funky interactive plots (https://github.com/cuemacro/chartpy) and 
+* Recommended: chartpy for funky interactive plots (https://github.com/cuemacro/chartpy) and
+* Recommended: arctic (AHL library for managing time series in MongoDB)
 * Recommended: multiprocessor_on_dill because standard multiprocessing library pickle causes issues 
 (from https://github.com/sixty-north/multiprocessing_on_dill)
 
@@ -85,6 +86,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 02 Oct 2016 - Added read/write dataframes via AHL's Arctic (MongoDB), added multi-threaded outer join, speeded up downloading intraday FX
 * 28 Sep 2016 - Added more data types to download for vol
 * 23 Sep 2016 - Fixed issue with downloading events
 * 20 Sep 2016 - Removed deco dependency, fixed issue downloading Quandl fields, fixed issue with setup files
