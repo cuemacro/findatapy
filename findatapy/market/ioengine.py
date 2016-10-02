@@ -139,7 +139,7 @@ class IOEngine(object):
                             postfix = postfix, intraday_tz = intraday_tz, excel_sheet = excel_sheet)
 
     ### functions to handle HDF5 on disk
-    def write_time_series_cache_to_disk(self, fname, data_frame, use_bcolz = False):
+    def write_time_series_cache_to_disk(self, fname, data_frame, engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1'):
         """
         write_time_series_cache_to_disk - writes Pandas data frame to disk as HDF5 format or bcolz format
 
@@ -151,7 +151,15 @@ class IOEngine(object):
             data frame to be written to disk
         """
 
-        if (use_bcolz):
+        # default HDF5 format
+        hdf5_format = 'fixed'
+
+        if 'hdf5' in engine:
+            hdf5_format = engine.split('_')[1]
+            engine = 'hdf5'
+
+
+        if (engine == 'bcolz'):
             # convert invalid characters to substitutes (which Bcolz can't deal with)
             data_frame.columns = self.find_replace_chars(data_frame.columns, _invalid_chars, _replace_chars)
             data_frame.columns = ['A_' + x for x in data_frame.columns]
@@ -161,31 +169,95 @@ class IOEngine(object):
             bcolzpath = self.get_bcolz_filename(fname)
             shutil.rmtree(bcolzpath, ignore_errors=True)
             zlens = bcolz.ctable.fromdataframe(data_frame, rootdir=bcolzpath)
-        else:
-            h5_filename_temp = self.get_h5_filename(fname + ".temp")
-            h5_filename = self.get_h5_filename(fname)
+        elif (engine == 'arctic'):
+            from arctic import Arctic
+            import pymongo
 
-            # delete the old copy
+            socketTimeoutMS = 2 * 1000
+            fname = os.path.basename(fname).replace('.', '_')
+
+            self.logger.info('Load MongoDB library: ' + fname)
+
+            c = pymongo.MongoClient(db_server, connect=False)
+            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
+
+            database = None
+
             try:
-                # os.remove(h5_filename_temp)
-                temp = 0
-            except: pass
+                database = store[fname]
+            except:
+                pass
 
-            store = pandas.HDFStore(h5_filename_temp, complib="blosc", complevel=9)
+            if database is None:
+                store.initialize_library(fname, audit=False)
+                self.logger.info("Created MongoDB library: " + fname)
+            else:
+                self.logger.info("Got MongoDB library: " + fname)
+
+            # Access the library
+            library = store[fname]
 
             if ('intraday' in fname):
                 data_frame = data_frame.astype('float32')
 
-            store['data'] = data_frame
-            store.close()
+            # can duplicate values if we have existing dates
+            if append_data:
+                library.append(fname, data_frame)
+            else:
+                library.write(fname, data_frame)
 
-            # delete the old copy
-            try:
-                os.remove(h5_filename)
-            except: pass
+        elif (engine == 'hdf5'):
+            h5_filename = self.get_h5_filename(fname)
 
-            # once written to disk rename
-            os.rename(h5_filename_temp, h5_filename)
+            # append data only works for HDF5 stored as tables (but this is much slower than fixed format)
+            # removes duplicated entries at the end
+            if append_data:
+                store = pandas.HDFStore(h5_filename, format=hdf5_format, complib="blosc", complevel=9)
+
+                if ('intraday' in fname):
+                    data_frame = data_frame.astype('float32')
+
+                # get last row which matches and remove everything after that (because append
+                # function doesn't check for duplicated rows
+                nrows = len(store['data'].index)
+                last_point = data_frame.index[-1]
+
+                i = nrows - 1
+
+                while(i > 0):
+                    read_index = store.select('data', start=i, stop=nrows).index[0]
+
+                    if (read_index <= last_point): break
+
+                    i = i - 1
+
+                # remove rows at the end, which are duplicates of the incoming time series
+                store.remove(key='data', start=i, stop=nrows)
+                store.put(key='data', value=data_frame, format=hdf5_format, append=True)
+                store.close()
+            else:
+                h5_filename_temp = self.get_h5_filename(fname + ".temp")
+
+                # delete the old copy
+                try:
+                    os.remove(h5_filename_temp)
+                except: pass
+
+                store = pandas.HDFStore(h5_filename_temp, format=hdf5_format, complib="blosc", complevel=9)
+
+                if ('intraday' in fname):
+                    data_frame = data_frame.astype('float32')
+
+                store.put(key='data', value=data_frame, format=hdf5_format)
+                store.close()
+
+                # delete the old copy
+                try:
+                    os.remove(h5_filename)
+                except: pass
+
+                # once written to disk rename
+                os.rename(h5_filename_temp, h5_filename)
 
     def get_h5_filename(self, fname):
         """
@@ -262,7 +334,7 @@ class IOEngine(object):
         store_export.put('df_for_r', data_frame32, data_columns=cols)
         store_export.close()
 
-    def read_time_series_cache_from_disk(self, fname, use_bcolz = False):
+    def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None, db_server = '127.0.0.1'):
         """
         read_time_series_cache_from_disk - Reads time series cache from disk in either HDF5 or bcolz
 
@@ -276,7 +348,7 @@ class IOEngine(object):
         DataFrame
         """
 
-        if (use_bcolz):
+        if (engine == 'bcolz'):
             try:
                 name = self.get_bcolz_filename(fname)
                 zlens = bcolz.open(rootdir=name)
@@ -293,7 +365,32 @@ class IOEngine(object):
                 return data_frame
             except:
                 return None
+        elif(engine == 'arctic'):
+            socketTimeoutMS = 2 * 1000
 
+            import pymongo
+            from arctic import Arctic
+
+            fname = os.path.basename(fname).replace('.', '_')
+
+            self.logger.info('Load MongoDB library: ' + fname)
+
+            c = pymongo.MongoClient(db_server, connect=False)
+
+            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
+
+            # Access the library
+            library = store[fname]
+
+            if start_date is None and finish_date is None:
+                item = library.read(fname)
+            else:
+                from arctic.date import DateRange
+                item = library.read(fname, date_range=DateRange(start_date, finish_date))
+
+            self.logger.info('Read ' + fname)
+
+            return item.data
         elif os.path.isfile(self.get_h5_filename(fname)):
             store = pandas.HDFStore(self.get_h5_filename(fname))
             data_frame = store.select("data")
