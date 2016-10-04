@@ -206,6 +206,10 @@ class IOEngine(object):
             else:
                 library.write(fname, data_frame)
 
+            c.close()
+
+            self.logger.info("Written MongoDB library: " + fname)
+
         elif (engine == 'hdf5'):
             h5_filename = self.get_h5_filename(fname)
 
@@ -387,6 +391,8 @@ class IOEngine(object):
             else:
                 from arctic.date import DateRange
                 item = library.read(fname, date_range=DateRange(start_date, finish_date))
+
+            c.close()
 
             self.logger.info('Read ' + fname)
 
