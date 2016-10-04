@@ -86,6 +86,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 04 Oct 2016 - Added arctic_example for writing pandas DataFrames
 * 02 Oct 2016 - Added read/write dataframes via AHL's Arctic (MongoDB), added multi-threaded outer join, speeded up downloading intraday FX
 * 28 Sep 2016 - Added more data types to download for vol
 * 23 Sep 2016 - Fixed issue with downloading events
