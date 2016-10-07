@@ -10,6 +10,7 @@ __pycache__/
 configfindatapy.xlsm
 
 # Distribution / packaging
+.idea/
 .Python
 env/
 build/
