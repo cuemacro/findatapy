@@ -86,6 +86,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 07 Oct 2016 - Add .idea from .gitignore
 * 06 Oct 2016 - Fixed downloading of tick count for FX
 * 04 Oct 2016 - Added arctic_example for writing pandas DataFrames
 * 02 Oct 2016 - Added read/write dataframes via AHL's Arctic (MongoDB), added multi-threaded outer join, speeded up downloading intraday FX
