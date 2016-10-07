@@ -3,7 +3,7 @@ from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
 market = Market(market_data_generator=MarketDataGenerator())
 
 md_request = MarketDataRequest(
-    start_date="decade",                        # start date (download data over past decade)
+    start_date="01 Jun 2000",                   # start date (download data over past decade)
     data_source='fred',                         # use FRED as data source
     tickers=['US CPI YoY', 'EZ CPI YoY'],       # ticker
     fields=['close'],                           # which fields to download
