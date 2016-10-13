@@ -73,6 +73,7 @@ class RetStats(object):
         dd2here = index_df / max2here - 1
 
         self._dd = dd2here.min()
+        self._yoy_rets = index_df.resample('A').mean().pct_change()
 
     def ann_returns(self):
         """
@@ -123,6 +124,16 @@ class RetStats(object):
         float
         """
         return self._kurtosis
+
+    def yoy_rets(self):
+        """
+        yoy_rets - Calculates the yoy rets
+
+        Returns
+        -------
+        float
+        """
+        return self._yoy_rets
 
     def summary(self):
         """
