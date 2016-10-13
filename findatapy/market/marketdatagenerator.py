@@ -152,7 +152,7 @@ class MarketDataGenerator(object):
                     return data_frame_agg
 
             try:
-                return self.filter.filter_time_series(market_data_request, data_frame_agg)
+                return self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)
             except:
                 import traceback
 
