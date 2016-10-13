@@ -36,7 +36,7 @@ class Filter(object):
         self.logger = LoggerManager().getLogger(__name__)
         return
 
-    def filter_time_series(self, market_data_request, data_frame):
+    def filter_time_series(self, market_data_request, data_frame, pad_columns = False):
         """
         filter_time_series - Filters a time series given a set of criteria (like start/finish date and tickers)
 
@@ -46,6 +46,8 @@ class Filter(object):
             defining time series filtering
         data_frame : DataFrame
             time series to be filtered
+        pad_columns : boolean
+            true, non-existant columns with nan
 
         Returns
         -------
@@ -58,7 +60,11 @@ class Filter(object):
 
         # filter by ticker.field combinations requested
         columns = self.create_tickers_fields_list(market_data_request)
-        data_frame = self.filter_time_series_by_columns(columns, data_frame)
+
+        if (pad_columns):
+            data_frame = self.pad_time_series_columns(columns, data_frame)
+        else:
+            data_frame = self.filter_time_series_by_columns(columns, data_frame)
 
         return data_frame
 
@@ -482,6 +488,8 @@ class Filter(object):
         uncommon_columns = [val for val in columns if val not in old_columns]
 
         data_frame = data_frame[common_columns]
+
+        self.logger.info("Padding missing columns " + str(uncommon_columns))
 
         for x in uncommon_columns: data_frame[x] = np.nan
 
