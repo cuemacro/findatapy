@@ -654,7 +654,11 @@ class Calculations(object):
             df[v] = list_o
         return df
 
-    ##### various methods for averaging time series by hours, mins and days to create summary time series
+    ##### various methods for averaging time series by hours, mins and days (or specific columns) to create summary time series
+    def average_by_columns_list(self, data_frame, columns):
+        return data_frame.\
+            groupby(columns).mean()
+
     def average_by_hour_min_of_day(self, data_frame):
         return data_frame.\
             groupby([data_frame.index.hour, data_frame.index.minute]).mean()

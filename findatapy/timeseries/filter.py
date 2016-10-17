@@ -222,6 +222,29 @@ class Filter(object):
 
         return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
 
+    def filter_time_series_by_days(self, days, data_frame):
+        """
+        filter_time_series_by_date - Filter time series by start/finish dates
+
+        Parameters
+        ----------
+        start_date : DateTime
+            start date of calendar
+        finish_date : DataTime
+            finish date of calendar
+        data_frame : DataFrame
+            data frame to be filtered
+
+        Returns
+        -------
+        DataFrame
+        """
+        offset = 0 # inclusive
+
+        finish_date = datetime.datetime.utcnow()
+        start_date = finish_date - timedelta(days=days)
+        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
+
     def filter_time_series_by_date_exc(self, start_date, finish_date, data_frame):
         """
         filter_time_series_by_date_exc - Filter time series by start/finish dates (exclude start & finish dates)
