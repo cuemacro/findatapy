@@ -86,6 +86,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 17 Oct 2016 - Functions for filtering time series by period
 * 13 Oct 2016 - Added YoY metric in RetStats, by default pad missing returned columns for MarketDataGenerator
 * 07 Oct 2016 - Add .idea from .gitignore
 * 06 Oct 2016 - Fixed downloading of tick count for FX
