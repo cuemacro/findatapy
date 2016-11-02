@@ -86,28 +86,33 @@ class ConfigManager(object):
                 cut = line["cut"]
                 sourceticker = line["sourceticker"]
 
-                if category == "":
-                    # print("stop")
-                    pass
+
+                if category != "":
+                    # print("stop" + category + '.' +
+                    #                                                  source + '.' +
+                    #                                                  freq + '.' +
+                    #                                                  cut + '.' +
+                    #                                                  ticker)
+                    # pass
 
 
-                # conversion from library ticker to vendor sourceticker
-                ConfigManager._dict_time_series_tickers_list_library_to_vendor[category + '.' +
-                                                                     source + '.' +
-                                                                     freq + '.' +
-                                                                     cut + '.' +
-                                                                     ticker] = sourceticker
+                    # conversion from library ticker to vendor sourceticker
+                    ConfigManager._dict_time_series_tickers_list_library_to_vendor[category + '.' +
+                                                                         source + '.' +
+                                                                         freq + '.' +
+                                                                         cut + '.' +
+                                                                         ticker] = sourceticker
 
-                # conversion from vendor sourceticker to library ticker
-                ConfigManager._dict_time_series_tickers_list_vendor_to_library[source + '.' + sourceticker] = ticker
+                    # conversion from vendor sourceticker to library ticker
+                    ConfigManager._dict_time_series_tickers_list_vendor_to_library[source + '.' + sourceticker] = ticker
 
-                # library of tickers by category
-                key = category + '.' + source + '.' + freq + '.' + cut
+                    # library of tickers by category
+                    key = category + '.' + source + '.' + freq + '.' + cut
 
-                if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
-                    ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(ticker)
-                else:
-                    ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [ticker]
+                    if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
+                        ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(ticker)
+                    else:
+                        ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [ticker]
 
         ## populate fields conversions
         reader = csv.DictReader(open(DataConstants().time_series_fields_list))
@@ -211,6 +216,7 @@ class ConfigManager(object):
     @staticmethod
     def convert_library_to_vendor_ticker(category, source, freq, cut, ticker):
         return ConfigManager._dict_time_series_tickers_list_library_to_vendor[
+
             category + '.' + source + '.'+ freq + '.' + cut + '.' + ticker]
 
     @staticmethod
