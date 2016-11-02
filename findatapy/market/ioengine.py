@@ -138,6 +138,45 @@ class IOEngine(object):
         return self.read_csv_data_frame(f_name, freq, cutoff = cutoff, dateparse = dateparse,
                             postfix = postfix, intraday_tz = intraday_tz, excel_sheet = excel_sheet)
 
+    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1'):
+        # default HDF5 format
+        hdf5_format = 'fixed'
+
+        if 'hdf5' in engine:
+            hdf5_format = engine.split('_')[1]
+            engine = 'hdf5'
+
+        if (engine == 'bcolz'):
+            # convert invalid characters to substitutes (which Bcolz can't deal with)
+            pass
+        elif (engine == 'arctic'):
+            from arctic import Arctic
+            import pymongo
+
+            socketTimeoutMS = 10 * 1000
+            fname = os.path.basename(fname).replace('.', '_')
+
+            self.logger.info('Load MongoDB library: ' + fname)
+
+            c = pymongo.MongoClient(db_server, connect=False)
+            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
+            store.delete_library(fname)
+
+            c.close()
+
+            self.logger.info("Deleted MongoDB library: " + fname)
+
+        elif (engine == 'hdf5'):
+            h5_filename = self.get_h5_filename(fname)
+
+                # delete the old copy
+            try:
+                os.remove(h5_filename)
+            except:
+                pass
+
+
+
     ### functions to handle HDF5 on disk
     def write_time_series_cache_to_disk(self, fname, data_frame, engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1'):
         """
@@ -173,14 +212,14 @@ class IOEngine(object):
             from arctic import Arctic
             import pymongo
 
-            socketTimeoutMS = 2 * 1000
+            socketTimeoutMS = 10 * 1000
             fname = os.path.basename(fname).replace('.', '_')
 
             self.logger.info('Load MongoDB library: ' + fname)
 
             c = pymongo.MongoClient(db_server, connect=False)
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
-
+            store.delete_library
             database = None
 
             try:
