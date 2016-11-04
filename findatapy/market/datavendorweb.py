@@ -65,13 +65,21 @@ class DataVendorQuandl(DataVendor):
             # we can often get multiple fields returned (even if we don't ask for them!)
             # convert to lower case
             returned_fields = [(x.split(' - ')[1]).lower().replace(' ', '-').replace('.', '-').replace('--', '-') for x in returned_tickers]
+
             returned_fields = [x.replace('value', 'close') for x in returned_fields]    # special case for close
+
+            # replace time fields (can cause problems later for times to start with 0)
+            for i in range(0, 10):
+                returned_fields = [x.replace('0'+ str(i) + ':00', str(i) + ':00') for x in returned_fields]
 
             returned_tickers = [x.replace('.', '/') for x in returned_tickers]
             returned_tickers = [x.split(' - ')[0] for x in returned_tickers]
 
-            fields = self.translate_from_vendor_field(returned_fields, market_data_request)
-            tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
+            try:
+                fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+                tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
+            except:
+                print('error')
 
             ticker_combined = []
 
@@ -81,7 +89,7 @@ class DataVendorQuandl(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from Quandl.")
+        self.logger.info("Completed request from Quandl for " + str(ticker_combined))
 
         return data_frame
 
