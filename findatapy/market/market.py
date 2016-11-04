@@ -45,6 +45,14 @@ class Market(object):
         # special cases when a predefined category has been asked
         if md_request.category is not None:
 
+            if (md_request.category == 'fx-spot-volume' and md_request.data_source == 'quandl'):
+                # NOT CURRENTLY IMPLEMENTED FOR FUTURE USE
+                from findatapy.market.fxclsvolume import FXCLSVolume
+                fxcls = FXCLSVolume(market_data_generator=self.market_data_generator)
+
+                return fxcls.get_fx_volume(md_request.start_date, md_request.finish_date, md_request.tickers, cut="LOC", source="quandl",
+                       cache_algo=md_request.cache_algo)
+
             if (md_request.category == 'fx' or md_request.category == 'fx-tot') and md_request.tickers is not None:
                 fxcf = FXCrossFactory(market_data_generator=self.market_data_generator)
 
@@ -78,11 +86,17 @@ class Market(object):
                 if md_request.tickers is not None:
                     df = []
 
+                    fxcf = FXCrossFactory(market_data_generator=self.market_data_generator)
                     fxvf = FXVolFactory(market_data_generator=self.market_data_generator)
                     rates = RatesFactory(market_data_generator=self.market_data_generator)
 
                     for t in md_request.tickers:
                         if len(t) == 6:
+                            df.append(fxcf.get_fx_cross(start=md_request.start_date, end=md_request.finish_date, cross=t,
+                                                        cut=md_request.cut, source=md_request.data_source, freq=md_request.freq,
+                                                        cache_algo=md_request.cache_algo, type='spot', environment=md_request.environment,
+                                                        fields=['close']))
+
                             df.append(fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
                                                               cut=md_request.cut, source=md_request.data_source,
                                                               part=fxvf.part,
@@ -92,7 +106,7 @@ class Market(object):
                                                               cut=md_request.cut, source=md_request.data_source,
                                                               cache_algo=md_request.cache_algo))
 
-                    df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date, ["USD", "EUR", "CHF"], fxvf.tenor,
+                    df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date, ["USD", "EUR", "CHF", "GBP"], fxvf.tenor,
                                                    cut=md_request.cut, source=md_request.data_source,
                                                    cache_algo=md_request.cache_algo
                                                    ))
@@ -622,3 +636,4 @@ class RatesFactory(object):
         data_frame.index.name = 'Date'
 
         return data_frame
+
