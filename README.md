@@ -86,6 +86,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 04 Nov 2016 - Added extra field converters for Quandl
+* 02 Nov 2016 - Changed timeouts for accessing MongoDB via arctic
 * 17 Oct 2016 - Functions for filtering time series by period
 * 13 Oct 2016 - Added YoY metric in RetStats, by default pad missing returned columns for MarketDataGenerator
 * 07 Oct 2016 - Add .idea from .gitignore
