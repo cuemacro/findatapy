@@ -86,6 +86,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 28 Nov 2016 - Bug fixes on MarketDataGenerator and BBGLowLevelTemplate (@spyamine)
 * 04 Nov 2016 - Added extra field converters for Quandl
 * 02 Nov 2016 - Changed timeouts for accessing MongoDB via arctic
 * 17 Oct 2016 - Functions for filtering time series by period
