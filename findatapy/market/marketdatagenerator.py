@@ -362,8 +362,9 @@ class MarketDataGenerator(object):
             data_frame_agg = data_vendor.load_ticker(market_data_request)
         else:
             market_data_request_list = []
-
-            group_size = int(len(market_data_request.tickers) / DataConstants().market_thread_no['other'] - 1)
+            
+            # when trying your example 'equitiesdata_example' I had a -1 result so it went out of the comming loop and I had errors in execution
+            group_size = max(int(len(market_data_request.tickers) / DataConstants().market_thread_no['other'] - 1),0) 
 
             if group_size == 0: group_size = 1
 
