@@ -314,7 +314,7 @@ class DataVendorBBGOpen(DataVendorBBG):
 ########################################################################################################################
 #### Lower level code to interact with Bloomberg Open API
 
-class BBGLowLevelTemplate:
+class BBGLowLevelTemplate(object): # in order that the init function works in child classes
 
     _session = None
 
