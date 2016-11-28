@@ -19,6 +19,7 @@ Abstract class for download of Bloomberg daily, intraday data and reference data
 
 Implemented by
 - LoaderBBGOpen (adapted version of new Bloomberg Open API for Python - recommended - although requires compilation)
+- no longer support COM API
 
 """
 
