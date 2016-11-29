@@ -184,6 +184,7 @@ class DataVendorALFRED(DataVendor):
         data_frame_list = []
         data_frame_release = []
 
+        # TODO refactor this code, a bit messy at the moment!
         for i in range(0, len(market_data_request.tickers)):
             while (trials < 5):
                 try:
