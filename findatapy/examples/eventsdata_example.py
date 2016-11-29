@@ -32,3 +32,17 @@ market_data_request = MarketDataRequest(
 df = market.fetch_market(market_data_request)
 
 print(df)
+
+# now just download the event day
+market_data_request = MarketDataRequest(
+                start_date = "year",
+                category = "events",
+                data_source = 'bloomberg',              # use Bloomberg as data source
+                tickers = ['NFP'],
+                fields = ['release-date-time-full'],                # which fields to download
+                vendor_tickers = ['NFP TCH Index'],     # ticker (Bloomberg)
+                vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST'])     # which Bloomberg fields to download
+
+df = market.fetch_market(market_data_request)
+
+print(df)
