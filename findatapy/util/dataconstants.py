@@ -98,6 +98,9 @@ class DataConstants(object):
     TWITTER_OAUTH_TOKEN	     = "x"
     TWITTER_OAUTH_TOKEN_SECRET	 = "x"
 
+    # FRED (Federal Reserve of St Louis data) settings
+    fred_api_key = "x"
+
 
     # or we can store credentials (or anything else) in a file "datacred.py" in the same folder, which will overwrite the above
     try:
@@ -128,6 +131,7 @@ class DataConstants(object):
         TWITTER_OAUTH_TOKEN_SECRET = cred.TWITTER_OAUTH_TOKEN_SECRET
 
         quandl_api_key = cred.quandl_api_key
+        fred_api_key = cred.fred_api_key
 
     except:
         pass
