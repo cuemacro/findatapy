@@ -88,6 +88,10 @@ class MarketDataGenerator(object):
             from findatapy.market.datavendorweb  import DataVendorDukasCopy
             data_vendor = DataVendorDukasCopy()
 
+        elif source == 'alfred':
+            from findatapy.market.datavendorweb  import DataVendorALFRED
+            data_vendor = DataVendorALFRED()
+
         elif source in ['yahoo', 'google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
             from findatapy.market.datavendorweb  import DataVendorPandasWeb
             data_vendor = DataVendorPandasWeb()
