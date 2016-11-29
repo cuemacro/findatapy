@@ -15,7 +15,7 @@ df = market.fetch_market(md_request)
 
 print(df)
 
-# comapre the close and actual release of US GDP (and the final)
+# compare the close and actual release of US GDP (and the final)
 md_request = MarketDataRequest(
     start_date="01 Jun 2000",                                                      # start date (download data over past decade)
     data_source='alfred',                                                          # use ALFRED/FRED as data source
