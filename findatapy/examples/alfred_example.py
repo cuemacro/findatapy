@@ -26,6 +26,8 @@ md_request = MarketDataRequest(
 
 df = market.fetch_market(md_request)
 
-from chartpy import Chart
+from chartpy import Chart, Style
 
-Chart().plot(df)
+style = Style(title="US GDP first vs last")
+
+Chart().plot(df, style=style)
