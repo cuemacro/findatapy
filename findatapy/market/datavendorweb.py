@@ -27,7 +27,7 @@ DukasCopy (retail FX broker - has historical tick data) - LoaderDukasCopy
 """
 DataVendorQuandl
 
-Class for reading in data from Quandl into Pyfindatapy library
+Class for reading in data from Quandl into findatapy library
 
 """
 
@@ -110,6 +110,169 @@ class DataVendorQuandl(DataVendor):
 
         if trials == 5:
             self.logger.error("Couldn't download from Quandl after several attempts!")
+
+        return data_frame
+
+#######################################################################################################################
+
+"""
+DataVendorALFRED
+
+Class for reading in data from ALFRED (and FRED) into findatapy library (requires fredapi - pip install fredapi) from
+https://github.com/mortada/fredapi
+
+"""
+
+# support Quandl 3.x.x
+try:
+    import fredapi
+    from fredapi import Fred
+except:
+    pass
+
+from findatapy.market.datavendor import DataVendor
+from findatapy.timeseries import Filter, Calculations
+
+class DataVendorALFRED(DataVendor):
+
+    def __init__(self):
+        super(DataVendorALFRED, self).__init__()
+        self.logger = LoggerManager().getLogger(__name__)
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+        market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
+        self.logger.info("Request ALFRED/FRED data")
+
+        data_frame = self.download_daily(market_data_request_vendor)
+
+        if data_frame is None or data_frame.index is []: return None
+
+        # convert from vendor to findatapy tickers/fields
+        if data_frame is not None:
+            returned_tickers = data_frame.columns
+
+        if data_frame is not None:
+            # tidy up tickers into a format that is more easily translatable
+            # we can often get multiple fields returned (even if we don't ask for them!)
+            # convert to lower case
+            returned_fields = [(x.split('.')[1]) for x in returned_tickers]
+            returned_tickers = [(x.split('.')[0]) for x in returned_tickers]
+
+            try:
+                fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+                tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
+            except:
+                print('error')
+
+            ticker_combined = []
+
+            for i in range(0, len(fields)):
+                ticker_combined.append(tickers[i] + "." + fields[i])
+
+            data_frame.columns = ticker_combined
+            data_frame.index.name = 'Date'
+
+        self.logger.info("Completed request from ALFRED/FRED for " + str(ticker_combined))
+
+        return data_frame
+
+    def download_daily(self, market_data_request):
+        trials = 0
+
+        data_frame_list = []
+        data_frame_release = []
+
+        for i in range(0, len(market_data_request.tickers)):
+            while (trials < 5):
+                try:
+                    fred = Fred(api_key=DataConstants().fred_api_key)
+
+                    # acceptable fields: close, actual-release, release-date-time-full
+                    if 'close' in market_data_request.fields and 'release-date-time-full' in market_data_request.fields:
+                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i])
+
+                        data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
+                                              market_data_request.tickers[i] + '.close']
+
+                        data_frame = data_frame.sort(columns=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
+                        data_frame = data_frame.drop_duplicates(subset=['Date'], keep='last')
+                        data_frame = data_frame.set_index(['Date'])
+
+                        filter = Filter()
+                        data_frame = filter.filter_time_series_by_date(market_data_request.start_date,
+                                                                       market_data_request.finish_date, data_frame)
+
+                        data_frame_list.append(data_frame)
+                    elif 'close' in market_data_request.fields:
+
+                        data_frame = fred.get_series(series_id=market_data_request.tickers[i],
+                                                     observation_start=market_data_request.start_date,
+                                                     observation_end=market_data_request.finish_date)
+
+                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame.columns = [market_data_request.tickers[i] + '.close']
+                        data_frame_list.append(data_frame)
+
+                    if 'actual-release' in market_data_request.fields and 'release-date-time-full' in market_data_request.fields:
+                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i])
+
+                        data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
+                                              market_data_request.tickers[i] + '.actual-release']
+
+                        data_frame = data_frame.sort(columns=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
+                        data_frame = data_frame.drop_duplicates(subset=['Date'], keep='first')
+                        data_frame = data_frame.set_index(['Date'])
+
+                        filter = Filter()
+                        data_frame = filter.filter_time_series_by_date(market_data_request.start_date,
+                                                                       market_data_request.finish_date, data_frame)
+
+                        data_frame_list.append(data_frame)
+
+                    elif 'actual-release' in market_data_request.fields:
+                        data_frame = fred.get_series_first_release(market_data_request.tickers[i])
+
+                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame.columns = [market_data_request.tickers[i] + '.actual-release']
+
+                        filter = Filter()
+                        data_frame = filter.filter_time_series_by_date(market_data_request.start_date,
+                                                                       market_data_request.finish_date, data_frame)
+
+                        data_frame_list.append(data_frame)
+
+                    elif 'release-date-time-full' in market_data_request.fields:
+                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i])
+
+                        data_frame = data_frame['realtime_start']
+
+                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame.columns = [market_data_request.tickers[i] + '.release-date-time-full']
+
+                        data_frame.index = data_frame[market_data_request.tickers[i] + '.release-date-time-full']
+                        data_frame = data_frame.sort()
+                        data_frame = data_frame.drop_duplicates()
+
+                        filter = Filter()
+                        data_frame_release.append(filter.filter_time_series_by_date(market_data_request.start_date,
+                                                                       market_data_request.finish_date, data_frame))
+
+                    break
+                except:
+                    trials = trials + 1
+                    self.logger.info("Attempting... " + str(trials) + " request to download from ALFRED/FRED")
+
+            if trials == 5:
+                self.logger.error("Couldn't download from ALFRED/FRED after several attempts!")
+
+        calc = Calculations()
+
+        data_frame1 = calc.pandas_outer_join(data_frame_list)
+        data_frame2 = calc.pandas_outer_join(data_frame_release)
+
+        data_frame = pandas.concat([data_frame1, data_frame2], axis=1)
 
         return data_frame
 
