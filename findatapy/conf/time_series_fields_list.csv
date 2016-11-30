@@ -41,3 +41,9 @@ bloomberg,first-revision,FIRST_REVISION
 bloomberg,first-revision-date,FIRST_REVISION_DATE
 bloomberg,observation-period,OBSERVATION_PERIOD
 bloomberg,relevance-value,RELEVANCE_VALUE
+alfred,actual-release,actual-release
+alfred,close,close
+alfred,release-date-time-full,release-date-time-full
+alfred,first-revision,first-revision
+,,
+,,
