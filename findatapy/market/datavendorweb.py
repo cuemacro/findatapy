@@ -197,7 +197,7 @@ class DataVendorALFRED(DataVendor):
                         data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
                                               market_data_request.tickers[i] + '.close']
 
-                        data_frame = data_frame.sort(columns=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
+                        data_frame = data_frame.sort_values(by=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
                         data_frame = data_frame.drop_duplicates(subset=['Date'], keep='last')
                         data_frame = data_frame.set_index(['Date'])
 
@@ -222,7 +222,7 @@ class DataVendorALFRED(DataVendor):
                         data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
                                               market_data_request.tickers[i] + '.actual-release']
 
-                        data_frame = data_frame.sort(columns=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
+                        data_frame = data_frame.sort_values(by=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
                         data_frame = data_frame.drop_duplicates(subset=['Date'], keep='first')
                         data_frame = data_frame.set_index(['Date'])
 
@@ -746,9 +746,9 @@ Based on https://github.com/mortada/fredapi (with minor edits)
 
 """
 
-
 import os
 import sys
+
 if sys.version_info[0] >= 3:
     from urllib.request import urlopen
     from urllib.parse import quote_plus
