@@ -87,7 +87,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
-* 30 Nov 2016 - Rewrote fredapi downloader and added to project
+* 30 Nov 2016 - Rewrote fredapi downloader (added helped methods) and added to project
 * 29 Nov 2016 - Added ALFRED/FRED as a data source
 * 28 Nov 2016 - Bug fixes on MarketDataGenerator and BBGLowLevelTemplate (@spyamine)
 * 04 Nov 2016 - Added extra field converters for Quandl
