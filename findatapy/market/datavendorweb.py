@@ -216,6 +216,18 @@ class DataVendorALFRED(DataVendor):
                         data_frame.columns = [market_data_request.tickers[i] + '.close']
                         data_frame_list.append(data_frame)
 
+                    if 'first-revision' in market_data_request.fields:
+                        data_frame = fred.get_series_first_revision(market_data_request.tickers[i])
+
+                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame.columns = [market_data_request.tickers[i] + '.first-revision']
+
+                        filter = Filter()
+                        data_frame = filter.filter_time_series_by_date(market_data_request.start_date,
+                                                                       market_data_request.finish_date, data_frame)
+
+                        data_frame_list.append(data_frame)
+
                     if 'actual-release' in market_data_request.fields and 'release-date-time-full' in market_data_request.fields:
                         data_frame = fred.get_series_all_releases(market_data_request.tickers[i])
 
@@ -926,6 +938,29 @@ class Fred(object):
         df = self.get_series_all_releases(series_id)
         first_release = df.groupby('date').head(1)
         data = first_release.set_index('date')['value']
+        return data
+
+    def get_series_first_revision(self, series_id):
+        """
+        Get first-revision data for a Fred series id. This will give the first revision to the data series. For instance,
+        The US GDP for Q1 2014 was first released to be 17149.6, and then later revised to 17101.3, and 17016.0.
+        This will take the first revision ie. 17101.3 in this case.
+
+        Parameters
+        ----------
+        series_id : str
+            Fred series id such as 'GDP'
+
+        Returns
+        -------
+        data : Series
+            a Series where each index is the observation date and the value is the data for the Fred series
+        """
+        df = self.get_series_all_releases(series_id)
+        first_revision = df.groupby('date').head(2)
+        data = first_revision.set_index('date')['value']
+        data = data[~data.index.duplicated(keep='last')]
+
         return data
 
     def get_series_as_of_date(self, series_id, as_of_date):
