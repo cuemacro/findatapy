@@ -66,8 +66,7 @@ Major requirements
 * Recommended: arctic (AHL library for managing time series in MongoDB)
 * Recommended: multiprocessor_on_dill because standard multiprocessing library pickle causes issues 
 (from https://github.com/sixty-north/multiprocessing_on_dill)
-* Recommended: fredapi for downloading from ALFRED/FRED
-(from https://github.com/mortada/fredapi)
+* Recommended: fredapi from ALFRED/FRED has been rewritten and added to the project directly (from https://github.com/mortada/fredapi)
 
 # Installation
 
@@ -88,6 +87,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 30 Nov 2016 - Rewrote fredapi downloader and added to project
 * 29 Nov 2016 - Added ALFRED/FRED as a data source
 * 28 Nov 2016 - Bug fixes on MarketDataGenerator and BBGLowLevelTemplate (@spyamine)
 * 04 Nov 2016 - Added extra field converters for Quandl
