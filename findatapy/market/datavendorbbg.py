@@ -100,6 +100,13 @@ class DataVendorBBG(DataVendor):
             else:
                 data_frame = self.get_daily_data(market_data_request, market_data_request_vendor)
 
+                # convert fields with release-dt to dates (special case!)
+                for c in data_frame.columns:
+                    if 'release-dt' in c:
+                        data_frame[c] = data_frame[c].astype('int')
+                        data_frame[c] = (data_frame[c]).astype(str).apply(
+                            lambda x: pandas.to_datetime(x, format='%Y%m%d'))
+
         # assume one ticker only
         # for intraday data we use IntradayDataRequest to Bloomberg
         if (market_data_request.freq in ['tick', 'intraday', 'second', 'minute', 'hourly']):
