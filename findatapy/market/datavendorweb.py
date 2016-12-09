@@ -192,7 +192,9 @@ class DataVendorALFRED(DataVendor):
 
                     # acceptable fields: close, actual-release, release-date-time-full
                     if 'close' in market_data_request.fields and 'release-date-time-full' in market_data_request.fields:
-                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i])
+                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i],
+                                                                  observation_start=market_data_request.start_date,
+                                                                  observation_end=market_data_request.finish_date)
 
                         data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
                                               market_data_request.tickers[i] + '.close']
@@ -217,7 +219,9 @@ class DataVendorALFRED(DataVendor):
                         data_frame_list.append(data_frame)
 
                     if 'first-revision' in market_data_request.fields:
-                        data_frame = fred.get_series_first_revision(market_data_request.tickers[i])
+                        data_frame = fred.get_series_first_revision(market_data_request.tickers[i],
+                                                                    observation_start=market_data_request.start_date,
+                                                                    observation_end=market_data_request.finish_date)
 
                         data_frame = pandas.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.first-revision']
@@ -229,7 +233,9 @@ class DataVendorALFRED(DataVendor):
                         data_frame_list.append(data_frame)
 
                     if 'actual-release' in market_data_request.fields and 'release-date-time-full' in market_data_request.fields:
-                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i])
+                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i],
+                                                                  observation_start=market_data_request.start_date,
+                                                                  observation_end=market_data_request.finish_date)
 
                         data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
                                               market_data_request.tickers[i] + '.actual-release']
@@ -245,7 +251,9 @@ class DataVendorALFRED(DataVendor):
                         data_frame_list.append(data_frame)
 
                     elif 'actual-release' in market_data_request.fields:
-                        data_frame = fred.get_series_first_release(market_data_request.tickers[i])
+                        data_frame = fred.get_series_first_release(market_data_request.tickers[i],
+                                                                   observation_start=market_data_request.start_date,
+                                                                   observation_end=market_data_request.finish_date)
 
                         data_frame = pandas.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.actual-release']
@@ -257,7 +265,9 @@ class DataVendorALFRED(DataVendor):
                         data_frame_list.append(data_frame)
 
                     elif 'release-date-time-full' in market_data_request.fields:
-                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i])
+                        data_frame = fred.get_series_all_releases(market_data_request.tickers[i],
+                                                                  observation_start=market_data_request.start_date,
+                                                                  observation_end=market_data_request.finish_date)
 
                         data_frame = data_frame['realtime_start']
 
@@ -903,7 +913,7 @@ class Fred(object):
             data[self._parse(child.get('date'))] = val
         return Series(data)
 
-    def get_series_latest_release(self, series_id):
+    def get_series_latest_release(self, series_id, observation_start=None, observation_end=None):
         """
         Get data for a Fred series id. This fetches the latest known data, and is equivalent to get_series()
 
@@ -917,9 +927,9 @@ class Fred(object):
         info : Series
             a Series where each index is the observation date and the value is the data for the Fred series
         """
-        return self.get_series(series_id)
+        return self.get_series(series_id, observation_start=observation_start, observation_end=observation_end)
 
-    def get_series_first_release(self, series_id):
+    def get_series_first_release(self, series_id, observation_start=None, observation_end=None):
         """
         Get first-release data for a Fred series id. This ignores any revision to the data series. For instance,
         The US GDP for Q1 2014 was first released to be 17149.6, and then later revised to 17101.3, and 17016.0.
@@ -935,12 +945,12 @@ class Fred(object):
         data : Series
             a Series where each index is the observation date and the value is the data for the Fred series
         """
-        df = self.get_series_all_releases(series_id)
+        df = self.get_series_all_releases(series_id, observation_start=observation_start, observation_end=observation_end)
         first_release = df.groupby('date').head(1)
         data = first_release.set_index('date')['value']
         return data
 
-    def get_series_first_revision(self, series_id):
+    def get_series_first_revision(self, series_id, observation_start=None, observation_end=None):
         """
         Get first-revision data for a Fred series id. This will give the first revision to the data series. For instance,
         The US GDP for Q1 2014 was first released to be 17149.6, and then later revised to 17101.3, and 17016.0.
@@ -956,7 +966,7 @@ class Fred(object):
         data : Series
             a Series where each index is the observation date and the value is the data for the Fred series
         """
-        df = self.get_series_all_releases(series_id)
+        df = self.get_series_all_releases(series_id, observation_start=observation_start, observation_end=observation_end)
         first_revision = df.groupby('date').head(2)
         data = first_revision.set_index('date')['value']
         data = data[~data.index.duplicated(keep='last')]
@@ -986,7 +996,7 @@ class Fred(object):
         data = df[df['realtime_start'] <= as_of_date]
         return data
 
-    def get_series_all_releases(self, series_id):
+    def get_series_all_releases(self, series_id, observation_start=None, observation_end=None):
         """
         Get all data for a Fred series id including first releases and all revisions. This returns a DataFrame
         with three columns: 'date', 'realtime_start', and 'value'. For instance, the US GDP for Q4 2013 was first released
@@ -1011,6 +1021,16 @@ class Fred(object):
                                                                                                     self.api_key,
                                                                                                     self.earliest_realtime_start,
                                                                                                     self.latest_realtime_end)
+
+        from pandas import to_datetime
+
+        if observation_start is not None:
+            observation_start = to_datetime(observation_start, errors='raise')
+            url += '&observation_start=' + observation_start.strftime('%Y-%m-%d')
+        if observation_end is not None:
+            observation_end = to_datetime(observation_end, errors='raise')
+            url += '&observation_end=' + observation_end.strftime('%Y-%m-%d')
+
         root = self.__fetch_data(url)
         if root is None:
             raise ValueError('No data exists for series id: ' + series_id)
