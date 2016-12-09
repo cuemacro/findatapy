@@ -103,8 +103,7 @@ class DataVendorBBG(DataVendor):
                 # convert fields with release-dt to dates (special case!)
                 for c in data_frame.columns:
                     if 'release-dt' in c:
-                        data_frame[c] = data_frame[c].astype('int')
-                        data_frame[c] = (data_frame[c]).astype(str).apply(
+                        data_frame[c] = (data_frame[c]).astype('int').astype(str).apply(
                             lambda x: pandas.to_datetime(x, format='%Y%m%d'))
 
         # assume one ticker only
