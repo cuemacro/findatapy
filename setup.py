@@ -15,5 +15,6 @@ setup(name='findatapy',
                           'pytz',
                           'requests',
                           'numpy',
-                          'pandas_datareader'],
+                          'pandas_datareader',
+                          'quandl'],
 	  zip_safe=False)
