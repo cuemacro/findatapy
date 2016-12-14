@@ -178,7 +178,9 @@ class IOEngine(object):
 
 
     ### functions to handle HDF5 on disk
-    def write_time_series_cache_to_disk(self, fname, data_frame, engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1'):
+    def write_time_series_cache_to_disk(self, fname, data_frame,
+                                        engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1',
+                                        filter_out_matching = None):
         """
         write_time_series_cache_to_disk - writes Pandas data frame to disk as HDF5 format or bcolz format
 
@@ -197,7 +199,6 @@ class IOEngine(object):
             hdf5_format = engine.split('_')[1]
             engine = 'hdf5'
 
-
         if (engine == 'bcolz'):
             # convert invalid characters to substitutes (which Bcolz can't deal with)
             data_frame.columns = self.find_replace_chars(data_frame.columns, _invalid_chars, _replace_chars)
@@ -212,7 +213,7 @@ class IOEngine(object):
             from arctic import Arctic
             import pymongo
 
-            socketTimeoutMS = 10 * 1000
+            socketTimeoutMS = 30 * 1000
             fname = os.path.basename(fname).replace('.', '_')
 
             self.logger.info('Load MongoDB library: ' + fname)
@@ -238,6 +239,17 @@ class IOEngine(object):
 
             if ('intraday' in fname):
                 data_frame = data_frame.astype('float32')
+
+            if filter_out_matching is not None:
+                cols = data_frame.columns
+
+                new_cols = []
+
+                for c in cols:
+                    if filter_out_matching not in c:
+                        new_cols.append(c)
+
+                data_frame = data_frame[new_cols]
 
             # can duplicate values if we have existing dates
             if append_data:
