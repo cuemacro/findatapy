@@ -65,8 +65,7 @@ class Market(object):
                     return fxcf.get_fx_cross(md_request.start_date, md_request.finish_date,
                                              md_request.tickers,
                      cut = md_request.cut, source = md_request.data_source, freq = md_request.freq, cache_algo=md_request.cache_algo, type = type,
-                     environment = md_request.environment)
-
+                     environment = md_request.environment, fields = md_request.fields)
             if (md_request.category == 'fx-implied-vol'):
                 if md_request.tickers is not None and md_request.freq == 'daily':
                     df = []
@@ -153,6 +152,7 @@ class FXCrossFactory(object):
     def flush_cache(self):
         self.cache = {}
 
+    # cross is a ticker[] in original properties
     def get_fx_cross_tick(self, start, end, cross,
                      cut = "NYC", source = "dukascopy", cache_algo = 'internet_load_return', type = 'spot',
                      environment = 'backtest', fields = ['bid', 'ask']):
@@ -165,7 +165,7 @@ class FXCrossFactory(object):
             freq_mult = 1,
             freq = 'tick',
             cut = cut,
-            fields = ['bid', 'ask', 'bidv', 'askv'],
+            fields = fields,
             cache_algo=cache_algo,
             environment = environment,
             start_date = start,
@@ -204,7 +204,7 @@ class FXCrossFactory(object):
         data_frame_agg = data_frame_agg.dropna()
         return data_frame_agg
 
-
+    # cross is a ticker[] in original properties
     def get_fx_cross(self, start, end, cross,
                      cut = "NYC", source = "bloomberg", freq = "intraday", cache_algo='internet_load_return', type = 'spot',
                      environment = 'backtest', fields = ['close']):
