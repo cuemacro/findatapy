@@ -8,6 +8,10 @@ __pycache__/
 # Credential files
 *cred.py
 configfindatapy.xlsm
+fxclsvolume.py
+
+# Temporary files
+temp/
 
 # Distribution / packaging
 .idea/
