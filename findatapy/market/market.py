@@ -189,6 +189,11 @@ class FXCrossFactory(object):
                 if fields == ['close']:
                     cross_vals = cross_vals[[cr + '.bid', cr + '.ask']].mean(axis=1)
                     cross_vals.columns = [cr + '.close']
+                else:
+                    filter = Filter()
+
+                    filter_columns = [cr + '.' + f for f in fields]
+                    cross_vals = filter.filter_time_series_by_columns(cross_vals, filter_columns)
 
             if data_frame_agg is None:
                 data_frame_agg = cross_vals
