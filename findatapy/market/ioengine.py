@@ -245,9 +245,9 @@ class IOEngine(object):
 
                 new_cols = []
 
-                for c in cols:
-                    if filter_out_matching not in c:
-                        new_cols.append(c)
+                for col in cols:
+                    if filter_out_matching not in col:
+                        new_cols.append(col)
 
                 data_frame = data_frame[new_cols]
 
