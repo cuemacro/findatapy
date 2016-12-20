@@ -87,7 +87,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
-* 20 Dec 2016 - Updated deprecated some pandas deprecated methods in Calculations class
+* 20 Dec 2016 - Updated deprecated some pandas deprecated methods in Calculations class & various bug fixes
 * 14 Dec 2016 - Bug fixes for DukasCopy downloader (@kalaytan) and added delete ticker from disk (Arctic)
 * 09 Dec 2016 - Speeded up ALFRED/FRED downloader
 * 30 Nov 2016 - Rewrote fredapi downloader (added helped methods) and added to project
