@@ -432,7 +432,7 @@ class FXVolFactory(object):
     part = ["V", "25R", "10R", "25B", "10B"]
 
     # all the tenors on our vol surface
-    tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
+    tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
     def __init__(self, market_data_generator=None):
         self.logger = LoggerManager().getLogger(__name__)
