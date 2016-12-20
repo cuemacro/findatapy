@@ -386,8 +386,10 @@ class Calculations(object):
         # 3. average of non-NaNs
         foo = lambda z: z[pandas.notnull(z)].sum()
 
-        rolling_sum = pandas.rolling_apply(data_frame, periods, foo, min_periods=1)
-        rolling_non_nans = pandas.stats.moments.rolling_count(data_frame, periods, freq=None, center=False, how=None)
+        # rolling_sum = pandas.rolling_apply(data_frame, periods, foo, min_periods=1)
+        # rolling_non_nans = pandas.stats.moments.rolling_count(data_frame, periods, freq=None, center=False, how=None) \
+        rolling_sum = data_frame.rolling(center=False, window=periods, min_periods=1).apply(func=foo)
+        rolling_non_nans = data_frame.rolling(window=periods,center=False).count()
 
         # For pandas 0.18 onwards (TODO)
         # rolling_non_nans = data_frame.rolling(span=periods, freq=None, center=False, how=None).count()
