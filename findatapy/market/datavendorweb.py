@@ -104,9 +104,9 @@ class DataVendorQuandl(DataVendor):
                                         trim_end=market_data_request.finish_date)
 
                 break
-            except:
+            except Exception as e:
                 trials = trials + 1
-                self.logger.info("Attempting... " + str(trials) + " request to download from Quandl")
+                self.logger.info("Attempting... " + str(trials) + " request to download from Quandl due to following error: " + str(e))
 
         if trials == 5:
             self.logger.error("Couldn't download from Quandl after several attempts!")
