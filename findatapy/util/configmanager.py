@@ -25,10 +25,10 @@ from findatapy.util.singleton import Singleton
 from findatapy.util.loggermanager import LoggerManager
 from dateutil.parser import parse
 
+import threading
+
 class ConfigManager(object):
     __metaclass__ = Singleton
-
-    _is_init = 0
 
     _dict_time_series_tickers_list_library_to_vendor = {}
     _dict_time_series_tickers_list_vendor_to_library = {}
@@ -43,14 +43,22 @@ class ConfigManager(object):
     # store categories ->
     _dict_time_series_tickers_list_library = {}
 
+    __lock = threading.Lock()
+
+    __instance = None
+
     def __init__(self, *args, **kwargs):
-        if ConfigManager._is_init == 0:
-            try:
-                ConfigManager.populate_time_series_dictionaries()
-                ConfigManager._is_init = 1
-            except: pass
-        #logger = LoggerManager().getLogger(__name__)
         pass
+
+    def get_instance(cls):
+        if not ConfigManager.__instance:
+            with ConfigManager.__lock:
+                if not ConfigManager.__instance:
+                    ConfigManager.__instance = super(ConfigManager,cls).__new__(ConfigManager)
+                    ConfigManager.__instance.populate_time_series_dictionaries()
+
+        return ConfigManager.__instance
+
 
     ### time series ticker manipulators
     @staticmethod
@@ -86,15 +94,12 @@ class ConfigManager(object):
                 cut = line["cut"]
                 sourceticker = line["sourceticker"]
 
-
                 if category != "":
                     # print("stop" + category + '.' +
                     #                                                  source + '.' +
                     #                                                  freq + '.' +
                     #                                                  cut + '.' +
                     #                                                  ticker)
-                    # pass
-
 
                     # conversion from library ticker to vendor sourceticker
                     ConfigManager._dict_time_series_tickers_list_library_to_vendor[category + '.' +
@@ -139,13 +144,15 @@ class ConfigManager(object):
             fields = line["fields"].split(',') # can have multiple fields
             startdate = line["startdate"]
 
-            # conversion from library category to library fields list
-            ConfigManager._dict_time_series_category_fields_library_to_library[
-                category + '.' + source + '.' + freq + '.' + cut] = fields
+            if category != "":
+                # conversion from library category to library fields list
+                ConfigManager._dict_time_series_category_fields_library_to_library[
+                    category + '.' + source + '.' + freq + '.' + cut] = fields
 
-            # conversion from library category to library startdate
-            ConfigManager._dict_time_series_category_startdate_library_to_library[
-                category + '.' + source + '.' + freq + '.' + cut] = parse(startdate).date()
+                # conversion from library category to library startdate
+                ConfigManager._dict_time_series_category_startdate_library_to_library[
+                        category + '.' + source + '.' + freq + '.' + cut] = parse(startdate).date()
+
 
     @staticmethod
     def get_categories_from_fields():
@@ -210,8 +217,10 @@ class ConfigManager(object):
 
     @staticmethod
     def get_tickers_list_for_category(category, source, freq, cut):
-        return ConfigManager._dict_time_series_category_tickers_library_to_library[
+        x = ConfigManager._dict_time_series_category_tickers_library_to_library[
                 category + '.' + source + '.' + freq + '.' + cut]
+
+        return x
 
     @staticmethod
     def convert_library_to_vendor_ticker(category, source, freq, cut, ticker):
