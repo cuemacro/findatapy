@@ -87,6 +87,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 05 Jan 2017 - Fixed fxspotdata_example example
 * 24 Dec 2016 - Added more error handling for Quandl
 * 20 Dec 2016 - Updated deprecated some pandas deprecated methods in Calculations class & various bug fixes
 * 14 Dec 2016 - Bug fixes for DukasCopy downloader (@kalaytan) and added delete ticker from disk (Arctic)
