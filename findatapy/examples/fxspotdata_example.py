@@ -5,8 +5,9 @@ market = Market(market_data_generator=MarketDataGenerator())
 # choose run_example = 0 for everything
 # run_example = 1 - download free tick data from DukasCopy example
 # run_example = 2 - download free FX daily data from Quandl
-# run_example = 3 - download FX data from Bloomberg
-# run_example = 4 - download second FX data from Bloomberg
+# run_example = 3 - download FX data from FRED
+# run_example = 4 - download FX data from Bloomberg
+# run_example = 5 - download second FX data from Bloomberg
 
 run_example = 0
 
@@ -19,7 +20,7 @@ if run_example == 1 or run_example == 0:
 
     # first we can do it by defining all the vendor fields, tickers etc. so we bypass the configuration file
     md_request = MarketDataRequest(start_date='14 Jun 2016', finish_date='15 Jun 2016',
-                                   fields=['bid','ask'], vendor_fields=['bid', 'ask'],
+                                   fields=['bid'], vendor_fields=['bid'],
                                    freq='tick', data_source='dukascopy',
                                    tickers=['EURUSD'], vendor_tickers=['EURUSD'])
 
@@ -88,7 +89,7 @@ if run_example == 3 or run_example == 0:
     df = market.fetch_market(md_request)
     print(df.tail(n=10))
 
-if run_example == 3 or run_example == 0:
+if run_example == 4 or run_example == 0:
     ####### Bloomberg
 
     # now we will try various examples with Bloomberg
@@ -115,7 +116,7 @@ if run_example == 3 or run_example == 0:
     print(df.tail(n=10))
 
 
-if run_example == 4 or run_example == 0:
+if run_example == 5 or run_example == 0:
     ####### Bloomberg
 
     # let's now try downloading tick data for the past hour from Bloomberg, directly specifying tickers
