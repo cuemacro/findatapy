@@ -36,6 +36,7 @@ import os.path
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.loggermanager import LoggerManager
 
+# NOTE: BCOLZ support is alpha!
 _replace_chars = ['_a_',
                   '_d_',
                   '_h_',
@@ -139,11 +140,8 @@ class IOEngine(object):
                             postfix = postfix, intraday_tz = intraday_tz, excel_sheet = excel_sheet)
 
     def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1'):
-        # default HDF5 format
-        hdf5_format = 'fixed'
 
         if 'hdf5' in engine:
-            hdf5_format = engine.split('_')[1]
             engine = 'hdf5'
 
         if (engine == 'bcolz'):
@@ -169,12 +167,11 @@ class IOEngine(object):
         elif (engine == 'hdf5'):
             h5_filename = self.get_h5_filename(fname)
 
-                # delete the old copy
+            # delete the old copy
             try:
                 os.remove(h5_filename)
             except:
                 pass
-
 
 
     ### functions to handle HDF5 on disk
@@ -182,7 +179,7 @@ class IOEngine(object):
                                         engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1',
                                         filter_out_matching = None):
         """
-        write_time_series_cache_to_disk - writes Pandas data frame to disk as HDF5 format or bcolz format
+        write_time_series_cache_to_disk - writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
         ---------
@@ -220,7 +217,7 @@ class IOEngine(object):
 
             c = pymongo.MongoClient(db_server, connect=False)
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
-            store.delete_library
+
             database = None
 
             try:

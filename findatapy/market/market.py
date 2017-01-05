@@ -32,7 +32,7 @@ class Market(object):
                 market_data_generator = MarketDataGenerator()
             elif DataConstants().default_market_data_generator == 'cachedmarketdatagenerator':
                 # NOT CURRENTLY IMPLEMENTED FOR FUTURE USE
-                from finexpy.market import CachedMarketDataGenerator
+                from finaddpy.market import CachedMarketDataGenerator
                 market_data_generator = CachedMarketDataGenerator()
 
         self.market_data_generator = market_data_generator
