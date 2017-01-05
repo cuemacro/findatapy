@@ -713,7 +713,10 @@ class DataVendorDukasCopy(DataVendor):
         if symbol[3:6] == 'JPY':
             divisor = 1000
 
-        # prices are returned without decimal point
+        if symbol == 'BRENTCMDUSD':
+            divisor = 1000
+
+        # prices are returned without decimal point (need to divide)
         df['bid'] =  df['bid'] /  divisor
         df['ask'] =  df['ask'] / divisor
 
