@@ -26,7 +26,7 @@ from findatapy.util import ConfigManager
 
 class DataVendor(object):
     def __init__(self):
-        self.config = ConfigManager()
+        self.config = ConfigManager().get_instance()
         # self.config = None
         return
 
