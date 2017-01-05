@@ -129,7 +129,7 @@ class MarketDataGenerator(object):
             if tickers == []: create_tickers = True
 
         if create_tickers:
-            market_data_request.tickers = self.config.get_tickers_list_for_category(
+            market_data_request.tickers = ConfigManager().get_instance().get_tickers_list_for_category(
             market_data_request.category, market_data_request.data_source, market_data_request.freq, market_data_request.cut)
 
         # intraday or tick: only one ticker per cache file
