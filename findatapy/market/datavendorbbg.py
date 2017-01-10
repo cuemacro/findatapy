@@ -24,12 +24,17 @@ Implemented by
 """
 
 from findatapy.market.datavendor import DataVendor
+from findatapy.market.marketdatarequest import MarketDataRequest
 
 import abc
 import datetime
 import copy
 
 class DataVendorBBG(DataVendor):
+
+    # these fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
+    list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day']
+    list_of_ref_vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST', 'LAST_TRADEABLE_DT']
 
     def __init__(self):
         super(DataVendorBBG, self).__init__()
@@ -49,6 +54,7 @@ class DataVendorBBG(DataVendor):
         -------
         DataFrame
         """
+        market_data_request = MarketDataRequest(md_request=market_data_request)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         data_frame = None
@@ -57,30 +63,53 @@ class DataVendorBBG(DataVendor):
         # do we need daily or intraday data?
         if (market_data_request.freq in ['daily', 'weekly', 'monthly', 'quarterly', 'yearly']):
 
-            # for events times/dates separately needs ReferenceDataRequest (when specified)
-            if 'release-date-time-full' in market_data_request.fields:
+            # work out the fields which need to be downloaded via Bloomberg ref request (BDP) and
+            # those that can be downloaded via Historical request (BDH)
+            ref_fields = []
+            ref_vendor_fields = []
 
-                # experimental!!
+            for i in range(0, len(market_data_request.fields)):
+                if market_data_request.fields[i] in self.list_of_ref_fields \
+                        or market_data_request_vendor.fields[i] in self.list_of_ref_vendor_fields:
+
+                    ref_fields.append(market_data_request.fields[i])
+                    ref_vendor_fields.append(market_data_request_vendor.fields[i])
+
+            non_ref_fields = []
+            non_ref_vendor_fields = []
+
+            for i in range(0, len(market_data_request.fields)):
+                if market_data_request.fields[i] not in self.list_of_ref_fields \
+                        and market_data_request_vendor.fields[i] not in self.list_of_ref_vendor_fields:
+                    non_ref_fields.append(market_data_request.fields[i])
+                    non_ref_vendor_fields.append(market_data_request_vendor.fields[i])
+
+            # for certain cases, need to use ReferenceDataRequest
+            # eg. for events times/dates, last tradeable date fields (when specified)
+            if len(ref_fields) > 0:
+
                 # careful: make sure you copy the market data request object (when threading, altering that can
                 # cause concurrency issues!)
-                datetime_data_frame = self.get_reference_data(market_data_request_vendor, market_data_request)
-
                 old_fields = copy.deepcopy(market_data_request.fields)
                 old_vendor_fields = copy.deepcopy(market_data_request_vendor.fields)
 
-                # remove fields 'release-date-time-full' from our request (and the associated field in the vendor)
-                # if they are there
-                try:
-                    index = market_data_request.fields.index('release-date-time-full')
+                # market_data_request = MarketDataRequest(md_request=market_data_request_copy)
 
-                    market_data_request.fields.pop(index)
-                    market_data_request_vendor.fields.pop(index)
-                except:
-                    pass
+                market_data_request.fields = ref_fields
+                market_data_request.vendor_fields = ref_vendor_fields
+                market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-                # download all the other event fields (uses HistoricalDataRequest to Bloomberg)
+                # just select those reference fields to download via reference
+                datetime_data_frame = self.get_reference_data(market_data_request_vendor, market_data_request)
+
+                # download all the other event or non-ref fields (uses HistoricalDataRequest to Bloomberg)
                 # concatenate with date time fields
-                if len(market_data_request_vendor.fields) > 0:
+                if len(non_ref_fields) > 0:
+
+                    market_data_request.fields = non_ref_fields
+                    market_data_request.vendor_fields = non_ref_vendor_fields
+                    market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
                     events_data_frame = self.get_daily_data(market_data_request, market_data_request_vendor)
 
                     col = events_data_frame.index.name
@@ -93,8 +122,8 @@ class DataVendorBBG(DataVendor):
                 else:
                     data_frame = datetime_data_frame
 
-                market_data_request.fields = old_fields
-                market_data_request_vendor.fields = old_vendor_fields
+                market_data_request.fields = copy.deepcopy(old_fields)
+                market_data_request_vendor.fields = copy.deepcopy(old_vendor_fields)
 
             # for all other daily/monthly/quarter data, we can use HistoricalDataRequest to Bloomberg
             else:
@@ -109,8 +138,7 @@ class DataVendorBBG(DataVendor):
                 except:
                     pass
 
-        # assume one ticker only
-        # for intraday data we use IntradayDataRequest to Bloomberg
+        # assume one ticker only for intraday data and use IntradayDataRequest to Bloomberg
         if (market_data_request.freq in ['tick', 'intraday', 'second', 'minute', 'hourly']):
             market_data_request_vendor.tickers = market_data_request_vendor.tickers[0]
 
@@ -183,7 +211,8 @@ class DataVendorBBG(DataVendor):
         end = datetime.utcnow()
 
         from datetime import timedelta
-        end = end + timedelta(days=365)# end.replace(year = end.year + 1)
+        end = end + timedelta(days=365) # because very often we may with to download data about future calendar events
+        #  end.replace(year = end.year + 1)
 
         market_data_request_vendor.finish_date = end
 
@@ -307,7 +336,13 @@ class DataVendorBBGOpen(DataVendorBBG):
         low_level_loader = BBGLowLevelRef()
 
         market_data_request_vendor_selective = copy.copy(market_data_request)
-        market_data_request_vendor_selective.fields = ['ECO_FUTURE_RELEASE_DATE_LIST']
+
+        # special case for future date releases
+        # if 'release-date-time-full' in market_data_request.fields:
+        #     market_data_request_vendor_selective.fields = ['ECO_FUTURE_RELEASE_DATE_LIST']
+        #
+        # if 'last-tradeable-day' in market_data_request.fields:
+        #     market_data_request_vendor_selective.fields = ['LAST_TRADEABLE_DT']
 
         data_frame =  low_level_loader.load_time_series(market_data_request_vendor_selective)
 
@@ -658,8 +693,12 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                         data[(field_name, ticker)][index] = re.findall(r'"(.*?)"', "%s" % row)[0]
 
                         index = index + 1
-                # else:
+                else:
+                    field_name = "%s" % field.name()
                     # vals.append(re.findall(r'"(.*?)"', "%s" % row)[0])
+                    data[(field_name, ticker)][index] = field.getValueAsString()
+
+                    index = index + 1
                     # print("%s = %s" % (field.name(), field.getValueAsString()))
 
             fieldExceptionArray = securityData.getElement("fieldExceptions")
