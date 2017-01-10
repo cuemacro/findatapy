@@ -87,6 +87,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 10 Jan 2017 - Added better handling for downloading of Bloomberg reference requests
 * 05 Jan 2017 - Fixed fxspotdata_example example, fixed singleton mechanism in ConfigManager
 * 24 Dec 2016 - Added more error handling for Quandl
 * 20 Dec 2016 - Updated deprecated some pandas deprecated methods in Calculations class & various bug fixes
