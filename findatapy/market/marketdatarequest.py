@@ -46,32 +46,62 @@ class MarketDataRequest(object):
                  gran_freq = None, cut = "NYC",
                  fields = ['close'], cache_algo = "internet_load_return",
                  vendor_tickers = None, vendor_fields = None,
-                 environment = "backtest", trade_side = 'trade'
+                 environment = "backtest", trade_side = 'trade', md_request = None
                  ):
 
         self.logger = LoggerManager().getLogger(__name__)
 
-        self.freq_mult = 1
+        # can deep copy MarketDataRequest (use a lock, so can be used with threading when downloading time series)
+        if md_request is not None:
+            import threading
+            lock = threading.Lock()
 
-        # define frequency of data
-        self.gran_freq = gran_freq
-        self.freq_mult = freq_mult
-        self.freq = freq
+            with lock:
+                import copy
 
-        # data source, start and fin
-        self.data_source = data_source
-        self.start_date = start_date
-        self.finish_date = finish_date
-        self.tickers = tickers
-        self.category = category                # special predefined categories
+                self.freq_mult = copy.deepcopy(md_request.freq_mult)
 
-        self.cut = cut                          # closing time of the data (eg. NYC, LDN, TOK etc)
-        self.fields = fields                    # fields, eg. close, high, low, open
-        self.cache_algo = cache_algo            # internet_load_return (cache_algo_return is for future use)
-        self.vendor_tickers = vendor_tickers    # define vendor tickers
-        self.vendor_fields = vendor_fields      # define vendor fields
-        self.environment = environment          # backtest environment only supported at present
-        self.trade_side = trade_side
+                # define frequency of data
+                self.gran_freq = copy.deepcopy(md_request.gran_freq)
+                self.freq_mult = copy.deepcopy(md_request.freq_mult)
+                self.freq = copy.deepcopy(md_request.freq)
+
+                # data source, start and fin
+                self.data_source = copy.deepcopy(md_request.data_source)
+                self.start_date = copy.deepcopy(md_request.start_date)
+                self.finish_date = copy.deepcopy(md_request.finish_date)
+                self.tickers = copy.deepcopy(md_request.tickers)
+                self.category = copy.deepcopy(md_request.category)  # special predefined categories
+
+                self.cut = copy.deepcopy(md_request.cut)                        # closing time of the data (eg. NYC, LDN, TOK etc)
+                self.fields = copy.deepcopy(md_request.fields)                  # fields, eg. close, high, low, open
+                self.cache_algo = copy.deepcopy(md_request.cache_algo)          # internet_load_return (cache_algo_return is for future use)
+                self.vendor_tickers = copy.deepcopy(md_request.vendor_tickers)  # define vendor tickers
+                self.vendor_fields = copy.deepcopy(md_request.vendor_fields)    # define vendor fields
+                self.environment = copy.deepcopy(md_request.environment)        # backtest environment only supported at present
+                self.trade_side = copy.deepcopy(md_request.trade_side)
+        else:
+            self.freq_mult = freq_mult
+
+            # define frequency of data
+            self.gran_freq = gran_freq
+            self.freq_mult = freq_mult
+            self.freq = freq
+
+            # data source, start and fin
+            self.data_source = data_source
+            self.start_date = start_date
+            self.finish_date = finish_date
+            self.tickers = tickers
+            self.category = category                # special predefined categories
+
+            self.cut = cut                          # closing time of the data (eg. NYC, LDN, TOK etc)
+            self.fields = fields                    # fields, eg. close, high, low, open
+            self.cache_algo = cache_algo            # internet_load_return (cache_algo_return is for future use)
+            self.vendor_tickers = vendor_tickers    # define vendor tickers
+            self.vendor_fields = vendor_fields      # define vendor fields
+            self.environment = environment          # backtest environment only supported at present
+            self.trade_side = trade_side
 
     @property
     def data_source(self):
