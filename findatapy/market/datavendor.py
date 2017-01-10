@@ -22,6 +22,7 @@ Abstract class for various data source loaders.
 import abc
 import copy
 
+from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.util import ConfigManager
 
 class DataVendor(object):
@@ -70,7 +71,7 @@ class DataVendor(object):
         symbols_vendor = self.translate_to_vendor_ticker(market_data_request)
         fields_vendor = self.translate_to_vendor_field(market_data_request)
 
-        market_data_request_vendor = copy.copy(market_data_request)
+        market_data_request_vendor = MarketDataRequest(md_request=market_data_request)
 
         market_data_request_vendor.tickers = symbols_vendor
         market_data_request_vendor.fields = fields_vendor
