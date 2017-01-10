@@ -150,7 +150,8 @@ class MarketDataGenerator(object):
 
         # only return time series if specified in the algo
         if 'return' in market_data_request.cache_algo:
-            # special case for events/events-dt which is not indexed like other tables
+            # special case for events/events-dt which is not indexed like other tables (also same for downloading futures
+            # contracts dates)
             if market_data_request.category is not None:
                 if 'events' in market_data_request.category:
                     return data_frame_agg
@@ -158,6 +159,9 @@ class MarketDataGenerator(object):
             try:
                 return self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)
             except:
+                if data_frame_agg is not None:
+                    return data_frame_agg
+
                 import traceback
 
                 self.logger.error(traceback.format_exc())
