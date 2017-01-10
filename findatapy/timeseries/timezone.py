@@ -96,6 +96,12 @@ class Timezone(object):
 
         return data_frame
 
+    def localise_index_as_chicago_time(self, data_frame):
+        chicago = pytz.timezone('America/Chicago')
+        data_frame = data_frame.tz_localize(chicago)
+
+        return data_frame
+
     def localise_index_as_london_time(self, data_frame):
         london = pytz.timezone('Europe/London')
         data_frame = data_frame.tz_localize(london)
