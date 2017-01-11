@@ -13,13 +13,6 @@ __author__ = 'saeedamen' # Saeed Amen
 #the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-Calculations
-
-Calculations on time series, such as calculating strategy returns and various wrappers on pandas for rolling sums etc.
-
-"""
-
 import datetime
 import functools
 import math
@@ -33,10 +26,12 @@ from findatapy.timeseries.filter import Filter
 from findatapy.timeseries.filter import Calendar
 
 class Calculations(object):
+    """Calculations on time series, such as calculating strategy returns and various wrappers on pandas for rolling sums etc.
+
+    """
 
     def calculate_signal_tc(self, signal_data_frame, tc, period_shift = 1):
-        """
-        calculate_signal_tc - Calculates the transaction costs for a particular signal
+        """Calculates the transaction costs for a particular signal
 
         Parameters
         ----------
@@ -54,8 +49,7 @@ class Calculations(object):
         return (signal_data_frame.shift(period_shift) - signal_data_frame).abs().multiply(tc)
 
     def calculate_entry_tc(self, entry_data_frame, tc, period_shift = 1):
-        """
-        calculate_entry_tc - Calculates the transaction costs for defined trading points
+        """Calculates the transaction costs for defined trading points
 
         Parameters
         ----------
@@ -73,8 +67,7 @@ class Calculations(object):
         return entry_data_frame.abs().multiply(tc)
 
     def calculate_signal_returns(self, signal_data_frame, returns_data_frame, period_shift = 1):
-        """
-        calculate_signal_returns - Calculates the trading startegy returns for given signal and asset
+        """Calculates the trading startegy returns for given signal and asset
 
         Parameters
         ----------
@@ -92,8 +85,7 @@ class Calculations(object):
         return signal_data_frame.shift(period_shift) * returns_data_frame
 
     def calculate_individual_trade_gains(self, signal_data_frame, strategy_returns_data_frame):
-        """
-        calculate_individual_trade_gains - Calculates profits on every trade
+        """Calculates profits on every trade (experimental code)
 
         Parameters
         ----------
@@ -101,12 +93,10 @@ class Calculations(object):
             trading signals
         strategy_returns_data_frame: DataFrame
             returns of strategy to be tested
-        period_shift : int
-            number of periods to shift signal
 
         Returns
         -------
-        DataFrame
+        DataFrame contains the P&L for every trade
         """
 
         # signal need to be aligned to NEXT period for returns
@@ -141,9 +131,77 @@ class Calculations(object):
 
         return trade_returns
 
-    def calculate_signal_returns_matrix(self, signal_data_frame, returns_data_frame, period_shift = 1):
+    def calculate_cum_rets_trades(self, signal_data_frame, strategy_returns_data_frame):
+        """Calculates cumulative returns resetting at each new trade
+
+        Parameters
+        ----------
+        signal_data_frame : DataFrame
+            trading signals
+        strategy_returns_data_frame: DataFrame
+            returns of strategy to be tested
+        period_shift : int
+            number of periods to shift signal
+
+        Returns
+        -------
+        DataFrame
         """
-        calculate_signal_returns_matrix - Calculates the trading strategy returns for given signal and asset
+
+        # signal need to be aligned to NEXT period for returns
+        signal_data_frame_pushed = signal_data_frame.shift(1)
+
+        # find all the trade points
+        reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
+
+        reset_points = reset_points.cumsum()
+
+        for c in reset_points.columns:
+            strategy_returns_data_frame[c + 'cumsum'] = reset_points[c]
+            strategy_returns_data_frame[c] = strategy_returns_data_frame.groupby([c + 'cumsum'])[c].cumsum()
+            strategy_returns_data_frame = strategy_returns_data_frame.drop([c + 'cumsum'], axis=1)
+
+        return strategy_returns_data_frame
+
+    def calculate_risk_stop_signals(self, signal_data_frame, cum_rets_trades, stop_loss, take_profit):
+        """
+
+        Parameters
+        ----------
+        signal_data_frame : DataFrame
+            Contains all the trade signals (typically mix of 0, +1 and +1
+
+        cum_rets_trades : DataFrame
+            Cumulative returns of strategy reset at every new trade
+
+        stop_loss : float
+            Stop loss level eg. -0.02
+
+        take_profit : float
+            Take profit level eg. +0.03
+
+        Returns
+        -------
+        DataFrame containing amended signals that take into account stops and take profits
+
+        """
+
+        signal_data_frame_pushed = signal_data_frame # signal_data_frame.shift(1)
+        reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
+
+        ind = (cum_rets_trades > take_profit) | (cum_rets_trades < stop_loss)
+        signal_data_frame[ind] = 0
+
+        reset_points[ind] = 1
+
+        signal_data_frame[reset_points == 0] = numpy.nan
+        signal_data_frame = signal_data_frame.ffill()
+        # signal_data_frame = signal_data_frame.shift(-1)
+
+        return signal_data_frame
+
+    def calculate_signal_returns_matrix(self, signal_data_frame, returns_data_frame, period_shift = 1):
+        """Calculates the trading strategy returns for given signal and asset
         as a matrix multiplication
 
         Parameters
@@ -163,8 +221,7 @@ class Calculations(object):
             signal_data_frame.shift(period_shift).values * returns_data_frame.values, index = returns_data_frame.index)
 
     def calculate_signal_returns_with_tc(self, signal_data_frame, returns_data_frame, tc, period_shift = 1):
-        """
-        calculate_singal_returns_with_tc - Calculates the trading startegy returns for given signal and asset including
+        """Calculates the trading startegy returns for given signal and asset including
         transaction costs
 
         Parameters
@@ -185,9 +242,7 @@ class Calculations(object):
         return signal_data_frame.shift(period_shift) * returns_data_frame - self.calculate_signal_tc(signal_data_frame, tc, period_shift)
 
     def calculate_signal_returns_with_tc_matrix(self, signal_data_frame, returns_data_frame, tc, period_shift = 1):
-        """
-        calculate_singal_returns_with_tc_matrix - Calculates the trading startegy returns for given signal and asset
-        with transaction costs with matrix multiplication
+        """Calculates the trading startegy returns for given signal and asset with transaction costs with matrix multiplication
 
         Parameters
         ----------
@@ -209,8 +264,7 @@ class Calculations(object):
                 (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc), index = returns_data_frame.index)
 
     def calculate_returns(self, data_frame, period_shift = 1):
-        """
-        calculate_returns - Calculates the simple returns for an asset
+        """Calculates the simple returns for an asset
 
         Parameters
         ----------
@@ -226,8 +280,7 @@ class Calculations(object):
         return data_frame / data_frame.shift(period_shift) - 1
 
     def calculate_diff_returns(self, data_frame, period_shift = 1):
-        """
-        calculate_diff_returns - Calculates the differences for an asset
+        """Calculates the differences for an asset
 
         Parameters
         ----------
@@ -243,8 +296,7 @@ class Calculations(object):
         return data_frame - data_frame.shift(period_shift)
 
     def calculate_log_returns(self, data_frame, period_shift = 1):
-        """
-        calculate_log_returns - Calculates the log returns for an asset
+        """Calculates the log returns for an asset
 
         Parameters
         ----------
@@ -260,8 +312,7 @@ class Calculations(object):
         return math.log(data_frame / data_frame.shift(period_shift))
 
     def create_mult_index(self, df_rets):
-        """
-        calculate_mult_index - Calculates a multiplicative index for a time series of returns
+        """ Calculates a multiplicative index for a time series of returns
 
         Parameters
         ----------
@@ -295,8 +346,7 @@ class Calculations(object):
         return df
 
     def create_mult_index_from_prices(self, data_frame):
-        """
-        calculate_mult_index_from_prices - Calculates a multiplicative index for a time series of prices
+        """Calculates a multiplicative index for a time series of prices
 
         Parameters
         ----------
@@ -310,8 +360,7 @@ class Calculations(object):
         return self.create_mult_index(self.calculate_returns(data_frame))
 
     def rolling_z_score(self, data_frame, periods):
-        """
-        rolling_z_score - Calculates the rolling z score for a time series
+        """Calculates the rolling z score for a time series
 
         Parameters
         ----------
@@ -349,8 +398,7 @@ class Calculations(object):
         return self.rolling_average(data_frame, periods)
 
     def rolling_average(self, data_frame, periods):
-        """
-        rolling_average - Calculates the rolling moving average
+        """Calculates the rolling moving average
 
         Parameters
         ----------
@@ -366,8 +414,7 @@ class Calculations(object):
         return pandas.rolling_mean(data_frame, periods)
 
     def rolling_sparse_average(self, data_frame, periods):
-        """
-        rolling_sparse_average - Calculates the rolling moving average of a sparse time series
+        """Calculates the rolling moving average of a sparse time series
 
         Parameters
         ----------
@@ -397,8 +444,7 @@ class Calculations(object):
         return rolling_sum / rolling_non_nans
 
     def rolling_sparse_sum(self, data_frame, periods):
-        """
-        rolling_sparse_sum - Calculates the rolling moving sum of a sparse time series
+        """Calculates the rolling moving sum of a sparse time series
 
         Parameters
         ----------
@@ -422,8 +468,7 @@ class Calculations(object):
         return rolling_sum
 
     def rolling_median(self, data_frame, periods):
-        """
-        rolling_median - Calculates the rolling moving average
+        """Calculates the rolling moving average
 
         Parameters
         ----------
@@ -439,8 +484,7 @@ class Calculations(object):
         return pandas.rolling_median(data_frame, periods)
 
     def rolling_sum(self, data_frame, periods):
-        """
-        rolling_sum - Calculates the rolling sum
+        """Calculates the rolling sum
 
         Parameters
         ----------
@@ -456,8 +500,7 @@ class Calculations(object):
         return pandas.rolling_sum(data_frame, periods)
 
     def cum_sum(self, data_frame):
-        """
-        cum_sum - Calculates the cumulative sum
+        """Calculates the cumulative sum
 
         Parameters
         ----------
@@ -471,8 +514,7 @@ class Calculations(object):
         return data_frame.cumsum()
 
     def rolling_ewma(self, data_frame, periods):
-        """
-        rolling_ewma - Calculates exponentially weighted moving average
+        """Calculates exponentially weighted moving average
 
         Parameters
         ----------
@@ -492,8 +534,7 @@ class Calculations(object):
 
     ##### correlation methods
     def rolling_corr(self, data_frame1, periods, data_frame2 = None, pairwise = False, flatten_labels = True):
-        """
-        rolling_corr - Calculates rolling correlation wrapping around pandas functions
+        """Calculates rolling correlation wrapping around pandas functions
 
         Parameters
         ----------
