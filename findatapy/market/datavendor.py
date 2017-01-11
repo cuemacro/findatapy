@@ -12,13 +12,6 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-DataVendor
-
-Abstract class for various data source loaders.
-
-"""
-
 import abc
 import copy
 
@@ -26,6 +19,9 @@ from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.util import ConfigManager
 
 class DataVendor(object):
+    """Abstract class for various data source loaders.
+
+    """
     def __init__(self):
         self.config = ConfigManager().get_instance()
         # self.config = None
@@ -33,8 +29,7 @@ class DataVendor(object):
 
     @abc.abstractmethod
     def load_ticker(self, market_data_request):
-        """
-        load_ticker - Retrieves market data from external data source
+        """Retrieves market data from external data source
 
         Parameters
         ----------
@@ -55,8 +50,7 @@ class DataVendor(object):
         return
 
     def construct_vendor_market_data_request(self, market_data_request):
-        """
-        construct_vendor_market_data_request - creates a MarketDataRequest with the vendor tickers
+        """Creates a MarketDataRequest with the vendor tickers
 
         Parameters
         ----------
@@ -79,8 +73,7 @@ class DataVendor(object):
         return market_data_request_vendor
 
     def translate_to_vendor_field(self, market_data_request):
-        """
-        translate_to_vendor_field - Converts all the fields from findatapy fields to vendor fields
+        """Converts all the fields from findatapy fields to vendor fields
 
         Parameters
         ----------
@@ -112,8 +105,7 @@ class DataVendor(object):
 
     # translate findatapy ticker to vendor ticker
     def translate_to_vendor_ticker(self, market_data_request):
-        """
-        translate_to_vendor_tickers - Converts all the tickers from findatapy tickers to vendor tickers
+        """Converts all the tickers from findatapy tickers to vendor tickers
 
         Parameters
         ----------
@@ -148,8 +140,7 @@ class DataVendor(object):
         return tickers_list_converted
 
     def translate_from_vendor_field(self, vendor_fields_list, market_data_request):
-        """
-        translate_from_vendor_field - Converts all the fields from vendors fields to findatapy fields
+        """Converts all the fields from vendors fields to findatapy fields
 
         Parameters
         ----------
@@ -190,8 +181,7 @@ class DataVendor(object):
 
     # translate findatapy ticker to vendor ticker
     def translate_from_vendor_ticker(self, vendor_tickers_list, market_data_request):
-        """
-        translate_from_vendor_ticker - Converts all the fields from vendor tickers to findatapy tickers
+        """Converts all the fields from vendor tickers to findatapy tickers
 
         Parameters
         ----------

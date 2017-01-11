@@ -12,18 +12,16 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-Market
-
-Market object is higher level object which fetches market data using underlying classes such as MarketDataGenerator. Also
-contains several other classes, which are for asset specific instances.
-
-"""
-
 from findatapy.util import DataConstants
 # from deco import *
 
 class Market(object):
+    """Higher level class which fetches market data using underlying classes such as MarketDataGenerator.
+
+    Also contains several other classes, which are for asset specific instances, for example for generating FX spot time series
+    or FX volatility surfaces.
+
+    """
 
     def __init__(self, market_data_generator = None, md_request = None):
         if market_data_generator is None:
@@ -39,6 +37,32 @@ class Market(object):
         self.md_request = md_request
 
     def fetch_market(self, md_request = None):
+        """Fetches market data for specific tickers
+
+        The user does not need to know to the low level API for each data provider works. The MarketDataRequest
+        needs to supply parameters that define each data request. It has details which include:
+            ticker eg. EURUSD
+            field eg. close
+            category eg. fx
+            data_source eg. bloomberg
+            start_date eg. 01 Jan 2015
+            finish_date eg. 01 Jan 2017
+
+        It can also have many optional attributes, such as
+            vendor_ticker eg. EURUSD Curncy
+            vendor_field eg. PX_LAST
+
+        Parameters
+        ----------
+        md_request : MarketDataRequest
+            Describing what market data to fetch
+
+        Returns
+        -------
+        pandas.DataFrame
+            Contains the requested market data
+
+        """
         if self.md_request is not None:
             md_request = self.md_request
 
@@ -50,9 +74,11 @@ class Market(object):
                 from findatapy.market.fxclsvolume import FXCLSVolume
                 fxcls = FXCLSVolume(market_data_generator=self.market_data_generator)
 
-                return fxcls.get_fx_volume(md_request.start_date, md_request.finish_date, md_request.tickers, cut="LOC", source="quandl",
+                return fxcls.get_fx_volume(md_request.start_date, md_request.finish_date, md_request.tickers,
+                                           cut="LOC", data_source="quandl",
                        cache_algo=md_request.cache_algo)
 
+            # for FX we have special methods for returning cross rates or total returns
             if (md_request.category == 'fx' or md_request.category == 'fx-tot') and md_request.tickers is not None:
                 fxcf = FXCrossFactory(market_data_generator=self.market_data_generator)
 
@@ -61,12 +87,15 @@ class Market(object):
                 elif md_request.category == 'fx-tot':
                     type = 'tot'
 
-                if (md_request.freq != 'tick' and md_request.fields == ['close']) or (md_request.freq == 'tick' and md_request.data_source == 'dukascopy'):
+                if (md_request.freq != 'tick' and md_request.fields == ['close']) or (md_request.freq == 'tick'
+                                                                                      and md_request.data_source == 'dukascopy'):
                     return fxcf.get_fx_cross(md_request.start_date, md_request.finish_date,
                                              md_request.tickers,
-                     cut = md_request.cut, source = md_request.data_source, freq = md_request.freq, cache_algo=md_request.cache_algo, type = type,
+                     cut = md_request.cut, data_source = md_request.data_source, freq = md_request.freq,
+                                             cache_algo=md_request.cache_algo, type = type,
                      environment = md_request.environment)
 
+            # for implied volatility we can return the full surface
             if (md_request.category == 'fx-implied-vol'):
                 if md_request.tickers is not None and md_request.freq == 'daily':
                     df = []
@@ -76,12 +105,14 @@ class Market(object):
                     for t in md_request.tickers:
                         if len(t) == 6:
                             df.append(fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
-                                                              cut=md_request.cut, source=md_request.data_source, part=fxvf.part,
+                                                              cut=md_request.cut, data_source=md_request.data_source, part=fxvf.part,
                                cache_algo_return=md_request.cache_algo))
 
                     if df != []:
                         return Calculations().pandas_outer_join(df)
 
+            # for FX vol market return all the market data necessarily for pricing options
+            # which includes FX spot, volatility surface, forward points, deposit rates
             if(md_request.category == 'fx-vol-market'):
                 if md_request.tickers is not None:
                     df = []
@@ -90,24 +121,26 @@ class Market(object):
                     fxvf = FXVolFactory(market_data_generator=self.market_data_generator)
                     rates = RatesFactory(market_data_generator=self.market_data_generator)
 
+                    # for each FX cross fetch the spot, vol and forward points
                     for t in md_request.tickers:
                         if len(t) == 6:
                             df.append(fxcf.get_fx_cross(start=md_request.start_date, end=md_request.finish_date, cross=t,
-                                                        cut=md_request.cut, source=md_request.data_source, freq=md_request.freq,
+                                                        cut=md_request.cut, data_source=md_request.data_source, freq=md_request.freq,
                                                         cache_algo=md_request.cache_algo, type='spot', environment=md_request.environment,
                                                         fields=['close']))
 
                             df.append(fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
-                                                              cut=md_request.cut, source=md_request.data_source,
+                                                              cut=md_request.cut, data_source=md_request.data_source,
                                                               part=fxvf.part,
                                                               cache_algo=md_request.cache_algo))
 
                             df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
-                                                              cut=md_request.cut, source=md_request.data_source,
+                                                              cut=md_request.cut, data_source=md_request.data_source,
                                                               cache_algo=md_request.cache_algo))
 
+                    # lastly fetch the base depos
                     df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date, ["USD", "EUR", "CHF", "GBP"], fxvf.tenor,
-                                                   cut=md_request.cut, source=md_request.data_source,
+                                                   cut=md_request.cut, data_source=md_request.data_source,
                                                    cache_algo=md_request.cache_algo
                                                    ))
 
@@ -123,21 +156,13 @@ class Market(object):
 
 ########################################################################################################################
 
-"""
-FXCrossFactory
-
-Class generates FX spot time series and FX total return time series (assuming we already have
-total return indices available from xxxUSD form) from underlying series.
-
-"""
-
-from findatapy.market.marketdatarequest import MarketDataRequest
-from findatapy.timeseries import Calculations
-
 from findatapy.util.fxconv import FXConv
-from findatapy.util.loggermanager import LoggerManager
 
 class FXCrossFactory(object):
+    """Class generates FX spot time series and FX total return time series (assuming we already have
+    total return indices available from xxxUSD form) from underlying series.
+
+    """
 
     def __init__(self, market_data_generator = None):
         self.logger = LoggerManager().getLogger(__name__)
@@ -154,7 +179,7 @@ class FXCrossFactory(object):
         self.cache = {}
 
     def get_fx_cross_tick(self, start, end, cross,
-                     cut = "NYC", source = "dukascopy", cache_algo = 'internet_load_return', type = 'spot',
+                     cut = "NYC", data_source = "dukascopy", cache_algo = 'internet_load_return', type = 'spot',
                      environment = 'backtest', fields = ['bid', 'ask']):
 
         if isinstance(cross, str):
@@ -170,13 +195,12 @@ class FXCrossFactory(object):
             environment = environment,
             start_date = start,
             finish_date = end,
-            data_source = source,
+            data_source = data_source,
             category = 'fx'
         )
 
         market_data_generator = self.market_data_generator
         data_frame_agg = None
-
 
         for cr in cross:
 
@@ -206,12 +230,12 @@ class FXCrossFactory(object):
 
 
     def get_fx_cross(self, start, end, cross,
-                     cut = "NYC", source = "bloomberg", freq = "intraday", cache_algo='internet_load_return', type = 'spot',
+                     cut = "NYC", data_source = "bloomberg", freq = "intraday", cache_algo='internet_load_return', type = 'spot',
                      environment = 'backtest', fields = ['close']):
 
-        if source == "gain" or source == 'dukascopy' or freq == 'tick':
+        if data_source == "gain" or data_source == 'dukascopy' or freq == 'tick':
             return self.get_fx_cross_tick(start, end, cross,
-                     cut = cut, source = source, cache_algo = cache_algo, type = 'spot', fields = fields)
+                     cut = cut, data_source = data_source, cache_algo = cache_algo, type = 'spot', fields = fields)
 
         if isinstance(cross, str):
             cross = [cross]
@@ -228,7 +252,7 @@ class FXCrossFactory(object):
                                                 cache_algo=cache_algo,
                                                 start_date=start,
                                                 finish_date=end,
-                                                data_source=source,
+                                                data_source=data_source,
                                                 environment=environment)
 
             market_data_request.type = type
@@ -413,13 +437,6 @@ class FXCrossFactory(object):
 
 #######################################################################################################################
 
-"""
-FXVolFactory
-
-Class generates FX implied volatility time series and surfaces (using very simple interpolation!).
-
-"""
-
 import pandas
 
 from findatapy.market.marketdatarequest import MarketDataRequest
@@ -427,6 +444,9 @@ from findatapy.util import LoggerManager
 from findatapy.timeseries import Calculations, Filter, Timezone
 
 class FXVolFactory(object):
+    """Generates FX implied volatility time series and surfaces (using very simple interpolation!).
+
+    """
     # types of quotation on vol surface
     # ATM, 25d riskies, 10d riskies, 25d strangles, 10d strangles
     part = ["V", "25R", "10R", "25B", "10B"]
@@ -447,19 +467,31 @@ class FXVolFactory(object):
 
         return
 
-    def get_fx_implied_vol(self, start, end, cross, tenor, cut="BGN", source="bloomberg", part="V",
+    def get_fx_implied_vol(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg", part="V",
                            cache_algo="internet_load_return"):
-        """ get_implied_vol = get implied vol for specified cross, tenor and part of surface
+        """Get implied vol for specified cross, tenor and part of surface
 
-        :param start: start date
-        :param end: end date
-        :param cross: asset to be calculated
-        :param tenor: tenor to calculate
-        :param cut: closing time of data
-        :param source: source of data eg. bloomberg
-        :param part: part of vol surface eg. V for ATM implied vol, 25R 25 delta risk reversal
+        Parameters
+        ----------
+        start : Datetime
+            start date of request
+        end : Datetime
+            end date of request
+        cross : str
+            FX cross
+        tenor : str
+            tenor of implied vol
+        cut : str
+            closing time of data
+        data_source : str
+            data_source of market data eg. bloomberg
+        part : str
+            part of vol surface eg. V for ATM implied vol, 25R 25 delta risk reversal
 
-        :return: realised volatility
+        Return
+        ------
+        pandas.DataFrame
+
         """
 
         market_data_generator = self.market_data_generator
@@ -477,7 +509,7 @@ class FXVolFactory(object):
 
         market_data_request = MarketDataRequest(
             start_date=start, finish_date=end,
-            data_source=source,
+            data_source=data_source,
             category='fx-implied-vol',
             freq='daily',
             cut=cut,
@@ -536,6 +568,9 @@ class FXVolFactory(object):
 #######################################################################################################################
 
 class RatesFactory(object):
+    """Gets the deposit rates for a particular currency
+
+    """
 
     def __init__(self, market_data_generator=None):
         self.logger = LoggerManager().getLogger(__name__)
@@ -550,18 +585,31 @@ class RatesFactory(object):
     # all the tenors on our forwards
     # forwards_tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
-    def get_base_depos(self, start, end, currencies, tenor, cut="NYC", source="bloomberg",
+    def get_base_depos(self, start, end, currencies, tenor, cut="NYC", data_source="bloomberg",
                               cache_algo="internet_load_return"):
-        """ get_forward_points = get forward points for specified cross, tenor and part of surface
+        """Gets the deposit rates for a particular tenor and part of surface
 
-        :param start: start date
-        :param end: end date
-        :param cross: asset to be calculated
-        :param tenor: tenor to calculate
-        :param cut: closing time of data
-        :param source: source of data eg. bloomberg
+        Parameter
+        ---------
+        start : Datetime
+            Start date
+        end : Datetime
+            End data
+        currencies : str
+            Currencies for which we want to download deposit rates
+        tenor : str
+            Tenor of deposit rate
+        cut : str
+            Closing time of the market data
+        data_source : str
+            data_source of the market data eg. bloomberg
+        cache_algo : str
+            Caching scheme for the data
 
-        :return: forward points
+        Returns
+        -------
+        pandas.DataFrame
+            Contains deposit rates
         """
 
         market_data_generator = self.market_data_generator
@@ -577,7 +625,7 @@ class RatesFactory(object):
 
         market_data_request = MarketDataRequest(
             start_date=start, finish_date=end,
-            data_source=source,
+            data_source=data_source,
             category='base-depos',
             freq='daily',
             cut=cut,
@@ -592,24 +640,37 @@ class RatesFactory(object):
 
         return data_frame
 
-    def get_fx_forward_points(self, start, end, cross, tenor, cut="BGN", source="bloomberg",
+    def get_fx_forward_points(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg",
                            cache_algo="internet_load_return"):
-        """ get_forward_points = get forward points for specified cross, tenor and part of surface
+        """Gets the forward points for a particular tenor and currency
 
-        :param start: start date
-        :param end: end date
-        :param cross: asset to be calculated
-        :param tenor: tenor to calculate
-        :param cut: closing time of data
-        :param source: source of data eg. bloomberg
+               Parameter
+               ---------
+               start : Datetime
+                   Start date
+               end : Datetime
+                   End data
+               cross : str
+                   FX crosses for which we want to download forward points
+               tenor : str
+                   Tenor of deposit rate
+               cut : str
+                   Closing time of the market data
+               data_source : str
+                   data_source of the market data eg. bloomberg
+               cache_algo : str
+                   Caching scheme for the data
 
-        :return: forward points
-        """
+               Returns
+               -------
+               pandas.DataFrame
+                   Contains deposit rates
+               """
 
         market_data_request = MarketDataRequest()
         market_data_generator = self.market_data_generator
 
-        market_data_request.data_source = source  # use bbg as a source
+        market_data_request.data_source = data_source  # use bbg as a data_source
         market_data_request.start_date = start  # start_date
         market_data_request.finish_date = end  # finish_date
 
@@ -626,7 +687,7 @@ class RatesFactory(object):
 
         market_data_request = MarketDataRequest(
             start_date = start, finish_date = end,
-            data_source = source,
+            data_source = data_source,
             category = 'fx-forwards',
             freq = 'daily',
             cut = cut,

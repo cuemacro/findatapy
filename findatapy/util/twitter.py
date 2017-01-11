@@ -12,18 +12,14 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-Twitter
-
-Has functions to tweet from Python (using Twython library)
-
-"""
-
 from twython import Twython
 
 from findatapy.util import DataConstants, LoggerManager
 
-class Twitter:
+class Twitter(object):
+    """Has functions to tweet from Python (using Twython library)
+
+    """
 
     def __init__(self, *args, **kwargs):
         self.logger = LoggerManager().getLogger(__name__)

@@ -12,18 +12,17 @@ __author__ = 'saeedamen'
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-MarketDataRequest
-
-Provides parameters for requesting market data
-
-"""
-
 from findatapy.util.loggermanager import LoggerManager
 from datetime import timedelta
 import datetime
 
 class MarketDataRequest(object):
+    """Provides parameters for requesting market data.
+
+    Includes parameters to define the ticker we'd like to fetch, the start and finish dates for our request, as well as
+    the various fields we would like and also the frequency of the data.
+
+    """
 
     # properties
     #

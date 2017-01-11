@@ -91,10 +91,10 @@ if __name__ == '__main__':
     tf = TickerFactory()
     root = 'E:/Remote/canary/conf'
 
-    # csv_file = root + '/fx_vol_tickers_maker.csv'
-    # out_csv_file = root + '/fx_vol_tickers.csv'
-    #
-    # tf.create_ticker(csv_file, out_csv_file)
+    csv_file = root + '/fx_vol_tickers_maker.csv'
+    out_csv_file = root + '/fx_vol_tickers.csv'
+
+    tf.create_ticker(csv_file, out_csv_file)
 
     csv_file = root + '/fx_forwards_tickers_maker.csv'
     out_csv_file = root + '/fx_forwards_tickers.csv'

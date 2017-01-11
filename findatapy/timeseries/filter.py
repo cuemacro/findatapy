@@ -12,13 +12,6 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-Filter
-
-Functions for filtering time series by dates and columns.
-
-"""
-
 from findatapy.util.loggermanager import LoggerManager
 
 from pandas.tseries.offsets import CustomBusinessDay
@@ -28,6 +21,11 @@ import pandas
 import pytz
 
 class Filter(object):
+    """Functions for filtering time series by dates and columns.
+
+    This class is used extensively in both findatapy and finmarketpy.
+
+    """
 
     _time_series_cache = {} # shared across all instances of object!
 
@@ -37,8 +35,7 @@ class Filter(object):
         return
 
     def filter_time_series(self, market_data_request, data_frame, pad_columns = False):
-        """
-        filter_time_series - Filters a time series given a set of criteria (like start/finish date and tickers)
+        """Filters a time series given a set of criteria (like start/finish date and tickers)
 
         Parameters
         ----------
@@ -69,8 +66,7 @@ class Filter(object):
         return data_frame
 
     def create_calendar_bus_days(self, start_date, end_date, cal = 'FX'):
-        """
-        create_calendar_bus_days - Creates a calendar of business days)
+        """Creates a calendar of business days
 
         Parameters
         ----------
@@ -91,8 +87,7 @@ class Filter(object):
         return [x for x in index if x not in hols]
 
     def get_holidays(self, start_date, end_date, cal = 'FX'):
-        """
-        get_holidays - Gets the holidays for a given calendar
+        """Gets the holidays for a given calendar
 
         Parameters
         ----------
@@ -136,8 +131,7 @@ class Filter(object):
         return pandas.to_datetime(holidays_list)
 
     def filter_time_series_by_holidays(self, data_frame, cal = 'FX'):
-        """
-        filter_time_series_by_holidays - Removes holidays from a given time series
+        """Removes holidays from a given time series
 
         Parameters
         ----------
@@ -202,8 +196,7 @@ class Filter(object):
         return pandas.concat(data_frame_filtered)
 
     def filter_time_series_by_date(self, start_date, finish_date, data_frame):
-        """
-        filter_time_series_by_date - Filter time series by start/finish dates
+        """Filter time series by start/finish dates
 
         Parameters
         ----------
@@ -223,8 +216,7 @@ class Filter(object):
         return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
 
     def filter_time_series_by_days(self, days, data_frame):
-        """
-        filter_time_series_by_date - Filter time series by start/finish dates
+        """Filter time series by start/finish dates
 
         Parameters
         ----------
@@ -246,8 +238,7 @@ class Filter(object):
         return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
 
     def filter_time_series_by_date_exc(self, start_date, finish_date, data_frame):
-        """
-        filter_time_series_by_date_exc - Filter time series by start/finish dates (exclude start & finish dates)
+        """Filter time series by start/finish dates (exclude start & finish dates)
 
         Parameters
         ----------
@@ -286,8 +277,7 @@ class Filter(object):
         # return data_frame
 
     def filter_time_series_by_date_offset(self, start_date, finish_date, data_frame, offset):
-        """
-        filter_time_series_by_date_offset - Filter time series by start/finish dates (and an offset)
+        """Filter time series by start/finish dates (and an offset)
 
         Parameters
         ----------
@@ -343,8 +333,7 @@ class Filter(object):
         return data_frame
 
     def filter_time_series_aux(self, start_date, finish_date, data_frame, offset):
-        """
-        filter_time_series_aux - Filter time series by start/finish dates (and an offset)
+        """Filter time series by start/finish dates (and an offset)
 
         Parameters
         ----------
@@ -384,8 +373,7 @@ class Filter(object):
         return data_frame.ix[start_index:finish_index]
 
     def filter_time_series_by_time_of_day(self, hour, minute, data_frame, in_tz = None, out_tz = None):
-        """
-        filter_time_series_by_time_of_day - Filter time series by time of day
+        """Filter time series by time of day
 
         Parameters
         ----------
@@ -419,8 +407,7 @@ class Filter(object):
         return data_frame
 
     def filter_time_series_by_minute_of_hour(self, minute, data_frame, in_tz = None, out_tz = None):
-        """
-        filter_time_series_by_minute_of_hour - Filter time series by minute of hour
+        """Filter time series by minute of hour
 
         Parameters
         ----------
@@ -451,8 +438,7 @@ class Filter(object):
         return data_frame
 
     def filter_time_series_between_hours(self, start_hour, finish_hour, data_frame):
-        """
-        filter_time_series_between_hours - Filter time series between hours of the day
+        """Filter time series between hours of the day
 
         Parameters
         ----------
@@ -474,8 +460,7 @@ class Filter(object):
         return data_frame
 
     def filter_time_series_by_columns(self, columns, data_frame):
-        """
-        filter_time_series_by_columns - Filter time series by certain columns
+        """Filter time series by certain columns
 
         Parameters
         ----------
@@ -491,8 +476,7 @@ class Filter(object):
         return data_frame[columns]
 
     def pad_time_series_columns(self, columns, data_frame):
-        """
-        pad_time_series - Selects time series from a dataframe and if necessary creates empty columns
+        """Selects time series from a dataframe and if necessary creates empty columns
 
         Parameters
         ----------
@@ -520,8 +504,7 @@ class Filter(object):
         return data_frame
 
     def filter_time_series_by_excluded_keyword(self, keyword, data_frame):
-        """
-        filter_time_series_by_excluded_keyword - Filter time series to exclude columns which contain keyword
+        """Filter time series to exclude columns which contain keyword
 
         Parameters
         ----------
@@ -539,8 +522,7 @@ class Filter(object):
         return self.filter_time_series_by_columns(columns, data_frame)
 
     def filter_time_series_by_included_keyword(self, keyword, data_frame):
-        """
-        filter_time_series_by_included_keyword - Filter time series to include columns which contain keyword
+        """Filter time series to include columns which contain keyword
 
         Parameters
         ----------
@@ -558,8 +540,7 @@ class Filter(object):
         return self.filter_time_series_by_columns(columns, data_frame)
 
     def filter_time_series_by_minute_freq(self, freq, data_frame):
-        """
-        filter_time_series_by_minute_freq - Filter time series where minutes correspond to certain minute filter
+        """Filter time series where minutes correspond to certain minute filter
 
         Parameters
         ----------
@@ -575,8 +556,7 @@ class Filter(object):
         return data_frame.loc[data_frame.index.minute % freq == 0]
 
     def create_tickers_fields_list(self, market_data_request):
-        """
-        create_ticker_field_list - Creates a list of tickers concatenated with fields from a MarketDataRequest
+        """Creates a list of tickers concatenated with fields from a MarketDataRequest
 
         Parameters
         ----------
@@ -633,8 +613,7 @@ class Filter(object):
         return data_frame
 
     def remove_out_FX_out_of_hours(self, data_frame):
-        """
-        remove_out_FX_out_of_hours - Filtered a time series for FX hours (ie. excludes 22h GMT Fri - 19h GMT Sun)
+        """Filtered a time series for FX hours (ie. excludes 22h GMT Fri - 19h GMT Sun)
 
         Parameters
         ----------
@@ -659,14 +638,6 @@ class Filter(object):
 
 #######################################################################################################################
 
-"""
-Calendar
-
-Provides calendar based functions for working out options expiries. Note, that in practice, we would often take
-into account market holidays.
-
-"""
-
 import datetime
 from datetime import timedelta
 
@@ -681,7 +652,11 @@ from pandas.tseries.offsets import CustomBusinessDay
 
 from findatapy.timeseries.filter import Filter
 
-class Calendar:
+class Calendar(object):
+    """Provides calendar based functions for working out options expiries. Note, that in practice, we would often take
+    into account market holidays.
+
+    """
 
     def get_business_days_tenor(self, tenor):
         if tenor == '1W':

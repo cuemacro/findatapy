@@ -12,19 +12,15 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-LoggerManager
-
-Acts as a wrapper for logging.
-
-"""
-
 import logging
 import logging.config
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.singleton import Singleton
 
 class LoggerManager(object):
+    """Acts as a wrapper for logging.
+
+    """
     __metaclass__ = Singleton
 
     _loggers = {}

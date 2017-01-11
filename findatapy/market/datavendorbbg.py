@@ -12,17 +12,6 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-LoaderBBG
-
-Abstract class for download of Bloomberg daily, intraday data and reference data.
-
-Implemented by
-- LoaderBBGOpen (adapted version of new Bloomberg Open API for Python - recommended - although requires compilation)
-- no longer support COM API
-
-"""
-
 from findatapy.market.datavendor import DataVendor
 from findatapy.market.marketdatarequest import MarketDataRequest
 
@@ -31,6 +20,15 @@ import datetime
 import copy
 
 class DataVendorBBG(DataVendor):
+    """Abstract class for download of Bloomberg daily, intraday data and reference data.
+
+    Implemented by:
+        DataVendorBBGOpen - Adapted version of new Bloomberg Open API for Python which is recommended. Note that this
+        requires compilation, via installed C++ compiler. For Python 3.5, this is Microsoft Visual Studio 2015.
+
+        Note: no longer supports COM API, which is slower and only 32 bit
+
+    """
 
     # these fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
     list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day']
@@ -42,8 +40,7 @@ class DataVendorBBG(DataVendor):
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
-        """
-        load_ticker - Retrieves market data from external data source (in this case Bloomberg)
+        """Retrieves market data from external data source (in this case Bloomberg)
 
         Parameters
         ----------
@@ -267,13 +264,6 @@ class DataVendorBBG(DataVendor):
 
 #######################################################################################################################
 
-"""
-LoaderBBGOpen
-
-Calls the Bloomberg Open API to download market data: daily, intraday and reference data (needs blpapi).
-
-"""
-
 import abc
 import copy
 import collections
@@ -292,6 +282,9 @@ from findatapy.market.datavendorbbg import DataVendorBBG
 from collections import defaultdict
 
 class DataVendorBBGOpen(DataVendorBBG):
+    """Calls the Bloomberg Open API to download market data: daily, intraday and reference data (needs blpapi).
+
+    """
     def __init__(self):
         super(DataVendorBBGOpen, self).__init__()
         self.logger = LoggerManager().getLogger(__name__)

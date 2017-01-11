@@ -32,7 +32,7 @@ style = Style(title="US GDP first vs last")
 
 Chart().plot(df, style=style)
 
-# get the change NFP (need to calculate that from the acutal-release and first-revision)
+# get the change NFP SA (need to calculate that from the acutal-release and first-revision)
 md_request = MarketDataRequest(
     start_date="01 Jun 2000",                                                      # start date (download data over past decade)
     data_source='alfred',                                                          # use ALFRED/FRED as data source

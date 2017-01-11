@@ -12,18 +12,14 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-Timezone
-
-Various functions wrapping onto pandas and pytz for quickly converting timezones for dataframes.
-
-"""
-
 import numpy
 import pytz
 import pandas.tseries.offsets
 
 class Timezone(object):
+    """Various functions wrapping onto pandas and pytz for quickly converting timezones for dataframes.
+
+    """
 
     def convert_index_from_UTC_to_new_york_time(self, data_frame):
         new_york = pytz.timezone('America/New_York')

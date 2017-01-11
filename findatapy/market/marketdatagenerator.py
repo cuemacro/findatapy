@@ -12,14 +12,6 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-MarketDataGenerator
-
-Returns market data time series by directly calling data sources like Bloomberg (bloomberg), Yahoo (yahoo), Quandl (quandl),
-FRED (fred) etc. which are implemented in subclasses of LoaderTemplate. This provides a common wrapper for all these data sources.
-
-"""
-
 import copy
 
 from findatapy.market.ioengine import IOEngine
@@ -27,6 +19,12 @@ from findatapy.timeseries import Filter, Calculations
 from findatapy.util import DataConstants, LoggerManager, ConfigManager
 
 class MarketDataGenerator(object):
+    """Returns market data time series by directly calling market data sources.
+
+    At present it supports Bloomberg (bloomberg), Yahoo (yahoo), Quandl (quandl), FRED (fred) etc. which are implemented
+    in subclasses of DataVendor class. This provides a common wrapper for all these data sources.
+
+    """
     _time_series_cache = {} # shared across all instances of object!
 
     def __init__(self):
@@ -40,8 +38,7 @@ class MarketDataGenerator(object):
         return
 
     def flush_cache(self):
-        """
-        flush_cache - Flushs internal cache of time series
+        """Flushs internal cache of time series
         """
 
         self._time_series_cache = {}
@@ -50,8 +47,7 @@ class MarketDataGenerator(object):
         self._intraday_code = code
 
     def get_data_vendor(self, source):
-        """
-        get_loader - Loads appropriate data service class
+        """Loads appropriate data service class
 
         Parameters
         ----------
@@ -101,8 +97,7 @@ class MarketDataGenerator(object):
         return data_vendor
 
     def fetch_market_data(self, market_data_request, kill_session = True):
-        """
-        fetch_market_data - Loads time series from specified data provider
+        """Loads time series from specified data provider
 
         Parameters
         ----------
@@ -169,8 +164,7 @@ class MarketDataGenerator(object):
                 return None
 
     def get_market_data_cached(self, market_data_request):
-        """
-        get_time_series_cached - Loads time series from cache (if it exists)
+        """Loads time series from cache (if it exists)
 
         Parameters
         ----------
@@ -197,8 +191,7 @@ class MarketDataGenerator(object):
         return None
 
     def create_time_series_hash_key(self, market_data_request, ticker = None):
-        """
-        create_time_series_hash_key - Creates a hash key for retrieving the time series
+        """Creates a hash key for retrieving the time series
 
         Parameters
         ----------
@@ -216,8 +209,7 @@ class MarketDataGenerator(object):
         return self.create_cache_file_name(self.create_category_key(market_data_request, ticker))
 
     def download_intraday_tick(self, market_data_request, data_vendor):
-        """
-        download_intraday_tick - Loads intraday time series from specified data provider
+        """Loads intraday time series from specified data provider
 
         Parameters
         ----------
@@ -351,8 +343,7 @@ class MarketDataGenerator(object):
         return data_frame_agg
 
     def download_daily(self, market_data_request, data_vendor):
-        """
-        download_daily - Loads daily time series from specified data provider
+        """Loads daily time series from specified data provider
 
         Parameters
         ----------
@@ -396,8 +387,7 @@ class MarketDataGenerator(object):
         return data_frame_agg
 
     def create_category_key(self, market_data_request, ticker=None):
-        """
-        create_category_key - Returns a category key for the associated MarketDataRequest
+        """Returns a category key for the associated MarketDataRequest
 
         Parameters
         ----------

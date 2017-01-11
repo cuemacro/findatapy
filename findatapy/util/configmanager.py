@@ -12,13 +12,6 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-ConfigManager
-
-Functions for converting between vendor tickers and findatapy tickers (and vice-versa).
-
-"""
-
 import csv
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.singleton import Singleton
@@ -28,6 +21,9 @@ from dateutil.parser import parse
 import threading
 
 class ConfigManager(object):
+    """Functions for converting between vendor tickers and findatapy tickers (and vice-versa).
+
+    """
     __metaclass__ = Singleton
 
     _dict_time_series_tickers_list_library_to_vendor = {}

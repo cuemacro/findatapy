@@ -12,23 +12,18 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-Descriptor
-
-Calculating return statistics of a time series
-
-"""
-
 import math
 
 from findatapy.timeseries.calculations import Calculations
 
 
 class RetStats(object):
+    """Calculating return statistics of a time series
+
+    """
 
     def calculate_ret_stats_from_prices(self, prices_df, ann_factor):
-        """
-        calculate_ret_stats_from_prices - Calculates return statistics for an asset's price
+        """Calculates return statistics for an asset's price
 
         Parameters
         ----------
@@ -46,8 +41,7 @@ class RetStats(object):
         self.calculate_ret_stats(calculations.calculate_returns(prices_df), ann_factor)
 
     def calculate_ret_stats(self, returns_df, ann_factor):
-        """
-        calculate_ret_stats - Calculates return statistics for an asset's returns including IR, vol, ret and drawdowns
+        """Calculates return statistics for an asset's returns including IR, vol, ret and drawdowns
 
         Parameters
         ----------
@@ -76,8 +70,7 @@ class RetStats(object):
         self._yoy_rets = index_df.resample('A').mean().pct_change()
 
     def ann_returns(self):
-        """
-        ann_returns - Gets annualised returns
+        """Gets annualised returns
 
         Returns
         -------
@@ -86,8 +79,7 @@ class RetStats(object):
         return self._rets
 
     def ann_vol(self):
-        """
-        ann_vol - Gets annualised volatility
+        """Gets annualised volatility
 
         Returns
         -------
@@ -96,8 +88,7 @@ class RetStats(object):
         return self._vol
 
     def inforatio(self):
-        """
-        inforatio - Gets information ratio
+        """Gets information ratio
 
         Returns
         -------
@@ -106,8 +97,7 @@ class RetStats(object):
         return self._inforatio
 
     def drawdowns(self):
-        """
-        drawdowns - Gets drawdowns for an asset or strategy
+        """Gets drawdowns for an asset or strategy
 
         Returns
         -------
@@ -116,8 +106,7 @@ class RetStats(object):
         return self._dd
 
     def kurtosis(self):
-        """
-        kurtosis - Gets kurtosis for an asset or strategy
+        """Gets kurtosis for an asset or strategy
 
         Returns
         -------
@@ -126,8 +115,7 @@ class RetStats(object):
         return self._kurtosis
 
     def yoy_rets(self):
-        """
-        yoy_rets - Calculates the yoy rets
+        """Calculates the yoy rets
 
         Returns
         -------
@@ -136,8 +124,7 @@ class RetStats(object):
         return self._yoy_rets
 
     def summary(self):
-        """
-        summary - Gets summary string contains various return statistics
+        """Gets summary string contains various return statistics
 
         Returns
         -------

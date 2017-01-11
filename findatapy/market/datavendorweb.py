@@ -12,10 +12,7 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-DataVendorWeb
-
-Contains implementations of DataVendor for
+"""Contains implementations of DataVendor for
 
 Quandl (free/premium data source) - LoaderQuandl
 Pandas Data Reader (free data source - includes FRED, World Bank, Yahoo) - LoaderPandasWeb
@@ -24,12 +21,7 @@ DukasCopy (retail FX broker - has historical tick data) - LoaderDukasCopy
 
 #######################################################################################################################
 
-"""
-DataVendorQuandl
 
-Class for reading in data from Quandl into findatapy library
-
-"""
 
 # support Quandl 3.x.x
 try:
@@ -41,6 +33,9 @@ except:
 from findatapy.market.datavendor import DataVendor
 
 class DataVendorQuandl(DataVendor):
+    """Reads in data from Quandl into findatapy library
+
+    """
 
     def __init__(self):
         super(DataVendorQuandl, self).__init__()
@@ -115,14 +110,6 @@ class DataVendorQuandl(DataVendor):
 
 #######################################################################################################################
 
-"""
-DataVendorALFRED
-
-Class for reading in data from ALFRED (and FRED) into findatapy library (requires fredapi - pip install fredapi) from
-https://github.com/mortada/fredapi
-
-"""
-
 # # support Quandl 3.x.x
 # try:
 #     import fredapi
@@ -134,6 +121,10 @@ from findatapy.market.datavendor import DataVendor
 from findatapy.timeseries import Filter, Calculations
 
 class DataVendorALFRED(DataVendor):
+    """Class for reading in data from ALFRED (and FRED) into findatapy library (based upon fredapi from
+    https://github.com/mortada/fredapi
+
+    """
 
     def __init__(self):
         super(DataVendorALFRED, self).__init__()
@@ -434,24 +425,20 @@ class DataVendorBOE(DataVendor):
 
 #######################################################################################################################
 
-"""
-DataVendorPandasWeb
-
-Class for reading in data from various web sources into Pyfindatapy library including
-
-- Yahoo! Finance - yahoo
-- Google Finance - google
-- St. Louis FED (FRED) - fred
-- Kenneth French data library - famafrench
-- World Bank - wb
-
-"""
-
 import pandas_datareader.data as web
 
 from findatapy.market.datavendor import DataVendor
 
 class DataVendorPandasWeb(DataVendor):
+    """Class for reading in data from various web sources into findatapy library including
+
+        Yahoo! Finance - yahoo
+        Google Finance - google
+        St. Louis FED (FRED) - fred
+        Kenneth French data library - famafrench
+        World Bank - wb
+
+    """
 
     def __init__(self):
         super(DataVendorPandasWeb, self).__init__()
@@ -511,18 +498,6 @@ class DataVendorPandasWeb(DataVendor):
 
 ########################################################################################################################
 
-"""
-DataVendorDukascopy
-
-Class for downloading tick data from DukasCopy (note: past month of data is not available). Selecting very large
-histories is not recommended as you will likely run out memory given the amount of data requested.
-
-Parsing of files is rewritten version https://github.com/nelseric/ticks/
-- parsing has been speeded up considerably
-- on-the-fly downloading/parsing
-
-"""
-
 import os
 from datetime import timedelta
 
@@ -547,6 +522,14 @@ from findatapy.market.datavendor import DataVendor
 from findatapy.util import ConfigManager, DataConstants, LoggerManager
 
 class DataVendorDukasCopy(DataVendor):
+    """Class for downloading tick data from DukasCopy (note: past month of data is not available). Selecting very large
+    histories is not recommended as you will likely run out memory given the amount of data requested.
+
+    Parsing of files is rewritten version https://github.com/nelseric/ticks/
+        parsing has been speeded up considerably
+        on-the-fly downloading/parsing
+
+    """
     tick_name  = "{symbol}/{year}/{month}/{day}/{hour}h_ticks.bi5"
 
     def __init__(self):
@@ -559,8 +542,7 @@ class DataVendorDukasCopy(DataVendor):
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
-        """
-        load_ticker - Retrieves market data from external data source (in this case Bloomberg)
+        """Retrieves market data from external data source (in this case Bloomberg)
 
         Parameters
         ----------
@@ -762,15 +744,6 @@ class DataVendorDukasCopy(DataVendor):
 
 ##########################
 
-"""
-FRED
-
-Auxillary class for getting access to ALFRED/FRED directly.
-
-Based on https://github.com/mortada/fredapi (with minor edits)
-
-"""
-
 import os
 import sys
 
@@ -788,6 +761,11 @@ else:
 import xml.etree.ElementTree as ET
 
 class Fred(object):
+    """Auxillary class for getting access to ALFRED/FRED directly.
+
+    Based on https://github.com/mortada/fredapi (with minor edits)
+
+    """
     earliest_realtime_start = '1776-07-04'
     latest_realtime_end = '9999-12-31'
     nan_char = '.'
@@ -796,8 +774,7 @@ class Fred(object):
     def __init__(self,
                  api_key=None,
                  api_key_file=None):
-        """
-        Initialize the Fred class that provides useful functions to query the Fred dataset. You need to specify a valid
+        """Initialize the Fred class that provides useful functions to query the Fred dataset. You need to specify a valid
         API key in one of 3 ways: pass the string via api_key, or set api_key_file to a file with the api key in the
         first line, or set the environment variable 'FRED_API_KEY' to the value of your api key. You can sign up for a
         free api key on the Fred website at http://research.stlouisfed.org/fred2/
@@ -824,8 +801,7 @@ class Fred(object):
                     website at http://research.stlouisfed.org/fred2/"""))
 
     def __fetch_data(self, url):
-        """
-        helper function for fetching data given a request URL
+        """Helper function for fetching data given a request URL
         """
         try:
             response = urlopen(url)
@@ -836,8 +812,8 @@ class Fred(object):
         return root
 
     def _parse(self, date_str, format='%Y-%m-%d'):
-        """
-        helper function for parsing FRED date string into datetime
+        """Helper function for parsing FRED date string into datetime
+
         """
         from pandas import to_datetime
         rv = to_datetime(date_str, format=format)
@@ -846,8 +822,7 @@ class Fred(object):
         return rv
 
     def get_series_info(self, series_id):
-        """
-        Get information about a series such as its title, frequency, observation start/end dates, units, notes, etc.
+        """Get information about a series such as its title, frequency, observation start/end dates, units, notes, etc.
 
         Parameters
         ----------
@@ -869,8 +844,7 @@ class Fred(object):
         return info
 
     def get_series(self, series_id, observation_start=None, observation_end=None, **kwargs):
-        """
-        Get data for a Fred series id. This fetches the latest known data, and is equivalent to get_series_latest_release()
+        """Get data for a Fred series id. This fetches the latest known data, and is equivalent to get_series_latest_release()
 
         Parameters
         ----------
@@ -917,8 +891,7 @@ class Fred(object):
         return Series(data)
 
     def get_series_latest_release(self, series_id, observation_start=None, observation_end=None):
-        """
-        Get data for a Fred series id. This fetches the latest known data, and is equivalent to get_series()
+        """Get data for a Fred series id. This fetches the latest known data, and is equivalent to get_series()
 
         Parameters
         ----------
@@ -933,8 +906,9 @@ class Fred(object):
         return self.get_series(series_id, observation_start=observation_start, observation_end=observation_end)
 
     def get_series_first_release(self, series_id, observation_start=None, observation_end=None):
-        """
-        Get first-release data for a Fred series id. This ignores any revision to the data series. For instance,
+        """Get first-release data for a Fred series id.
+
+        This ignores any revision to the data series. For instance,
         The US GDP for Q1 2014 was first released to be 17149.6, and then later revised to 17101.3, and 17016.0.
         This will ignore revisions after the first release.
 
@@ -954,8 +928,9 @@ class Fred(object):
         return data
 
     def get_series_first_revision(self, series_id, observation_start=None, observation_end=None):
-        """
-        Get first-revision data for a Fred series id. This will give the first revision to the data series. For instance,
+        """Get first-revision data for a Fred series id.
+
+        This will give the first revision to the data series. For instance,
         The US GDP for Q1 2014 was first released to be 17149.6, and then later revised to 17101.3, and 17016.0.
         This will take the first revision ie. 17101.3 in this case.
 
@@ -977,8 +952,9 @@ class Fred(object):
         return data
 
     def get_series_as_of_date(self, series_id, as_of_date):
-        """
-        Get latest data for a Fred series id as known on a particular date. This includes any revision to the data series
+        """Get latest data for a Fred series id as known on a particular date.
+
+        This includes any revision to the data series
         before or on as_of_date, but ignores any revision on dates after as_of_date.
 
         Parameters
@@ -1000,8 +976,9 @@ class Fred(object):
         return data
 
     def get_series_all_releases(self, series_id, observation_start=None, observation_end=None):
-        """
-        Get all data for a Fred series id including first releases and all revisions. This returns a DataFrame
+        """Get all data for a Fred series id including first releases and all revisions.
+
+        This returns a DataFrame
         with three columns: 'date', 'realtime_start', and 'value'. For instance, the US GDP for Q4 2013 was first released
         to be 17102.5 on 2014-01-30, and then revised to 17080.7 on 2014-02-28, and then revised to 17089.6 on
         2014-03-27. You will therefore get three rows with the same 'date' (observation date) of 2013-10-01 but three
@@ -1059,9 +1036,9 @@ class Fred(object):
         return data
 
     def get_series_vintage_dates(self, series_id):
-        """
-        Get a list of vintage dates for a series. Vintage dates are the dates in history when a
-        series' data values were revised or new data values were released.
+        """Get a list of vintage dates for a series.
+
+        Vintage dates are the dates in history when a series' data values were revised or new data values were released.
 
         Parameters
         ----------
@@ -1085,8 +1062,7 @@ class Fred(object):
         return dates
 
     def __do_series_search(self, url):
-        """
-        helper function for making one HTTP request for data, and parsing the returned results into a DataFrame
+        """Helper function for making one HTTP request for data, and parsing the returned results into a DataFrame
         """
         root = self.__fetch_data(url)
 
@@ -1119,8 +1095,7 @@ class Fred(object):
         return data, num_results_total
 
     def __get_search_results(self, url, limit, order_by, sort_order):
-        """
-        helper function for getting search results up to specified limit on the number of results. The Fred HTTP API
+        """Helper function for getting search results up to specified limit on the number of results. The Fred HTTP API
         truncates to 1000 results per request, so this may issue multiple HTTP requests to obtain more available data.
         """
 
@@ -1157,8 +1132,9 @@ class Fred(object):
         return data.head(max_results_needed)
 
     def search(self, text, limit=1000, order_by=None, sort_order=None):
-        """
-        Do a fulltext search for series in the Fred dataset. Returns information about matching series in a DataFrame.
+        """Do a fulltext search for series in the Fred dataset.
+
+        Returns information about matching series in a DataFrame.
 
         Parameters
         ----------
@@ -1185,8 +1161,9 @@ class Fred(object):
         return info
 
     def search_by_release(self, release_id, limit=0, order_by=None, sort_order=None):
-        """
-        Search for series that belongs to a release id. Returns information about matching series in a DataFrame.
+        """Search for series that belongs to a release id.
+
+        Returns information about matching series in a DataFrame.
 
         Parameters
         ----------
@@ -1215,8 +1192,9 @@ class Fred(object):
         return info
 
     def search_by_category(self, category_id, limit=0, order_by=None, sort_order=None):
-        """
-        Search for series that belongs to a category id. Returns information about matching series in a DataFrame.
+        """Search for series that belongs to a category id.
+
+        Returns information about matching series in a DataFrame.
 
         Parameters
         ----------

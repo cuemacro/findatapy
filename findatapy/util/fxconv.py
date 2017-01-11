@@ -12,16 +12,12 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-FXConv
-
-Various helper methods to manipulate FX crosses, applying correct conventions.
-
-"""
-
 from findatapy.util.loggermanager import LoggerManager
 
 class FXConv(object):
+    """Various methods to manipulate FX crosses, applying correct conventions.
+
+    """
 
     # TODO
     g10 = ['EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']

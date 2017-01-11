@@ -12,14 +12,6 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-IOEngine
-
-Write and reads time series data to disk in various formats, CSV and HDF5 format. (planning to add other interfaces too).
-Also supports BColz (but not currently stable).
-
-"""
-
 import pandas
 import codecs
 import datetime
@@ -59,14 +51,17 @@ _invalid_chars = ['&',
                   ' ']
 
 class IOEngine(object):
+    """Write and reads time series data to disk in various formats, CSV and HDF5 format. (planning to add other interfaces too).
+    Also supports BColz (but not currently stable).
+
+    """
 
     def __init__(self):
         self.logger = LoggerManager().getLogger(__name__)
 
     ### functions to handle Excel on disk
     def write_time_series_to_excel(self, fname, sheet, data_frame, create_new=False):
-        """
-        write_time_series_to_excel - writes Pandas data frame to disk in Excel format
+        """Writes Pandas data frame to disk in Excel format
 
         Parameters
         ----------
@@ -97,8 +92,7 @@ class IOEngine(object):
         writer.close()
 
     def write_time_series_to_excel_writer(self, writer, sheet, data_frame):
-        """
-        write_time_series_to_excel_writer - writes Pandas data frame to disk in Excel format for a writer
+        """Writes Pandas data frame to disk in Excel format for a writer
 
         Parameters
         ----------
@@ -113,8 +107,7 @@ class IOEngine(object):
 
     def read_excel_data_frame(self, f_name, excel_sheet, freq, cutoff = None, dateparse = None,
                             postfix = '.close', intraday_tz = 'UTC'):
-        """
-        read_excel_data_frame - Reads Excel from disk into DataFrame
+        """Reads Excel from disk into DataFrame
 
         Parameters
         ----------
@@ -178,8 +171,7 @@ class IOEngine(object):
     def write_time_series_cache_to_disk(self, fname, data_frame,
                                         engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1',
                                         filter_out_matching = None):
-        """
-        write_time_series_cache_to_disk - writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
+        """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
         ---------
@@ -312,8 +304,7 @@ class IOEngine(object):
                 os.rename(h5_filename_temp, h5_filename)
 
     def get_h5_filename(self, fname):
-        """
-        get_h5_filename - Strips h5 off filename returning first portion of filename
+        """Strips h5 off filename returning first portion of filename
 
         Parameters
         ----------
@@ -330,13 +321,12 @@ class IOEngine(object):
         return fname + ".h5"
 
     def get_bcolz_filename(self, fname):
-        """
-        get_bcolz_filename - Strips h5 off filename returning first portion of filename
+        """Strips bcolz off filename returning first portion of filename
 
         Parameters
         ----------
         fname : str
-            h5 filename to strip
+            bcolz filename to strip
 
         Returns
         -------
@@ -348,8 +338,7 @@ class IOEngine(object):
         return fname + ".bcolz"
 
     def write_r_compatible_hdf_dataframe(self, data_frame, fname, fields = None):
-        """
-        write_r_compatible_hdf_dataframe - Write a DataFrame to disk in as an R compatible HDF5 file
+        """Write a DataFrame to disk in as an R compatible HDF5 file
 
         Parameters
         ----------
@@ -387,8 +376,7 @@ class IOEngine(object):
         store_export.close()
 
     def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None, db_server = '127.0.0.1'):
-        """
-        read_time_series_cache_from_disk - Reads time series cache from disk in either HDF5 or bcolz
+        """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
         ----------
@@ -464,8 +452,7 @@ class IOEngine(object):
 
     def read_csv_data_frame(self, f_name, freq, cutoff = None, dateparse = None,
                             postfix = '.close', intraday_tz = 'UTC', excel_sheet = None):
-        """
-        read_csv_data_frame - Reads CSV/Excel from disk into DataFrame
+        """Reads CSV/Excel from disk into DataFrame
 
         Parameters
         ----------
@@ -570,8 +557,7 @@ class IOEngine(object):
         return array
 
     def convert_csv_data_frame(self, f_name, category, freq, cutoff=None, dateparse=None):
-        """
-        convert_csv_data_frame - Converts CSV file to HDF5 file
+        """Converts CSV file to HDF5 file
 
         Parameters
         ----------
@@ -597,8 +583,7 @@ class IOEngine(object):
             category_f_name, data_frame)
 
     def clean_csv_file(self, f_name):
-        """
-        clean_csv_file - Cleans up CSV file (removing empty characters) before writing back to disk
+        """Cleans up CSV file (removing empty characters) before writing back to disk
 
         Parameters
         ----------
