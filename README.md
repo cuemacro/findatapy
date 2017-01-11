@@ -87,6 +87,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 11 Jan 2017 - Added extra documentation and method for assessing stop loss/take profit
 * 10 Jan 2017 - Added better handling for downloading of Bloomberg reference requests
 * 05 Jan 2017 - Fixed fxspotdata_example example, fixed singleton mechanism in ConfigManager
 * 24 Dec 2016 - Added more error handling for Quandl
