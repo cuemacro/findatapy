@@ -16,5 +16,6 @@ setup(name='findatapy',
                           'requests',
                           'numpy',
                           'pandas_datareader',
-                          'quandl'],
+                          'quandl',
+                          'multiprocessing_on_dill'],
 	  zip_safe=False)
