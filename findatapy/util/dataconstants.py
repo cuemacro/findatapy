@@ -32,8 +32,12 @@ class DataConstants(object):
     folder_historic_CSV = "x"
     folder_time_series_data = "x"
 
+
+
     ###### FOR ALIAS TICKERS
     # config file for time series categories
+    config_root_folder = root_folder
+
     time_series_categories_fields = \
         root_folder + "conf/time_series_categories_fields.csv"
 
@@ -110,6 +114,8 @@ class DataConstants(object):
 
         folder_historic_CSV = cred.folder_historic_CSV
         folder_time_series_data = cred.folder_time_series_data
+
+        config_root_folder = cred.config_root_folder
 
         time_series_categories_fields = cred.time_series_categories_fields
 

@@ -174,10 +174,10 @@ class Calculations(object):
         cum_rets_trades : DataFrame
             Cumulative returns of strategy reset at every new trade
 
-        stop_loss : float
+        stop_loss : float (or DataFrame)
             Stop loss level eg. -0.02
 
-        take_profit : float
+        take_profit : float (or DataFrame)
             Take profit level eg. +0.03
 
         Returns
@@ -197,6 +197,38 @@ class Calculations(object):
         signal_data_frame[reset_points == 0] = numpy.nan
         signal_data_frame = signal_data_frame.ffill()
         # signal_data_frame = signal_data_frame.shift(-1)
+
+        return signal_data_frame
+
+    # TODO
+    def calculate_risk_stop_defined_signals(self, signal_data_frame, stops_data_frame):
+        """
+
+        Parameters
+        ----------
+        signal_data_frame : DataFrame
+            Contains all the trade signals (typically mix of 0, +1 and +1
+
+        stops_data_frame : DataFrame
+            Contains 1/-1 to indicate where trades would be stopped out
+
+        Returns
+        -------
+        DataFrame containing amended signals that take into account stops and take profits
+
+        """
+
+        signal_data_frame_pushed = signal_data_frame # signal_data_frame.shift(1)
+        reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
+
+        stops_data_frame = stops_data_frame.abs()
+        ind = stops_data_frame > 1
+        signal_data_frame[ind] = 0
+
+        reset_points[ind] = 1
+
+        signal_data_frame[reset_points == 0] = numpy.nan
+        signal_data_frame = signal_data_frame.ffill()
 
         return signal_data_frame
 

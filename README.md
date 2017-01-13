@@ -47,21 +47,6 @@ Major requirements
 * Required: Python 3.4, 3.5
 * Required: pandas, numpy etc.
 * Recommended: Bloomberg Python Open API
-    * To use Bloomberg you will need to have a licence (either to access Desktop API or Server API)
-    * Use experimental Python 3.4 version from Bloomberg http://www.bloomberglabs.com/api/libraries/
-    * Also download C++ version of Bloomberg API and extract into any location
-        * eg. C:\blp\blpapi_cpp_3.9.10.1
-    * For Python 3.5 - need to compile blpapi source using Microsoft Visual Studio 2015 yourself
-        * Install Microsoft Visual Studio 2015 (Community Edition is free)
-        * Before doing do be sure to add environment variables for the Bloomberg DLL (blpapi3_64.dll) to PATH variable
-            * eg. C:\blp\blpapi_cpp_3.9.10.1\bin
-        * Make sure BLPAPI_ROOT root is set as an environmental variable in Windows
-            * eg. C:\blp\blpapi_cpp_3.9.10.1
-        * python setup.py build
-        * python setup.py install
-    * For Python 3.4 - prebuilt executable can be run, which means we can skip the build steps above
-        * Might need to tweak registry to avoid "Python 3.4 not found in registry error" (blppython.reg example) when using this executable 
-    * The library doesn't support the old Bloomberg COM API (since much slower than the new Open API)
 * Recommended: chartpy for funky interactive plots (https://github.com/cuemacro/chartpy) and
 * Recommended: arctic (AHL library for managing time series in MongoDB)
 * Recommended: multiprocessor_on_dill because standard multiprocessing library pickle causes issues 
@@ -69,6 +54,9 @@ Major requirements
 * Recommended: fredapi from ALFRED/FRED has been rewritten and added to the project directly (from https://github.com/mortada/fredapi)
 
 # Installation
+
+For detailed installation instructions for finmarketpy and its associated Python libraries go to
+https://github.com/cuemacro/finmarketpy/INSTALL.md (which includes details on how to setup your entire Python environment).
 
 You can install the library using the below. After installation:
 * Make sure you edit the DataConstants class for the correct Quandl API and Twitter API keys
@@ -87,6 +75,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 13 Jan 2017 - Added "expiry" for tickers (optional to add), so can handle futures data better when downloading
+and various bugs fixed for getting Bloomberg reference data fetching
 * 11 Jan 2017 - Added extra documentation and method for assessing stop loss/take profit
 * 10 Jan 2017 - Added better handling for downloading of Bloomberg reference requests
 * 05 Jan 2017 - Fixed fxspotdata_example example, fixed singleton mechanism in ConfigManager

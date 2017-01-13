@@ -14,7 +14,10 @@ __author__ = 'saeedamen' # Saeed Amen
 
 import copy
 
+import pandas
+
 from findatapy.market.ioengine import IOEngine
+from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Filter, Calculations
 from findatapy.util import DataConstants, LoggerManager, ConfigManager
 
@@ -110,7 +113,7 @@ class MarketDataGenerator(object):
         """
 
         tickers = market_data_request.tickers
-        data_vendor = self.get_data_vendor(market_data_request.data_source)
+        # data_vendor = self.get_data_vendor(market_data_request.data_source)
 
         # check if tickers have been specified (if not load all of them for a category)
         # also handle single tickers/list tickers
@@ -129,10 +132,11 @@ class MarketDataGenerator(object):
 
         # intraday or tick: only one ticker per cache file
         if (market_data_request.freq in ['intraday', 'tick', 'second', 'hour', 'minute']):
-            data_frame_agg = self.download_intraday_tick(market_data_request, data_vendor)
+            data_frame_agg = self.download_intraday_tick(market_data_request)
 
         # daily: multiple tickers per cache file - assume we make one API call to vendor library
-        else: data_frame_agg = self.download_daily(market_data_request, data_vendor)
+        else:
+            data_frame_agg = self.download_daily(market_data_request)
 
         if('internet_load' in market_data_request.cache_algo):
             self.logger.debug("Internet loading.. ")
@@ -208,7 +212,7 @@ class MarketDataGenerator(object):
 
         return self.create_cache_file_name(self.create_category_key(market_data_request, ticker))
 
-    def download_intraday_tick(self, market_data_request, data_vendor):
+    def download_intraday_tick(self, market_data_request):
         """Loads intraday time series from specified data provider
 
         Parameters
@@ -241,7 +245,20 @@ class MarketDataGenerator(object):
 
                 # we downscale into float32, to avoid memory problems in Python (32 bit)
                 # data is stored on disk as float32 anyway
-                data_frame_single = data_vendor.load_ticker(market_data_request_single)
+                # old_finish_date = market_data_request_single.finish_date
+                #
+                # market_data_request_single.finish_date = self.refine_expiry_date(market_data_request)
+                #
+                # if market_data_request_single.finish_date >= market_data_request_single.start_date:
+                #     data_frame_single = data_vendor.load_ticker(market_data_request_single)
+                # else:
+                #     data_frame_single = None
+                #
+                # market_data_request_single.finish_date = old_finish_date
+                #
+                # data_frame_single = data_vendor.load_ticker(market_data_request_single)
+
+                data_frame_single = self.fetch_single_time_series(market_data_request)
 
                 # if the vendor doesn't provide any data, don't attempt to append
                 if data_frame_single is not None:
@@ -284,7 +301,42 @@ class MarketDataGenerator(object):
             return self.fetch_group_time_series(market_data_request_list)
 
     def fetch_single_time_series(self, market_data_request):
-        data_frame_single = self.get_data_vendor(market_data_request.data_source).load_ticker(market_data_request)
+
+        market_data_request = MarketDataRequest(md_request=market_data_request)
+
+        # only includes those tickers have not expired yet!
+        start_date = pandas.Timestamp(market_data_request.start_date)
+
+        tickers = market_data_request.tickers
+        vendor_tickers = market_data_request.vendor_tickers
+
+        expiry_date = market_data_request.expiry_date
+
+        config = ConfigManager().get_instance()
+        # in many cases no expiry is defined
+        for i in range(0, len(tickers)):
+            try:
+                expiry_date = config.get_expiry_for_ticker(market_data_request.data_source, tickers[i])
+            except:
+                pass
+
+            if expiry_date is not None:
+                # use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
+                if pandas.Timestamp(expiry_date) < start_date:
+                    tickers[i] = None
+
+                if vendor_tickers is not None:
+                    vendor_tickers[i] = None
+
+        market_data_request.tickers = [e for e in tickers if e != None]
+
+        if vendor_tickers is not None:
+            market_data_request.vendor_tickers = [e for e in vendor_tickers if e != None]
+
+        data_frame_single = None
+
+        if len(market_data_request.tickers) > 0:
+            data_frame_single = self.get_data_vendor(market_data_request.data_source).load_ticker(market_data_request)
 
         if data_frame_single is not None:
             if data_frame_single.empty == False:
@@ -342,7 +394,7 @@ class MarketDataGenerator(object):
 
         return data_frame_agg
 
-    def download_daily(self, market_data_request, data_vendor):
+    def download_daily(self, market_data_request):
         """Loads daily time series from specified data provider
 
         Parameters
@@ -358,7 +410,8 @@ class MarketDataGenerator(object):
         # daily data does not include ticker in the key, as multiple tickers in the same file
 
         if DataConstants().market_thread_no['other'] == 1:
-            data_frame_agg = data_vendor.load_ticker(market_data_request)
+            # data_frame_agg = data_vendor.load_ticker(market_data_request)
+            data_frame_agg = self.fetch_single_time_series(market_data_request)
         else:
             market_data_request_list = []
             
@@ -385,6 +438,14 @@ class MarketDataGenerator(object):
         self._time_series_cache[fname] = data_frame_agg  # cache in memory (ok for daily data)
 
         return data_frame_agg
+
+    def refine_expiry_date(self, market_data_request):
+
+        # expiry date
+        if market_data_request.expiry_date is None:
+            ConfigManager().get_instance().get_expiry_for_ticker(market_data_request.data_source, market_data_request.ticker)
+
+        return market_data_request
 
     def create_category_key(self, market_data_request, ticker=None):
         """Returns a category key for the associated MarketDataRequest

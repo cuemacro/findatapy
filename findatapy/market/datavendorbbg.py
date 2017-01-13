@@ -31,8 +31,8 @@ class DataVendorBBG(DataVendor):
     """
 
     # these fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
-    list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day']
-    list_of_ref_vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST', 'LAST_TRADEABLE_DT']
+    list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day', 'futures-chain-tickers', 'futures-chain-last-trade-dates']
+    list_of_ref_vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST', 'LAST_TRADEABLE_DT', 'FUT_CHAIN', 'FUT_CHAIN_LAST_TRADE_DATES']
 
     def __init__(self):
         super(DataVendorBBG, self).__init__()
@@ -221,6 +221,9 @@ class DataVendorBBG(DataVendor):
 
         # convert from vendor to findatapy tickers/fields
         if data_frame is not None:
+            if data_frame.empty:
+                return None
+
             returned_fields = data_frame.columns.get_level_values(0)
             returned_tickers = data_frame.columns.get_level_values(1)
 
@@ -668,6 +671,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         securityDataArray = msg.getElement('securityData')
 
         index = 0
+        single = False
 
         for securityData in list(securityDataArray.values()):
             ticker = securityData.getElementAsString("security")
@@ -688,11 +692,10 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                         index = index + 1
                 else:
                     field_name = "%s" % field.name()
-                    # vals.append(re.findall(r'"(.*?)"', "%s" % row)[0])
-                    data[(field_name, ticker)][index] = field.getValueAsString()
+                    data[(field_name, ticker)][0] = field.getValueAsString()
 
                     index = index + 1
-                    # print("%s = %s" % (field.name(), field.getValueAsString()))
+                    single = True   # no need to create multi-index late, because just row!! CAREFUL!! needed for futures expiries
 
             fieldExceptionArray = securityData.getElement("fieldExceptions")
 
@@ -705,7 +708,9 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
 
         # if obsolete ticker could return no values
         if (not(data_frame.empty)):
-            data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
+            if not(single):
+                data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
+
             self.logger.info("Reading: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
         else:
             return None
@@ -726,6 +731,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         request = refDataService.createRequest('ReferenceDataRequest')
 
         self.add_override(request, 'TIME_ZONE_OVERRIDE', 23)    # force GMT time
+        self.add_override(request, 'INCLUDE_EXPIRED_CONTRACTS', "Y")  # force GMT time
         self.add_override(request, 'START_DT', self._options.startDateTime.strftime('%Y%m%d'))
         self.add_override(request, 'END_DT', self._options.endDateTime.strftime('%Y%m%d'))
 

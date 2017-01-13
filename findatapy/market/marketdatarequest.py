@@ -45,7 +45,8 @@ class MarketDataRequest(object):
                  gran_freq = None, cut = "NYC",
                  fields = ['close'], cache_algo = "internet_load_return",
                  vendor_tickers = None, vendor_fields = None,
-                 environment = "backtest", trade_side = 'trade', md_request = None
+                 environment = "backtest", trade_side = 'trade', expiry_date = None,
+                 md_request = None
                  ):
 
         self.logger = LoggerManager().getLogger(__name__)
@@ -79,6 +80,7 @@ class MarketDataRequest(object):
                 self.vendor_fields = copy.deepcopy(md_request.vendor_fields)    # define vendor fields
                 self.environment = copy.deepcopy(md_request.environment)        # backtest environment only supported at present
                 self.trade_side = copy.deepcopy(md_request.trade_side)
+                self.expiry_date = copy.deepcopy(md_request.expiry_date)
         else:
             self.freq_mult = freq_mult
 
@@ -101,6 +103,7 @@ class MarketDataRequest(object):
             self.vendor_fields = vendor_fields      # define vendor fields
             self.environment = environment          # backtest environment only supported at present
             self.trade_side = trade_side
+            self.expiry_date = expiry_date
 
     @property
     def data_source(self):
@@ -347,3 +350,11 @@ class MarketDataRequest(object):
             self.logger.warning(trade_side + " is not a defined trade side.")
 
         self.__trade_side = trade_side
+        
+    @property
+    def expiry_date(self):
+        return self.__expiry_date
+
+    @expiry_date.setter
+    def expiry_date(self, expiry_date):
+        self.__expiry_date = self.date_parser(expiry_date)
