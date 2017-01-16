@@ -75,6 +75,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 16 Jan 2017 - Added override for stop/take profit signals (& allow dynamic levels), speed up for filtering of time series by column
 * 13 Jan 2017 - Added "expiry" for tickers (optional to add), so can handle futures data better when downloading
 and various bugs fixed for getting Bloomberg reference data fetching
 * 11 Jan 2017 - Added extra documentation and method for assessing stop loss/take profit
