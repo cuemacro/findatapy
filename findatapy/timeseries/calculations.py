@@ -200,6 +200,43 @@ class Calculations(object):
 
         return signal_data_frame
 
+    def calculate_risk_stop_defined_level_signals(self, asset_data_frame, signal_data_frame, stop_loss, take_profit):
+        """
+
+        Parameters
+        ----------
+        signal_data_frame : DataFrame
+            Contains all the trade signals (typically mix of 0, +1 and +1
+
+        stop_loss : DataFrame
+            DataFrame with continuous stop loss levels in the asset
+
+        take_profit : DataFrame
+            DataFrame with continuous take profit levels in the asset
+
+        Returns
+        -------
+        DataFrame containing amended signals that take into account stops and take profits
+
+        """
+
+        # TODO
+        # signal_data_frame_pushed = signal_data_frame  # signal_data_frame.shift(1)
+        # reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
+        #
+        # ind = (asset_data_frame > take_profit) & (signal_data_frame > 0)
+        # signal_data_frame[ind] = 0
+        #
+        # ind = (asset_data_frame < stop_loss) & (signal_data_frame < 0)
+        # signal_data_frame[ind] = 0
+        #
+        # reset_points[ind] = 1
+        #
+        # signal_data_frame[reset_points == 0] = numpy.nan
+        # signal_data_frame = signal_data_frame.ffill()
+
+        return signal_data_frame
+
     # TODO
     def calculate_risk_stop_defined_signals(self, signal_data_frame, stops_data_frame):
         """
@@ -222,7 +259,7 @@ class Calculations(object):
         reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
 
         stops_data_frame = stops_data_frame.abs()
-        ind = stops_data_frame > 1
+        ind = stops_data_frame >= 1
         signal_data_frame[ind] = 0
 
         reset_points[ind] = 1
