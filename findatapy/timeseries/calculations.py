@@ -100,7 +100,7 @@ class Calculations(object):
         """
 
         # signal need to be aligned to NEXT period for returns
-        signal_data_frame_pushed = signal_data_frame.shift(1)
+        # signal_data_frame_pushed = signal_data_frame.shift(1)
 
         # find all the trade points
         trade_points = ((signal_data_frame - signal_data_frame.shift(1)).abs())
@@ -185,7 +185,7 @@ class Calculations(object):
         DataFrame containing amended signals that take into account stops and take profits
 
         """
-
+        
         signal_data_frame_pushed = signal_data_frame # signal_data_frame.shift(1)
         reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
 
@@ -200,7 +200,7 @@ class Calculations(object):
 
         return signal_data_frame
 
-    def calculate_risk_stop_defined_level_signals(self, asset_data_frame, signal_data_frame, stop_loss, take_profit):
+    def calculate_risk_stop_dynamic_signals(self, signal_data_frame, asset_data_frame, stop_loss_df, take_profit_df):
         """
 
         Parameters
@@ -208,11 +208,11 @@ class Calculations(object):
         signal_data_frame : DataFrame
             Contains all the trade signals (typically mix of 0, +1 and +1
 
-        stop_loss : DataFrame
-            DataFrame with continuous stop loss levels in the asset
+        stop_loss_df : DataFrame
+            Continuous stop losses in the asset (in USD amounts eg +2, +2.5, +2.6 USD)
 
-        take_profit : DataFrame
-            DataFrame with continuous take profit levels in the asset
+        take_profit_df : DataFrame
+            Continuous take profits in the asset (in USD amounts eg -2, -2.1, -2.5 USD)
 
         Returns
         -------
@@ -220,20 +220,47 @@ class Calculations(object):
 
         """
 
-        # TODO
-        # signal_data_frame_pushed = signal_data_frame  # signal_data_frame.shift(1)
-        # reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
-        #
-        # ind = (asset_data_frame > take_profit) & (signal_data_frame > 0)
-        # signal_data_frame[ind] = 0
-        #
-        # ind = (asset_data_frame < stop_loss) & (signal_data_frame < 0)
-        # signal_data_frame[ind] = 0
-        #
-        # reset_points[ind] = 1
-        #
-        # signal_data_frame[reset_points == 0] = numpy.nan
-        # signal_data_frame = signal_data_frame.ffill()
+        signal_data_frame_pushed = signal_data_frame  # signal_data_frame.shift(1)
+        reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
+
+        # ensure all the inputs are pandas DataFrames (rather than mixture of Series and DataFrames)
+        asset_data_frame = pandas.DataFrame(asset_data_frame)
+        signal_data_frame = pandas.DataFrame(signal_data_frame)
+        stop_loss_df = pandas.DataFrame(stop_loss_df)
+        take_profit_df = pandas.DataFrame(take_profit_df)
+
+        take_profit_df[reset_points == 0] = numpy.nan
+        stop_loss_df[reset_points == 0] = numpy.nan
+
+        asset_df_copy = asset_data_frame.copy(deep=True)
+        asset_df_copy[reset_points == 0] = numpy.nan
+
+        take_profit_df = take_profit_df.ffill()
+        stop_loss_df = stop_loss_df.ffill()
+        asset_df_copy = asset_df_copy.ffill()
+
+        # take profit for buys
+        ind1 = (asset_data_frame.values > (asset_df_copy.values + take_profit_df.values)) & (signal_data_frame.values > 0)
+
+        # take profit for sells
+        ind2 = (asset_data_frame.values < (asset_df_copy.values - take_profit_df.values)) & (signal_data_frame.values < 0)
+
+        # stop loss for buys
+        ind3 = (asset_data_frame.values < (asset_df_copy.values + stop_loss_df.values)) & (signal_data_frame.values > 0)
+
+        # stop loss for sells
+        ind4 = (asset_data_frame.values > (asset_df_copy.values - stop_loss_df.values)) & (signal_data_frame.values < 0)
+
+        # when has there been a stop loss or take profit? assign those as being flat points
+        ind = ind1 | ind2 | ind3 | ind4
+
+        signal_data_frame[ind] = 0
+
+        reset_points[ind] = 1
+
+        # fill down the trades
+        signal_data_frame[reset_points == 0] = numpy.nan
+        signal_data_frame = signal_data_frame.ffill()
 
         return signal_data_frame
 
