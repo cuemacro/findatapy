@@ -499,7 +499,8 @@ class Filter(object):
         if uncommon_columns != []:
             self.logger.info("Padding missing columns " + str(uncommon_columns))
 
-        for x in uncommon_columns: data_frame.loc[:,x] = np.nan
+            # for x in uncommon_columns: data_frame.loc[:,x] = np.nan
+            data_frame.loc[:, uncommon_columns] = np.nan
 
         return data_frame
 
