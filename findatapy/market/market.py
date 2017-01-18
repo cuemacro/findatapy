@@ -93,7 +93,7 @@ class Market(object):
                                              md_request.tickers,
                      cut = md_request.cut, data_source = md_request.data_source, freq = md_request.freq,
                                              cache_algo=md_request.cache_algo, type = type,
-                     environment = md_request.environment)
+                     environment = md_request.environment, fields=md_request.fields)
 
             # for implied volatility we can return the full surface
             if (md_request.category == 'fx-implied-vol'):
@@ -217,7 +217,7 @@ class FXCrossFactory(object):
                     filter = Filter()
 
                     filter_columns = [cr + '.' + f for f in fields]
-                    cross_vals = filter.filter_time_series_by_columns(cross_vals, filter_columns)
+                    cross_vals = filter.filter_time_series_by_columns(filter_columns, cross_vals)
 
             if data_frame_agg is None:
                 data_frame_agg = cross_vals
