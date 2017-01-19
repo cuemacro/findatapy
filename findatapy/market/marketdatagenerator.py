@@ -389,8 +389,16 @@ class MarketDataGenerator(object):
         if data_frame_group is not None:
             data_frame_group = [i for i in data_frame_group if i is not None]
 
+            # for debugging!
+            # import pickle
+            # import datetime
+            # pickle.dump(data_frame_group, open(str(datetime.datetime.now()).replace(':', '-').replace(' ', '-').replace(".", "-") + ".p", "wb"))
+
             if data_frame_group is not None:
-                data_frame_agg = self.calculations.pandas_outer_join(data_frame_group)
+                try:
+                    data_frame_agg = self.calculations.pandas_outer_join(data_frame_group)
+                except:
+                    self.logger.warning('Possible overlap of columns? Have you specifed same ticker several times')
 
         return data_frame_agg
 
@@ -432,6 +440,7 @@ class MarketDataGenerator(object):
                 market_data_request_list.append(market_data_request_single)
 
             data_frame_agg = self.fetch_group_time_series(market_data_request_list)
+
 
         key = self.create_category_key(market_data_request)
         fname = self.create_cache_file_name(key)

@@ -1,2 +1,3 @@
 recursive-include findatapy/ *.*
 include findatapy/conf/*
+recursive-include findatapy_examples/ *.*

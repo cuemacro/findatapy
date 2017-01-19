@@ -38,6 +38,7 @@ class MarketDataRequest(object):
     # vendor_tickers (optional)
     # vendor_fields (optional)
     # cache_algo (eg. internet, disk, memory) - internet will forcibly download from the internet
+    # futures_curve (optional)
     # environment (eg. prod, backtest) - old data is saved with prod, backtest will overwrite the last data point
     def __init__(self, data_source = None,
                  start_date ='year', finish_date = datetime.datetime.utcnow(),
@@ -46,7 +47,7 @@ class MarketDataRequest(object):
                  fields = ['close'], cache_algo = "internet_load_return",
                  vendor_tickers = None, vendor_fields = None,
                  environment = "backtest", trade_side = 'trade', expiry_date = None,
-                 md_request = None
+                 md_request = None, futures_curve = None
                  ):
 
         self.logger = LoggerManager().getLogger(__name__)
@@ -81,6 +82,7 @@ class MarketDataRequest(object):
                 self.environment = copy.deepcopy(md_request.environment)        # backtest environment only supported at present
                 self.trade_side = copy.deepcopy(md_request.trade_side)
                 self.expiry_date = copy.deepcopy(md_request.expiry_date)
+                self.futures_curve = copy.deepcopy(md_request.futures_curve)
         else:
             self.freq_mult = freq_mult
 
@@ -104,6 +106,7 @@ class MarketDataRequest(object):
             self.environment = environment          # backtest environment only supported at present
             self.trade_side = trade_side
             self.expiry_date = expiry_date
+            self.futures_curve = futures_curve
 
     @property
     def data_source(self):
@@ -358,3 +361,11 @@ class MarketDataRequest(object):
     @expiry_date.setter
     def expiry_date(self, expiry_date):
         self.__expiry_date = self.date_parser(expiry_date)
+
+    @property
+    def futures_curve(self):
+        return self.__futures_curve
+
+    @futures_curve.setter
+    def futures_curve(self, futures_curve):
+        self.__futures_curve = futures_curve

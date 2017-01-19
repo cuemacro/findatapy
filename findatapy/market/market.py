@@ -147,6 +147,9 @@ class Market(object):
                     if df != []:
                         return Calculations().pandas_outer_join(df)
 
+            if md_request.futures_curve is not None:
+                return md_request.futures_curve.fetch_curve(md_request, self.market_data_generator)
+
 
             # TODO add more special examples here for different asset classes
             # the idea is that we do all the market data downloading here, rather than elsewhere

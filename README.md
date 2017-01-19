@@ -75,6 +75,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 19 Jan 2017 - Changed examples location in project, added future based variables to Market
 * 18 Jan 2017 - Fixed returning of bid/ask in DukasCopy
 * 16 Jan 2017 - Added override for stop/take profit signals (& allow dynamic levels), speed up for filtering of time series by column
 * 13 Jan 2017 - Added "expiry" for tickers (optional to add), so can handle futures data better when downloading
