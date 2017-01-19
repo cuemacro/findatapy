@@ -37,6 +37,7 @@ class MarketDataGenerator(object):
         self.calculations = Calculations()
         self.io_engine = IOEngine()
         self._intraday_code = -1
+        self.days_expired_contract_download = -1
 
         return
 
@@ -305,7 +306,13 @@ class MarketDataGenerator(object):
         market_data_request = MarketDataRequest(md_request=market_data_request)
 
         # only includes those tickers have not expired yet!
-        start_date = pandas.Timestamp(market_data_request.start_date)
+        start_date = pandas.Timestamp(market_data_request.start_date).date()
+
+        import datetime
+
+        current_date = datetime.datetime.utcnow().date()
+
+        from datetime import timedelta
 
         tickers = market_data_request.tickers
         vendor_tickers = market_data_request.vendor_tickers
@@ -313,7 +320,8 @@ class MarketDataGenerator(object):
         expiry_date = market_data_request.expiry_date
 
         config = ConfigManager().get_instance()
-        # in many cases no expiry is defined
+
+        # in many cases no expiry is defined so skip them
         for i in range(0, len(tickers)):
             try:
                 expiry_date = config.get_expiry_for_ticker(market_data_request.data_source, tickers[i])
@@ -321,9 +329,22 @@ class MarketDataGenerator(object):
                 pass
 
             if expiry_date is not None:
+                expiry_date = pandas.Timestamp(expiry_date).date()
+
                 # use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
-                if pandas.Timestamp(expiry_date) < start_date:
+                # if the expiry is before the start date of our download don't both loading
+                if  expiry_date < start_date:
                     tickers[i] = None
+
+                # special case for futures-contracts which are intraday
+                # avoid downloading if the expiry date is very far in the past
+                # (we need this before there might be odd situations where we run on an expiry date, but still want to get
+                # data right till expiry time)
+                if market_data_request.category == 'futures-contracts' and market_data_request.freq == 'intraday' \
+                        and self.days_expired_intraday_contract_download > 0:
+
+                    if expiry_date + timedelta(days=self.days_expired_intraday_contract_download) < current_date:
+                        tickers[i] = None
 
                 if vendor_tickers is not None:
                     vendor_tickers[i] = None
