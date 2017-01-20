@@ -493,15 +493,19 @@ class Filter(object):
 
         common_columns = [val for val in columns if val in old_columns]
         uncommon_columns = [val for val in columns if val not in old_columns]
+        uncommon_columns = [str(x) for x in uncommon_columns]
 
         data_frame = data_frame[common_columns]
 
-        if uncommon_columns != []:
-            self.logger.info("Padding missing columns " + str(uncommon_columns))
+        if len(uncommon_columns) > 0:
+            self.logger.info("Padding missing columns...") # " + str(uncommon_columns))
 
-            for x in uncommon_columns: data_frame.loc[:,x] = np.nan
-            # data_frame.loc[:, uncommon_columns] = np.nan
-            # data_frame.loc[:, uncommon_columns] = np.nan
+            new_data_frame = pandas.DataFrame(index=data_frame.index, columns=uncommon_columns)
+
+            data_frame = pandas.concat([data_frame, new_data_frame], axis=1)
+
+            # SLOW method below
+            # for x in uncommon_columns: data_frame.loc[:,x] = np.nan
 
         return data_frame
 
