@@ -156,6 +156,8 @@ class MarketDataGenerator(object):
                 if 'events' in market_data_request.category:
                     return data_frame_agg
 
+            # pad columns a second time (is this necessary to do here again?)
+            # TODO only do this for not daily data?
             try:
                 return self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)
             except:
