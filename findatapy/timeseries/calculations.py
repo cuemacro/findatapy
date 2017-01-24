@@ -82,7 +82,16 @@ class Calculations(object):
         -------
         DataFrame
         """
+
+        # can cause issues, if the names of the columns are not identical
         return signal_data_frame.shift(period_shift) * returns_data_frame
+
+    def calculate_signal_returns_as_matrix(self, signal_data_frame, returns_data_frame, period_shift = 1):
+
+        return pandas.DataFrame(
+            signal_data_frame.shift(period_shift).values * returns_data_frame.values, index=returns_data_frame.index,
+            columns=returns_data_frame.columns)
+
 
     def calculate_individual_trade_gains(self, signal_data_frame, strategy_returns_data_frame):
         """Calculates profits on every trade (experimental code)
@@ -209,10 +218,10 @@ class Calculations(object):
             Contains all the trade signals (typically mix of 0, +1 and +1
 
         stop_loss_df : DataFrame
-            Continuous stop losses in the asset (in USD amounts eg +2, +2.5, +2.6 USD)
+            Continuous stop losses in the asset (in price amounts eg +2, +2.5, +2.6 USD - as opposed to percentages)
 
         take_profit_df : DataFrame
-            Continuous take profits in the asset (in USD amounts eg -2, -2.1, -2.5 USD)
+            Continuous take profits in the asset (in price amounts eg -2, -2.1, -2.5 USD - as opposed to percentages)
 
         Returns
         -------
@@ -254,8 +263,12 @@ class Calculations(object):
         # when has there been a stop loss or take profit? assign those as being flat points
         ind = ind1 | ind2 | ind3 | ind4
 
+        # for debugging
+        # sum_ind = (ind == True).sum(); print(sum_ind)
+
         signal_data_frame[ind] = 0
 
+        # those places where we have been stopped out/taken profit are additional trade "reset points"
         reset_points[ind] = 1
 
         # fill down the trades
