@@ -75,6 +75,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 25 Jan 2017 - Work on stop losses for multiple assets in DataFrame
 * 24 Jan 2017 - Extra method for calculating signal * returns (multiplying matrices)
 * 19 Jan 2017 - Changed examples location in project, added future based variables to Market
 * 18 Jan 2017 - Fixed returning of bid/ask in DukasCopy
