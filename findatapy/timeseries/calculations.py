@@ -199,6 +199,9 @@ class Calculations(object):
         reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
 
         ind = (cum_rets_trades > take_profit) | (cum_rets_trades < stop_loss)
+
+        # to allow indexing, need to match column names
+        ind.columns = signal_data_frame.columns
         signal_data_frame[ind] = 0
 
         reset_points[ind] = 1
@@ -238,11 +241,21 @@ class Calculations(object):
         stop_loss_df = pandas.DataFrame(stop_loss_df)
         take_profit_df = pandas.DataFrame(take_profit_df)
 
-        take_profit_df[reset_points == 0] = numpy.nan
-        stop_loss_df[reset_points == 0] = numpy.nan
+        non_trades = reset_points == 0
+
+        # need to temporarily change column names to allow indexing (ASSUMES: columns in same order!)
+        non_trades.columns = take_profit_df.columns
+
+        # where we don't have a trade fill with NaNs
+        take_profit_df[non_trades] = numpy.nan
+
+        non_trades.columns = stop_loss_df.columns
+        stop_loss_df[non_trades] = numpy.nan
 
         asset_df_copy = asset_data_frame.copy(deep=True)
-        asset_df_copy[reset_points == 0] = numpy.nan
+
+        non_trades.columns = asset_df_copy.columns
+        asset_df_copy[non_trades] = numpy.nan
 
         take_profit_df = take_profit_df.ffill()
         stop_loss_df = stop_loss_df.ffill()
@@ -263,12 +276,15 @@ class Calculations(object):
         # when has there been a stop loss or take profit? assign those as being flat points
         ind = ind1 | ind2 | ind3 | ind4
 
+        ind = pandas.DataFrame(data= ind, columns = signal_data_frame.columns, index = signal_data_frame.index)
+
         # for debugging
         # sum_ind = (ind == True).sum(); print(sum_ind)
 
         signal_data_frame[ind] = 0
 
-        # those places where we have been stopped out/taken profit are additional trade "reset points"
+        # those places where we have been stopped out/taken profit are additional trade "reset points", which we need to define
+        # (already have ordinary buy/sell trades defined)
         reset_points[ind] = 1
 
         # fill down the trades
@@ -300,6 +316,8 @@ class Calculations(object):
 
         stops_data_frame = stops_data_frame.abs()
         ind = stops_data_frame >= 1
+
+        ind.columns = signal_data_frame.columns
         signal_data_frame[ind] = 0
 
         reset_points[ind] = 1
