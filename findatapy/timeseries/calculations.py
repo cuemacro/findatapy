@@ -165,10 +165,16 @@ class Calculations(object):
 
         reset_points = reset_points.cumsum()
 
+        # make sure they have the same column names (otherwise issues around pandas calc - assume same ordering for cols)
+        old_cols = strategy_returns_data_frame.columns
+        strategy_returns_data_frame.columns = signal_data_frame.pushed.columns
+
         for c in reset_points.columns:
             strategy_returns_data_frame[c + 'cumsum'] = reset_points[c]
             strategy_returns_data_frame[c] = strategy_returns_data_frame.groupby([c + 'cumsum'])[c].cumsum()
             strategy_returns_data_frame = strategy_returns_data_frame.drop([c + 'cumsum'], axis=1)
+
+        strategy_returns_data_frame.columns = old_cols
 
         return strategy_returns_data_frame
 
@@ -287,7 +293,7 @@ class Calculations(object):
         # (already have ordinary buy/sell trades defined)
         reset_points[ind] = 1
 
-        # fill down the trades
+        # where we don't have trade make these NaN and then fill down
         signal_data_frame[reset_points == 0] = numpy.nan
         signal_data_frame = signal_data_frame.ffill()
 
