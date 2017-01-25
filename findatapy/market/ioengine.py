@@ -51,8 +51,11 @@ _invalid_chars = ['&',
                   ' ']
 
 class IOEngine(object):
-    """Write and reads time series data to disk in various formats, CSV and HDF5 format. (planning to add other interfaces too).
-    Also supports BColz (but not currently stable).
+    """Write and reads time series data to disk in various formats, CSV, HDF5 (fixed and table formats) and MongoDB/Arctic.
+
+    Can be used to save down output of finmarketpy backtests and also to cache market data locally.
+
+    Also supports BColz (but not currently stable). Planning to add other interfaces such as SQL etc.
 
     """
 
@@ -179,6 +182,15 @@ class IOEngine(object):
             path of file
         data_frame : DataFrame
             data frame to be written to disk
+        engine : str
+            'hdf5_fixed' - use HDF5 fixed format, very quick, but cannot append to this
+            'hdf5_table' - use HDF5 table format, slower but can append to
+            'arctic' - use Arctic/MongoDB database
+        append_data : bool
+            False - write a fresh copy of data on disk each time
+            True - append data to disk
+        db_server : str
+            Database server for arctic (default: '127.0.0.1')
         """
 
         # default HDF5 format
@@ -382,6 +394,16 @@ class IOEngine(object):
         ----------
         fname : str
             file to be read from
+        engine : str (optional)
+            'hd5' - reads HDF5 files (default)
+            'arctic' - reads from Arctic/MongoDB database
+            'bcolz' = reads from bcolz file (not fully implemented)
+        start_date : str/datetime (optional)
+            Start date
+        finish_date : str/datetime (optional)
+            Finish data
+        db_server : str
+            IP address of MongdDB (default '127.0.0.1')
 
         Returns
         -------
@@ -579,8 +601,7 @@ class IOEngine(object):
 
         category_f_name = self.create_cache_file_name(category)
 
-        self.write_time_series_cache_to_disk(
-            category_f_name, data_frame)
+        self.write_time_series_cache_to_disk(category_f_name, data_frame)
 
     def clean_csv_file(self, f_name):
         """Cleans up CSV file (removing empty characters) before writing back to disk
