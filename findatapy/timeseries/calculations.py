@@ -167,7 +167,7 @@ class Calculations(object):
 
         # make sure they have the same column names (otherwise issues around pandas calc - assume same ordering for cols)
         old_cols = strategy_returns_data_frame.columns
-        strategy_returns_data_frame.columns = signal_data_frame.pushed.columns
+        strategy_returns_data_frame.columns = signal_data_frame_pushed.columns
 
         for c in reset_points.columns:
             strategy_returns_data_frame[c + 'cumsum'] = reset_points[c]
@@ -685,7 +685,8 @@ class Calculations(object):
         DataFrame
         """
 
-        panel = pandas.rolling_corr(data_frame1, data_frame2, periods, pairwise = pairwise)
+        # panel = pandas.rolling_corr(data_frame1, data_frame2, periods, pairwise = pairwise)
+        panel = data_frame1.rolling(window=periods).corr(data_frame2, pairwise=pairwise)
 
         try:
             df = panel.to_frame(filter_observations=False).transpose()
