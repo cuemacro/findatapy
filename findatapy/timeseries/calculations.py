@@ -685,8 +685,15 @@ class Calculations(object):
         DataFrame
         """
 
-        # panel = pandas.rolling_corr(data_frame1, data_frame2, periods, pairwise = pairwise)
-        panel = data_frame1.rolling(window=periods).corr(data_frame2, pairwise=pairwise)
+        # this is the new bit of code here
+        if pandas.__version__ < '0.17':
+            if pairwise:
+                panel = pandas.rolling_corr_pairwise(data_frame1.join(data_frame2), periods)
+            else:
+                panel = pandas.rolling_corr(data_frame1, data_frame2, periods)
+        else:
+            # panel = pandas.rolling_corr(data_frame1, data_frame2, periods, pairwise = pairwise)
+            panel = data_frame1.rolling(window=periods).corr(other=data_frame2, pairwise=True)
 
         try:
             df = panel.to_frame(filter_observations=False).transpose()
@@ -743,6 +750,20 @@ class Calculations(object):
         # df_list = [dd.from_pandas(df) for df in df_list]
 
         return df_list[0].join(df_list[1:], how="outer")
+
+    def join_left_fill_right(self, df_left, df_right):
+
+        # say our right series is a signal
+        # say our left series is an asset to be traded
+
+        # first do an outer join then fill down our right signal
+        df_left_1, df_right = df_left.align(df_right, join='outer', axis=0)
+        df_right = df_right.fillna(method='ffill')
+
+        # now realign back to days when we trade
+        df_left, df_right = df_left.align(df_right, join='left', axis=0)
+
+        return df_left, df_right
 
     def functional_outer_join(self, df_list):
         def join_dfs(ldf, rdf):
