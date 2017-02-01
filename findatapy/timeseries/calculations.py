@@ -25,6 +25,8 @@ from pandas.stats.api import ols
 from findatapy.timeseries.filter import Filter
 from findatapy.timeseries.filter import Calendar
 
+from pandas import compat
+
 class Calculations(object):
     """Calculations on time series, such as calculating strategy returns and various wrappers on pandas for rolling sums etc.
 
@@ -804,7 +806,28 @@ class Calculations(object):
     def linear_regression(self, df_y, df_x):
         return pandas.stats.api.ols(y = df_y, x = df_x)
 
-    def linear_regression_single_vars(self, df_y, df_x, y_vars, x_vars):
+    def linear_regression_single_vars(self, df_y, df_x, y_vars, x_vars, use_stats_models = True):
+        """Do a linear regression of a number of y and x variable pairs in different dataframes, report back the coefficients.
+
+        Parameters
+        ----------
+        df_y : DataFrame
+            y variables to regress
+        df_x : DataFrame
+            x variables to regress
+        y_vars : str (list)
+            Which y variables should we regress
+        x_vars : str (list)
+            Which x variables should we regress
+        use_stats_models : bool (default: True)
+            Should we use statsmodels library directly or pandas.stats.api.ols wrapper (warning deprecated)
+
+        Returns
+        -------
+        List of regression statistics
+
+        """
+
         stats = []
 
         for i in range(0, len(y_vars)):
@@ -812,7 +835,23 @@ class Calculations(object):
             x = df_x[x_vars[i]]
 
             try:
-                out = pandas.stats.api.ols(y = y, x = x)
+                if pandas.__version__ < '0.17' or not(use_stats_models):
+                    out = pandas.stats.api.ols(y = y, x = x)
+                else:
+                    # pandas.stats.api is now being depreciated, recommended replacement package
+                    # http://www.statsmodels.org/stable/regression.html
+
+                    # we follow the example from there - Fit and summarize OLS model
+
+                    import statsmodels.api as sm
+                    import statsmodels
+
+                    # to remove NaN values (otherwise regression is undefined)
+                    (y, x, a, b, c, d) = self._filter_data(y, x)
+
+                    # assumes we have a constant (remove add_constant wrapper to have no intercept reported)
+                    mod = sm.OLS(y.get_values(), statsmodels.tools.add_constant(x.get_values()))
+                    out = mod.fit()
             except:
                 out = None
 
@@ -822,6 +861,7 @@ class Calculations(object):
 
     def strip_linear_regression_output(self, indices, ols_list, var):
 
+        # TODO deal with output from statsmodel as opposed to pandas.stats.ols
         if not(isinstance(var, list)):
             var = [var]
 
@@ -850,6 +890,7 @@ class Calculations(object):
                         return None
 
             df[v] = list_o
+
         return df
 
     ##### various methods for averaging time series by hours, mins and days (or specific columns) to create summary time series
@@ -978,6 +1019,96 @@ class Calculations(object):
         df.index = pandas.DatetimeIndex(new_index)
 
         return df
+
+    ###### preparing data for OLS statsmodels ######
+    ###### these methods are originally from pandas.stats.ols
+    ###### which is being deprecated
+    def _filter_data(self, lhs, rhs, weights=None):
+        """
+        Cleans the input for single OLS.
+        Parameters
+        ----------
+        lhs : Series
+            Dependent variable in the regression.
+        rhs : dict, whose values are Series, DataFrame, or dict
+            Explanatory variables of the regression.
+        weights : array-like, optional
+            1d array of weights.  If None, equivalent to an unweighted OLS.
+        Returns
+        -------
+        Series, DataFrame
+            Cleaned lhs and rhs
+        """
+
+        if not isinstance(lhs, pandas.Series):
+            if len(lhs) != len(rhs):
+                raise AssertionError("length of lhs must equal length of rhs")
+            lhs = pandas.Series(lhs, index=rhs.index)
+
+        rhs = self._combine_rhs(rhs)
+        lhs = pandas.DataFrame({'__y__': lhs}, dtype=float)
+        pre_filt_rhs = rhs.dropna(how='any')
+
+        combined = rhs.join(lhs, how='outer')
+
+        if weights is not None:
+            combined['__weights__'] = weights
+
+        valid = (combined.count(1) == len(combined.columns)).values
+        index = combined.index
+        combined = combined[valid]
+
+        if weights is not None:
+            filt_weights = combined.pop('__weights__')
+        else:
+            filt_weights = None
+
+        filt_lhs = combined.pop('__y__')
+        filt_rhs = combined
+
+        if hasattr(filt_weights, 'to_dense'):
+            filt_weights = filt_weights.to_dense()
+
+        return (filt_lhs.to_dense(), filt_rhs.to_dense(), filt_weights,
+                pre_filt_rhs.to_dense(), index, valid)
+
+    def _safe_update(self, d, other):
+        """
+        Combine dictionaries with non-overlapping keys
+        """
+        for k, v in compat.iteritems(other):
+            if k in d:
+                raise Exception('Duplicate regressor: %s' % k)
+
+            d[k] = v
+
+    def _combine_rhs(self, rhs):
+        """
+        Glue input X variables together while checking for potential
+        duplicates
+        """
+        series = {}
+
+        if isinstance(rhs, pandas.Series):
+            series['x'] = rhs
+        elif isinstance(rhs, pandas.DataFrame):
+            series = rhs.copy()
+        elif isinstance(rhs, dict):
+            for name, value in pandas.compat.iteritems(rhs):
+                if isinstance(value, pandas.Series):
+                    self._safe_update(series, {name: value})
+                elif isinstance(value, (dict, pandas.DataFrame)):
+                    self._safe_update(series, value)
+                else:  # pragma: no cover
+                    raise Exception('Invalid RHS data type: %s' % type(value))
+        else:  # pragma: no cover
+            raise Exception('Invalid RHS type: %s' % type(rhs))
+
+        if not isinstance(series, pandas.DataFrame):
+            series = pandas.DataFrame(series, dtype=float)
+
+        return series
+
 
 if __name__ == '__main__':
 
