@@ -1,10 +1,13 @@
 # Installation of Python Bloomberg API
 
 Below we outline the steps you need to install the Python Bloomberg API to access Bloomberg data via findatapy. We are
-assuming a Windows installation here (for example if you have a Bloomberg Terminal). However, it should be possible to install
-the Server API on a Linux box.
+assuming a Windows installation here, and that we have Bloomberg Terminal and the Desktop API installed already.
 
-* To use Bloomberg you will need to have a licence (either to access Desktop API or Server API)
+However, it should be possible to install the Bloomberg Server API on a Linux/Mac OS X machine and communicate with blpapi,
+however I have not tested this.
+
+* To use Bloomberg you will need to have a data licence (either to access Desktop API or Server API)
+* Please check your Bloomberg licence before installing anything to understand all its terms and how you can use the data
 * Use experimental Python 3.4 version from Bloomberg http://www.bloomberglabs.com/api/libraries/
 * Also download C++ version of Bloomberg API and extract into any location
     * eg. C:\blp\blpapi_cpp_3.9.10.1
