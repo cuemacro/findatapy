@@ -173,6 +173,7 @@ class IOEngine(object):
     ### functions to handle HDF5 on disk
     def write_time_series_cache_to_disk(self, fname, data_frame,
                                         engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1',
+                                        db_port = None, username = None, password = None,
                                         filter_out_matching = None):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
@@ -186,6 +187,7 @@ class IOEngine(object):
             'hdf5_fixed' - use HDF5 fixed format, very quick, but cannot append to this
             'hdf5_table' - use HDF5 table format, slower but can append to
             'arctic' - use Arctic/MongoDB database
+            'redis' - use Redis
         append_data : bool
             False - write a fresh copy of data on disk each time
             True - append data to disk
@@ -210,6 +212,18 @@ class IOEngine(object):
             bcolzpath = self.get_bcolz_filename(fname)
             shutil.rmtree(bcolzpath, ignore_errors=True)
             zlens = bcolz.ctable.fromdataframe(data_frame, rootdir=bcolzpath)
+        elif (engine == 'redis'):
+            import redis
+
+            fname = os.path.basename(fname).replace('.', '_')
+
+            try:
+                r = redis.StrictRedis(host=db_server, port=db_port, db=0)
+                r.set(fname, data_frame.to_msgpack(compress='blosc'))
+                self.logger.info("Pushed " + fname + " to Redis")
+            except Exception as e:
+                self.logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
+
         elif (engine == 'arctic'):
             from arctic import Arctic
             import pymongo
@@ -387,7 +401,8 @@ class IOEngine(object):
         store_export.put('df_for_r', data_frame32, data_columns=cols)
         store_export.close()
 
-    def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None, db_server = '127.0.0.1'):
+    def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None, db_server = '127.0.0.1',
+                                         db_port = None, username = None, password = None):
         """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
@@ -427,6 +442,26 @@ class IOEngine(object):
                 return data_frame
             except:
                 return None
+        elif(engine == 'redis'):
+            import redis
+
+            fname = os.path.basename(fname).replace('.', '_')
+
+            msg = None
+
+            try:
+                r = redis.StrictRedis(host=db_server, port=db_port, db=0)
+                msg = r.get(fname)
+
+            except:
+                self.logger.info("Cache not existent for " + fname + " in Redis")
+
+            if msg is None: return None
+
+            data_frame = pandas.read_msgpack(msg)
+
+            return data_frame
+
         elif(engine == 'arctic'):
             socketTimeoutMS = 2 * 1000
 
@@ -626,3 +661,21 @@ class IOEngine(object):
 
     def create_cache_file_name(self, filename):
         return DataConstants().folder_time_series_data + "/" + filename
+
+# TODO refactor IOEngine so that each database is implemented in a subclass of DBEngine
+
+    def get_engine(self, engine = 'hdf5_fixed'):
+        pass
+
+class DBEngine(object):
+    pass
+
+class DBEngineArctic(DBEngine):
+    pass
+
+class DBEngineHDF5(DBEngine):
+    pass
+
+class DBRedis(DBEngine):
+    pass
+
