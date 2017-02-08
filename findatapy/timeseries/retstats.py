@@ -13,6 +13,7 @@ __author__ = 'saeedamen' # Saeed Amen
 #
 
 import math
+import pandas
 
 from findatapy.timeseries.calculations import Calculations
 
@@ -62,8 +63,12 @@ class RetStats(object):
         self._kurtosis = returns_df.kurtosis(axis=0) / math.sqrt(ann_factor)
 
         index_df = calculations.create_mult_index(returns_df)
-        # max2here = pandas.expanding_max(index_df)
-        max2here = index_df.expanding(min_periods=1).max()
+
+        if pandas.__version__ < '0.17':
+            max2here = pandas.expanding_max(index_df)
+        else:
+            max2here = index_df.expanding(min_periods=1).max()
+
         dd2here = index_df / max2here - 1
 
         self._dd = dd2here.min()
