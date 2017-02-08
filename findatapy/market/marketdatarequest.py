@@ -16,6 +16,8 @@ from findatapy.util.loggermanager import LoggerManager
 from datetime import timedelta
 import datetime
 
+import copy
+
 class MarketDataRequest(object):
     """Provides parameters for requesting market data.
 
@@ -40,6 +42,12 @@ class MarketDataRequest(object):
     # cache_algo (eg. internet, disk, memory) - internet will forcibly download from the internet
     # futures_curve (optional)
     # environment (eg. prod, backtest) - old data is saved with prod, backtest will overwrite the last data point
+
+    def generate_key(self):
+        from findatapy.market.ioengine import SpeedCache
+
+        return SpeedCache().generate_key(self, ['logger', '__futures_curve', '__cache_algo'])
+
     def __init__(self, data_source = None,
                  start_date ='year', finish_date = datetime.datetime.utcnow(),
                  tickers = None, category = None, freq_mult = 1, freq = "daily",
@@ -368,4 +376,9 @@ class MarketDataRequest(object):
 
     @futures_curve.setter
     def futures_curve(self, futures_curve):
+        if futures_curve is not None:
+            self.__futures_curve_key = futures_curve.generate_key()
+        else:
+            self.__futures_curve_key = None
+
         self.__futures_curve = futures_curve
