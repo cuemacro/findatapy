@@ -507,6 +507,9 @@ class Filter(object):
             # SLOW method below
             # for x in uncommon_columns: data_frame.loc[:,x] = np.nan
 
+        # get columns in same order again
+        data_frame = data_frame[columns]
+
         return data_frame
 
     def filter_time_series_by_excluded_keyword(self, keyword, data_frame):
