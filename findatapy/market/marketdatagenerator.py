@@ -37,7 +37,7 @@ class MarketDataGenerator(object):
         self.calculations = Calculations()
         self.io_engine = IOEngine()
         self._intraday_code = -1
-        self.days_expired_contract_download = -1
+        self.days_expired_intraday_contract_download = -1
 
         return
 
