@@ -75,6 +75,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 08 Feb 2017 - Pad columns now returns columns in same order as input
 * 07 Feb 2017 - Added Redis to IOEngine
 * 05 Feb 2017 - Added openpyxl as a dependency
 * 01 Feb 2017 - Added method for aligning left and right dataframes (with fill down) and rolling_corr (to work with pandas <= 0.13)
