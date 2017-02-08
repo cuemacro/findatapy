@@ -231,7 +231,7 @@ class IOEngine(object):
             socketTimeoutMS = 30 * 1000
             fname = os.path.basename(fname).replace('.', '_')
 
-            self.logger.info('Load MongoDB library: ' + fname)
+            self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
             c = pymongo.MongoClient(db_server, connect=False)
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
@@ -458,6 +458,8 @@ class IOEngine(object):
 
             if msg is None: return None
 
+            self.logger.info('Load Redis cache: ' + fname)
+
             data_frame = pandas.read_msgpack(msg)
 
             return data_frame
@@ -470,7 +472,7 @@ class IOEngine(object):
 
             fname = os.path.basename(fname).replace('.', '_')
 
-            self.logger.info('Load MongoDB library: ' + fname)
+            self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
             c = pymongo.MongoClient(db_server, connect=False)
 
@@ -666,6 +668,67 @@ class IOEngine(object):
 
     def get_engine(self, engine = 'hdf5_fixed'):
         pass
+
+#######################################################################################################################
+
+import hashlib
+
+class SpeedCache(object):
+    """Wrapper for cache hosted in external in memory database (by default Redis). This allows us to share hash across
+    Python instances, rather than having repopulate each time we restart Python.
+
+    """
+    def __init__(self, db_cache_server = None, db_cache_port = None, engine = 'redis'):
+        from findatapy.util import DataConstants
+        if db_cache_server is None:
+
+            self.db_cache_server = DataConstants().db_cache_server
+
+        if db_cache_port is None:
+            self.db_cache_port = DataConstants().db_cache_port
+
+        self.engine = engine
+        self.io_engine = IOEngine()
+
+    def put_dataframe(self, key, obj):
+        if self.engine != 'no_cache':
+            try:
+                self.io_engine.write_time_series_cache_to_disk(key, obj, engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
+            except: pass
+
+    def get_dataframe(self, key):
+        if self.engine == 'no_cache': return None
+
+        try:
+            return self.io_engine.read_time_series_cache_from_disk(key, engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
+        except: pass
+
+    def generate_key(self, obj, key_drop):
+        """Create a unique hash key for object from its attributes (excluding those attributes in key drop), which can be
+        used as a hashkey in the Redis hashtable
+
+        Parameters
+        ----------
+        obj : class
+            Any Python class
+        key_drop : str (list)
+            List of internal attributes to drop before hashing
+
+        Returns
+        -------
+        hashkey
+        """
+
+        key = []
+
+        for k in obj.__dict__.keys():
+            if k not in key_drop:
+                key.append(str(k) + ':' + str(obj.__dict__[k]))
+
+        key = key.sort()
+
+        return type(obj).__name__ + "_" + hashlib.sha1(str(key).encode('utf-8')).hexdigest()
+
 
 class DBEngine(object):
     pass
