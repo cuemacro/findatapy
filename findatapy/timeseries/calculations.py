@@ -753,6 +753,8 @@ class Calculations(object):
 
         return df_list[0].join(df_list[1:], how="outer")
 
+    # several types of outer join (TODO finalise which one should appear!)
+
     def join_left_fill_right(self, df_left, df_right):
 
         # say our right series is a signal
@@ -774,6 +776,23 @@ class Calculations(object):
         return functools.reduce(join_dfs, df_list)
 
     # experimental!
+    # splits dataframe list into halves
+    def iterative_outer_join_second(self, df_list):
+
+        while (True):
+            length = len(df_list)
+
+            if length == 1: break
+
+            df_list_out = []
+
+            for i in range(0, length, 2):
+                df_list_out.append(self.join_aux(i, df_list))
+
+            df_list = df_list_out
+
+        return df_list[0]
+
     def iterative_outer_join(self, df_list, pool = None):
 
         if pool is None:
@@ -787,7 +806,6 @@ class Calculations(object):
             if length == 1: break
 
             job_args = [(item_a, df_list) for i, item_a in enumerate(range(0, length, 2))]
-
             df_list = pool.map_async(self.join_aux_helper, job_args).get()
 
         pool.close()
@@ -820,7 +838,7 @@ class Calculations(object):
         x_vars : str (list)
             Which x variables should we regress
         use_stats_models : bool (default: True)
-            Should we use statsmodels library directly or pandas.stats.api.ols wrapper (warning deprecated)
+            Should we use statsmodels library directly or pandas.stats.api.ols wrapper (warning: deprecated)
 
         Returns
         -------
