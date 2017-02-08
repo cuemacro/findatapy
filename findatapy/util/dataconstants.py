@@ -32,7 +32,10 @@ class DataConstants(object):
     folder_historic_CSV = "x"
     folder_time_series_data = "x"
 
-
+    ###### FOR TEMPORARY IN-MEMRORY CACHE (Redis)
+    db_cache_server = '127.0.0.1'
+    db_cache_port = '6379'
+    write_cache_engine = 'redis'  # 'redis' or 'no_cache' means we don't use cache
 
     ###### FOR ALIAS TICKERS
     # config file for time series categories
@@ -138,6 +141,10 @@ class DataConstants(object):
 
         quandl_api_key = cred.quandl_api_key
         fred_api_key = cred.fred_api_key
+
+        db_cache_server = cred.db_cache_server
+        db_cache_port = cred.db_cache_port
+        write_cache_engine = cred.write_cache_engine
 
     except:
         pass
