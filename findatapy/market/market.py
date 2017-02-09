@@ -13,6 +13,7 @@ __author__ = 'saeedamen' # Saeed Amen
 #
 
 from findatapy.util import DataConstants
+from findatapy.market.ioengine import SpeedCache
 # from deco import *
 
 class Market(object):
@@ -33,6 +34,7 @@ class Market(object):
                 from finaddpy.market import CachedMarketDataGenerator
                 market_data_generator = CachedMarketDataGenerator()
 
+        self.speed_cache = SpeedCache()
         self.market_data_generator = market_data_generator
         self.md_request = md_request
 
@@ -66,6 +68,18 @@ class Market(object):
         if self.md_request is not None:
             md_request = self.md_request
 
+        key = md_request.generate_key()
+
+        data_frame = None
+
+        # if internet_load has been specified don't bother going to cache (might end up calling lower level cache though
+        # through MarketDataGenerator
+        if 'cache_algo' in md_request.cache_algo:
+            data_frame = self.speed_cache.get_dataframe(key)
+
+        if data_frame is not None:
+            return data_frame
+
         # special cases when a predefined category has been asked
         if md_request.category is not None:
 
@@ -74,7 +88,7 @@ class Market(object):
                 from findatapy.market.fxclsvolume import FXCLSVolume
                 fxcls = FXCLSVolume(market_data_generator=self.market_data_generator)
 
-                return fxcls.get_fx_volume(md_request.start_date, md_request.finish_date, md_request.tickers,
+                data_frame = fxcls.get_fx_volume(md_request.start_date, md_request.finish_date, md_request.tickers,
                                            cut="LOC", data_source="quandl",
                        cache_algo=md_request.cache_algo)
 
@@ -89,7 +103,7 @@ class Market(object):
 
                 if (md_request.freq != 'tick' and md_request.fields == ['close']) or (md_request.freq == 'tick'
                                                                                       and md_request.data_source == 'dukascopy'):
-                    return fxcf.get_fx_cross(md_request.start_date, md_request.finish_date,
+                    data_frame = fxcf.get_fx_cross(md_request.start_date, md_request.finish_date,
                                              md_request.tickers,
                      cut = md_request.cut, data_source = md_request.data_source, freq = md_request.freq,
                                              cache_algo=md_request.cache_algo, type = type,
@@ -109,7 +123,7 @@ class Market(object):
                                cache_algo_return=md_request.cache_algo))
 
                     if df != []:
-                        return Calculations().pandas_outer_join(df)
+                        data_frame = Calculations().pandas_outer_join(df)
 
             # for FX vol market return all the market data necessarily for pricing options
             # which includes FX spot, volatility surface, forward points, deposit rates
@@ -145,17 +159,22 @@ class Market(object):
                                                    ))
 
                     if df != []:
-                        return Calculations().pandas_outer_join(df)
+                        data_frame = Calculations().pandas_outer_join(df)
 
             if md_request.futures_curve is not None:
-                return md_request.futures_curve.fetch_curve(md_request, self.market_data_generator)
-
+                data_frame = md_request.futures_curve.fetch_continuous_futures_time_series\
+                    (md_request, self.market_data_generator)
 
             # TODO add more special examples here for different asset classes
             # the idea is that we do all the market data downloading here, rather than elsewhere
 
         # by default: pass the market data request to MarketDataGenerator
-        return self.market_data_generator.fetch_market_data(md_request)
+        if data_frame is None:
+            data_frame = self.market_data_generator.fetch_market_data(md_request)
+
+        self.speed_cache.put_dataframe(key, data_frame)
+
+        return data_frame
 
 ########################################################################################################################
 
@@ -171,15 +190,14 @@ class FXCrossFactory(object):
         self.logger = LoggerManager().getLogger(__name__)
         self.fxconv = FXConv()
 
+        from findatapy.market import SpeedCache
+        self.speed_cache = SpeedCache()
         self.cache = {}
 
         self.calculations = Calculations()
         self.market_data_generator = market_data_generator
 
         return
-
-    def flush_cache(self):
-        self.cache = {}
 
     def get_fx_cross_tick(self, start, end, cross,
                      cut = "NYC", data_source = "dukascopy", cache_algo = 'internet_load_return', type = 'spot',
@@ -293,16 +311,15 @@ class FXCrossFactory(object):
             pool = Pool(thread_no)
 
             # open the market data downloads in their own threads and return the results
-            result = pool.map_async(self._get_individual_fx_cross, market_data_request_list)
-            data_frame_agg = self.calculations.iterative_outer_join(result.get())
+            data_frame_agg = self.calculations.iterative_outer_join(
+                pool.map_async(self._get_individual_fx_cross, market_data_request_list).get())
 
             # data_frame_agg = self.calculations.pandas_outer_join(result.get())
 
-            # pool would have already been closed earlier
-            # try:
-            #    pool.close()
-            #    pool.join()
-            # except: pass
+            try:
+                pool.close()
+                pool.join()
+            except: pass
         else:
             for md_request in market_data_request_list:
                 data_frame_agg.append(self._get_individual_fx_cross(md_request))
@@ -311,6 +328,8 @@ class FXCrossFactory(object):
 
         # strip the nan elements
         data_frame_agg = data_frame_agg.dropna()
+
+        # self.speed_cache.put_dataframe(key, data_frame_agg)
 
         return data_frame_agg
 
