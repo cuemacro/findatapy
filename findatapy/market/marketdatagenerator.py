@@ -66,7 +66,12 @@ class MarketDataGenerator(object):
 
         data_vendor = None
 
-        source = source.split("-")[0]
+        try:
+            source = source.split("-")[0]
+        except:
+            self.logger.error("Was data source specified?")
+
+            return None
 
         if source == 'bloomberg':
             from findatapy.market.datavendorbbg import DataVendorBBGOpen
@@ -438,9 +443,17 @@ class MarketDataGenerator(object):
         pandas.DataFrame
         """
 
-        # daily data does not include ticker in the key, as multiple tickers in the same file
+        key = self.create_category_key(market_data_request)
 
-        if DataConstants().market_thread_no['other'] == 1:
+        is_key_overriden = False
+
+        for k in DataConstants().override_multi_threading_for_categories:
+            if k in key:
+                is_key_overriden = True
+                break
+
+        # daily data does not include ticker in the key, as multiple tickers in the same file
+        if DataConstants().market_thread_no['other'] == 1 or is_key_overriden:
             # data_frame_agg = data_vendor.load_ticker(market_data_request)
             data_frame_agg = self.fetch_single_time_series(market_data_request)
         else:
@@ -464,8 +477,6 @@ class MarketDataGenerator(object):
 
             data_frame_agg = self.fetch_group_time_series(market_data_request_list)
 
-
-        key = self.create_category_key(market_data_request)
         fname = self.create_cache_file_name(key)
         self._time_series_cache[fname] = data_frame_agg  # cache in memory (ok for daily data)
 
