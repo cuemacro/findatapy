@@ -135,7 +135,7 @@ class IOEngine(object):
         return self.read_csv_data_frame(f_name, freq, cutoff = cutoff, dateparse = dateparse,
                             postfix = postfix, intraday_tz = intraday_tz, excel_sheet = excel_sheet)
 
-    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1'):
+    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1', db_port='6379'):
 
         if 'hdf5' in engine:
             engine = 'hdf5'
@@ -143,6 +143,18 @@ class IOEngine(object):
         if (engine == 'bcolz'):
             # convert invalid characters to substitutes (which Bcolz can't deal with)
             pass
+        elif (engine == 'redis'):
+            import redis
+
+            fname = os.path.basename(fname).replace('.', '_')
+
+            try:
+                r = redis.StrictRedis(host=db_server, port=db_port, db=0)
+                r.delete(fname)
+
+            except Exception as e:
+                self.logger.warning("Cannot delete non-existent key " + fname + " in Redis: " + str(e))
+
         elif (engine == 'arctic'):
             from arctic import Arctic
             import pymongo
@@ -479,19 +491,26 @@ class IOEngine(object):
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
 
             # Access the library
-            library = store[fname]
+            try:
+                library = store[fname]
 
-            if start_date is None and finish_date is None:
-                item = library.read(fname)
-            else:
-                from arctic.date import DateRange
-                item = library.read(fname, date_range=DateRange(start_date, finish_date))
+                if start_date is None and finish_date is None:
+                    item = library.read(fname)
+                else:
+                    from arctic.date import DateRange
+                    item = library.read(fname, date_range=DateRange(start_date, finish_date))
 
-            c.close()
+                c.close()
 
-            self.logger.info('Read ' + fname)
+                self.logger.info('Read ' + fname)
 
-            return item.data
+                return item.data
+
+            except Exception as e:
+                self.logger.warning('Library does not exist: ' + fname + ', ' + str (e))
+
+                return None
+
         elif os.path.isfile(self.get_h5_filename(fname)):
             store = pandas.HDFStore(self.get_h5_filename(fname))
             data_frame = store.select("data")
@@ -703,7 +722,17 @@ class SpeedCache(object):
             return self.io_engine.read_time_series_cache_from_disk(key, engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
         except: pass
 
-    def generate_key(self, obj, key_drop):
+    def dump_key(self, key):
+        if self.engine == 'no_cache': return None
+
+        try:
+            return self.io_engine.remove_time_series_cache_on_disk(key, engine=self.engine,
+                                                                   db_server=self.db_cache_server,
+                                                                   db_port=self.db_cache_port)
+        except:
+            pass
+
+    def generate_key(self, obj, key_drop = []):
         """Create a unique hash key for object from its attributes (excluding those attributes in key drop), which can be
         used as a hashkey in the Redis hashtable
 
@@ -719,16 +748,24 @@ class SpeedCache(object):
         hashkey
         """
 
+        # never want to include Logger object!
+        key_drop.append('logger')
+
         key = []
 
-        for k in obj.__dict__.keys():
+        for k in obj.__dict__:
             if k not in key_drop:
-                key.append(str(k) + ':' + str(obj.__dict__[k]))
+                add = obj.__dict__[k]
 
-        key = key.sort()
+                if add is not None:
+                    if isinstance(add, list): add = '_'.join(str(e) for e in add)
 
-        return type(obj).__name__ + "_" + hashlib.sha1(str(key).encode('utf-8')).hexdigest()
+                key.append(str(k) + ':' + str(add))
 
+        key.sort()
+        key = '_'.join(str(e) for e in key).replace(type(obj).__name__, '').replace('___', '_')
+
+        return type(obj).__name__ + "_" + str(len(str(key))) + "_" + str(key)
 
 class DBEngine(object):
     pass
