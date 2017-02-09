@@ -31,8 +31,11 @@ class DataVendorBBG(DataVendor):
     """
 
     # these fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
-    list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day', 'futures-chain-tickers', 'futures-chain-last-trade-dates']
-    list_of_ref_vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST', 'LAST_TRADEABLE_DT', 'FUT_CHAIN', 'FUT_CHAIN_LAST_TRADE_DATES']
+    list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day', 'futures-chain-tickers',
+                          'futures-chain-last-trade-dates', 'first-notice-date']
+
+    list_of_ref_vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST', 'LAST_TRADEABLE_DT', 'FUT_CHAIN',
+                                 'FUT_CHAIN_LAST_TRADE_DATES', 'FUT_NOTICE_FIRST']
 
     def __init__(self):
         super(DataVendorBBG, self).__init__()
@@ -703,6 +706,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                 errorInfo = fieldException.getElement("errorInfo")
                 print(errorInfo.getElementAsString("category"), ":", \
                     fieldException.getElementAsString("fieldId"))
+                print("stop")
 
         data_frame = pandas.DataFrame(data)
 
