@@ -75,6 +75,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 09 Feb 2017 - Added in-memory caching when loading market data (via Redis)
 * 08 Feb 2017 - Pad columns now returns columns in same order as input
 * 07 Feb 2017 - Added Redis to IOEngine
 * 05 Feb 2017 - Added openpyxl as a dependency
