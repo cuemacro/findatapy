@@ -80,10 +80,16 @@ class DataConstants(object):
     # also some data sources will complain if you start too many parallel threads to call data!
     # for some data providers might get better performance from 1 thread only!
     market_thread_no = {             'quandl'      : 4,
-                                     'bloomberg'   : 8,
+                                     'bloomberg'   : 4,
                                      'yahoo'       : 8,
                                      'other'       : 4,
                                      'dukascopy'   : 2}
+
+    # we can override the thread count and drop back to single thread for certain market data downloads, as can have issues with
+    # quite large daily datasets from Bloomberg (and other data vendors) when doing multi-threading, so can override and use
+    # single threading on these (and also split into several chunks)
+    #
+    override_multi_threading_for_categories = []
 
     # log config file
     logging_conf = root_folder + "conf/logging.conf"
@@ -145,6 +151,8 @@ class DataConstants(object):
         db_cache_server = cred.db_cache_server
         db_cache_port = cred.db_cache_port
         write_cache_engine = cred.write_cache_engine
+
+        override_multi_threading_for_categories = cred.override_multi_threading_for_categories
 
     except:
         pass
