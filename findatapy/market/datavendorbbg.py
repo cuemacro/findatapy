@@ -586,10 +586,16 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         self._options = []
 
     def combine_slices(self, data_frame, data_frame_slice):
-        if (data_frame_slice.columns.get_level_values(1).values[0]
-            not in data_frame.columns.get_level_values(1).values):
+        # data
+        try:
+            if (data_frame_slice.columns.get_level_values(1).values[0]
+                not in data_frame.columns.get_level_values(1).values):
 
-            return data_frame.join(data_frame_slice, how="outer")
+                return data_frame.join(data_frame_slice, how="outer")
+        except Exception as e :
+            self.logger.warn('Data slice empty ' + str(e))
+
+            return data_frame
 
         return data_frame
 
@@ -704,6 +710,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
 
             for fieldException in list(fieldExceptionArray.values()):
                 errorInfo = fieldException.getElement("errorInfo")
+
                 print(errorInfo.getElementAsString("category"), ":", \
                     fieldException.getElementAsString("fieldId"))
                 print("stop")
