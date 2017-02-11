@@ -48,20 +48,19 @@ To appear
 Major requirements
 * Required: Python 3.4, 3.5
 * Required: pandas, numpy etc.
-* Recommended: Bloomberg Python Open API
-* Recommended: chartpy for funky interactive plots (https://github.com/cuemacro/chartpy) and
-* Recommended: arctic (AHL library for managing time series in MongoDB)
-* Recommended: multiprocessor_on_dill because standard multiprocessing library pickle causes issues 
-(from https://github.com/sixty-north/multiprocessing_on_dill)
-* Recommended: fredapi from ALFRED/FRED has been rewritten and added to the project directly (from https://github.com/mortada/fredapi)
+* Recommended: blpapi - Bloomberg Python Open API
+* Recommended: chartpy - for funky interactive plots ([https://github.com/cuemacro/chartpy](https://github.com/cuemacro/chartpy)) and
+* Recommended: arctic - AHL library for managing time series in MongoDB
+* Recommended: multiprocessor_on_dill - standard multiprocessing library pickle causes issues ([https://github.com/sixty-north/multiprocessing_on_dill](https://github.com/sixty-north/multiprocessing_on_dill))
+* Recommended: fredapi - ALFRED/FRED has been rewritten and added to the project directly (from https://github.com/mortada/fredapi)
 
 # Installation
 
-For detailed installation instructions for finmarketpy and its associated Python libraries go to
-[https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md](https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md) (which includes details on how to setup your entire Python environment).
+For detailed installation instructions for chartpy, findatapy & finmarketpy and its associated Python libraries go to
+[https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md](https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md). The tutorial includes details on how to setup your entire Python environment.
 
 You can install the library using the below. After installation:
-* Make sure you edit the DataConstants class for the correct Quandl API and Twitter API keys
+* Make sure you edit the DataConstants class for the correct Quandl API and Twitter API keys etc
 
 ```
 pip install git+https://github.com/cuemacro/findatapy.git
