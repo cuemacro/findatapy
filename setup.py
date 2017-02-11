@@ -18,5 +18,7 @@ setup(name='findatapy',
                           'pandas_datareader',
                           'quandl',
                           'multiprocessing_on_dill',
+                          'redis',
+                          'blosc',
                           'openpyxl'],
 	  zip_safe=False)
