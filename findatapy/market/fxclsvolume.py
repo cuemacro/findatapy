@@ -1,6 +1,7 @@
 from findatapy.timeseries import Calculations
 from findatapy.util import LoggerManager
 from findatapy.market import MarketDataRequest
+
 import pandas
 
 #######################################################################################################################
@@ -21,16 +22,26 @@ class FXCLSVolume(object):
 
     def get_fx_volume(self, start, end, currency_pairs, cut="LOC", source="quandl",
                        cache_algo="internet_load_return"):
-        """ get_forward_points = get forward points for specified cross, tenor and part of surface
+        """Gets forward points for specified cross, tenor and part of surface
 
-        :param start: start date
-        :param end: end date
-        :param cross: asset to be calculated
-        :param tenor: tenor to calculate
-        :param cut: closing time of data
-        :param source: source of data eg. bloomberg
+        Parameters
+        ----------
+        start_date : str
+            start date of download
+        end_date : str
+            end data of download
+        cross : str
+            asset to be calculated
+        tenor : str
+            tenor to calculate
+        cut : str
+            closing time of data
+        source : str
+            source of data eg. bloomberg
 
-        :return: forward points
+        Returns
+        -------
+        pandas.DataFrame
         """
 
         market_data_generator = self.market_data_generator
