@@ -1,4 +1,6 @@
-# findatapy
+<img src="findatapy_logo.png?raw=true" width="300"/>
+
+# [findatapy](https://github.com/cuemacro/findatapy)
 
 findatapy creates an easy to use Python API to download market data from many sources including Quandl, Bloomberg, Yahoo, Google etc. using
 a unified high level interface. Users can also define their own custom tickers, using configuraiton files. There is also functionality which
