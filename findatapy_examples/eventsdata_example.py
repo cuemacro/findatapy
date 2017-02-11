@@ -23,30 +23,30 @@ if __name__ == '__main__':
 
     print(df)
 
-    # # we also have a few events defined in our configuation file
-    # # those tickers/fields which are predefined this way are easier to download
-    # # note how we don't have to use the vendor_tickers and vendor_fields for examples
-    # market_data_request = MarketDataRequest(
-    #                 start_date = "year",
-    #                 category = "events",
-    #                 data_source = 'bloomberg',                      # use Bloomberg as data source
-    #                 tickers = ['USD-US Employees on Nonfarm Payrolls Total MoM Net Change SA'],
-    #                 fields = ['release-date-time-full', 'release-dt', 'actual-release', 'number-observations'])
-    #
-    # df = market.fetch_market(market_data_request)
-    #
-    # print(df)
-    #
-    # # now just download the event day
-    # market_data_request = MarketDataRequest(
-    #                 start_date = "year",
-    #                 category = "events",
-    #                 data_source = 'bloomberg',              # use Bloomberg as data source
-    #                 tickers = ['NFP'],
-    #                 fields = ['release-date-time-full'],                # which fields to download
-    #                 vendor_tickers = ['NFP TCH Index'],     # ticker (Bloomberg)
-    #                 vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST'])     # which Bloomberg fields to download
-    #
-    # df = market.fetch_market(market_data_request)
-    #
-    # print(df)
+    # we also have a few events defined in our configuation file
+    # those tickers/fields which are predefined this way are easier to download
+    # note how we don't have to use the vendor_tickers and vendor_fields for examples
+    market_data_request = MarketDataRequest(
+                    start_date = "year",
+                    category = "events",
+                    data_source = 'bloomberg',                      # use Bloomberg as data source
+                    tickers = ['USD-US Employees on Nonfarm Payrolls Total MoM Net Change SA'],
+                    fields = ['release-date-time-full', 'release-dt', 'actual-release', 'number-observations'])
+
+    df = market.fetch_market(market_data_request)
+
+    print(df)
+
+    # now just download the event day
+    market_data_request = MarketDataRequest(
+                    start_date = "year",
+                    category = "events",
+                    data_source = 'bloomberg',              # use Bloomberg as data source
+                    tickers = ['NFP'],
+                    fields = ['release-date-time-full'],                # which fields to download
+                    vendor_tickers = ['NFP TCH Index'],     # ticker (Bloomberg)
+                    vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST'])     # which Bloomberg fields to download
+
+    df = market.fetch_market(market_data_request)
+
+    print(df)
