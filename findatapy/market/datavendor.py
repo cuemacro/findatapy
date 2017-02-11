@@ -16,7 +16,7 @@ import abc
 import copy
 
 from findatapy.market.marketdatarequest import MarketDataRequest
-from findatapy.util import ConfigManager
+from findatapy.util import ConfigManager, LoggerManager
 
 class DataVendor(object):
     """Abstract class for various data source loaders.
@@ -24,6 +24,7 @@ class DataVendor(object):
     """
     def __init__(self):
         self.config = ConfigManager().get_instance()
+        self.logger = LoggerManager().getLogger(__name__)
         # self.config = None
         return
 
@@ -99,7 +100,14 @@ class DataVendor(object):
         fields_converted = []
 
         for field in fields_list:
-            fields_converted.append(self.config.convert_library_to_vendor_field(source, field))
+            try:
+                f = self.config.convert_library_to_vendor_field(source, field)
+            except:
+                self.logger.error("Couldn't find field conversion, did you type it correctly: " + field)
+
+                return
+
+            fields_converted.append(f)
 
         return fields_converted
 
@@ -134,8 +142,14 @@ class DataVendor(object):
         tickers_list_converted = []
 
         for ticker in tickers_list:
-            tickers_list_converted.append(
-                self.config.convert_library_to_vendor_ticker(category, source, freq, cut, ticker))
+            try:
+                t = self.config.convert_library_to_vendor_ticker(category, source, freq, cut, ticker)
+            except:
+                self.logger.error("Couldn't find ticker conversion, did you type it correctly: " + ticker)
+
+                return
+
+            tickers_list_converted.append(t)
 
         return tickers_list_converted
 
@@ -175,7 +189,14 @@ class DataVendor(object):
         # otherwise used stored configuration files (every field needs to be defined!)
         else:
             for vendor_field in vendor_fields_list:
-                fields_converted.append(self.config.convert_vendor_to_library_field(data_source, vendor_field))
+                try:
+                    v = self.config.convert_vendor_to_library_field(data_source, vendor_field)
+                except:
+                    self.logger.error("Couldn't find field conversion, did you type it correctly: " + vendor_field)
+
+                    return
+
+                fields_converted.append(v)
 
         return fields_converted
 
@@ -215,7 +236,13 @@ class DataVendor(object):
         tickers_converted = []
 
         for vendor_ticker in vendor_tickers_list:
-            tickers_converted.append(
-                self.config.convert_vendor_to_library_ticker(data_source, vendor_ticker))
+            try:
+                v = self.config.convert_vendor_to_library_ticker(data_source, vendor_ticker)
+            except:
+                self.logger.error("Couldn't find ticker conversion, did you type it correctly: " + vendor_ticker)
+
+                return
+
+            tickers_converted.append(v)
 
         return tickers_converted
