@@ -188,7 +188,7 @@ class IOEngine(object):
 
     ### functions to handle HDF5 on disk
     def write_time_series_cache_to_disk(self, fname, data_frame,
-                                        engine = 'hdf5_fixed', append_data = False, db_server = '127.0.0.1',
+                                        engine = 'hdf5_fixed', append_data = False, db_server = DataConstants().db_server,
                                         db_port = None, username = None, password = None,
                                         filter_out_matching = None):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
@@ -417,7 +417,8 @@ class IOEngine(object):
         store_export.put('df_for_r', data_frame32, data_columns=cols)
         store_export.close()
 
-    def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None, db_server = '127.0.0.1',
+    def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None,
+                                         db_server = DataConstants().db_server,
                                          db_port = None, username = None, password = None):
         """Reads time series cache from disk in either HDF5 or bcolz
 
