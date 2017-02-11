@@ -353,7 +353,7 @@ class MarketDataGenerator(object):
                     if expiry_date + timedelta(days=self.days_expired_intraday_contract_download) < current_date:
                         tickers[i] = None
 
-                if vendor_tickers is not None:
+                if vendor_tickers is not None and tickers[i] is None:
                     vendor_tickers[i] = None
 
         market_data_request.tickers = [e for e in tickers if e != None]
@@ -370,10 +370,11 @@ class MarketDataGenerator(object):
             if data_frame_single.empty == False:
                 data_frame_single.index.name = 'Date'
 
-                # will fail for dataframes which includes dates
+                # will fail for dataframes which includes dates/strings (eg. futures contract names)
                 try:
                     data_frame_single = data_frame_single.astype('float32')
-                except: pass
+                except:
+                    self.logger.warning('Could not convert to float')
 
                 if market_data_request.freq == "second":
                     data_frame_single = data_frame_single.resample("1s")
@@ -392,6 +393,7 @@ class MarketDataGenerator(object):
             # must use the multiprocessing_on_dill library otherwise can't pickle objects correctly
             # note: currently not very stable
             from multiprocessing_on_dill import Pool
+            # from pathos.pools import ProcessPool as Pool
 
         thread_no = DataConstants().market_thread_no['other']
 
@@ -452,15 +454,21 @@ class MarketDataGenerator(object):
                 is_key_overriden = True
                 break
 
+        # by default use other
+        thread_no = DataConstants().market_thread_no['other']
+
+        if market_data_request.data_source in DataConstants().market_thread_no:
+            thread_no = DataConstants().market_thread_no[market_data_request.data_source]
+
         # daily data does not include ticker in the key, as multiple tickers in the same file
-        if DataConstants().market_thread_no['other'] == 1 or is_key_overriden:
+        if thread_no == 1:
             # data_frame_agg = data_vendor.load_ticker(market_data_request)
             data_frame_agg = self.fetch_single_time_series(market_data_request)
         else:
             market_data_request_list = []
             
             # when trying your example 'equitiesdata_example' I had a -1 result so it went out of the comming loop and I had errors in execution
-            group_size = max(int(len(market_data_request.tickers) / DataConstants().market_thread_no['other'] - 1),0) 
+            group_size = max(int(len(market_data_request.tickers) / thread_no - 1),0)
 
             if group_size == 0: group_size = 1
 
@@ -475,7 +483,17 @@ class MarketDataGenerator(object):
 
                 market_data_request_list.append(market_data_request_single)
 
-            data_frame_agg = self.fetch_group_time_series(market_data_request_list)
+            # special case where we make smaller calls one after the other
+            if is_key_overriden:
+
+                data_frame_list = []
+
+                for md in market_data_request_list:
+                    data_frame_list.append(self.fetch_single_time_series(md))
+
+                data_frame_agg = self.calculations.pandas_outer_join(data_frame_list)
+            else:
+                data_frame_agg = self.fetch_group_time_series(market_data_request_list)
 
         fname = self.create_cache_file_name(key)
         self._time_series_cache[fname] = data_frame_agg  # cache in memory (ok for daily data)
