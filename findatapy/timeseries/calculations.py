@@ -778,6 +778,16 @@ class Calculations(object):
     # experimental!
     # splits dataframe list into halves
     def iterative_outer_join_second(self, df_list):
+        if df_list is None: return None
+
+        # remove any None elements (which can't be joined!)
+        df_list = [i for i in df_list if i is not None]
+
+        if len(df_list) == 0:
+            return None
+
+        elif len(df_list) == 1:
+            return df_list[0]
 
         while (True):
             length = len(df_list)
@@ -795,9 +805,15 @@ class Calculations(object):
 
     def iterative_outer_join(self, df_list, pool = None):
 
+        if not(isinstance(df_list, list)):
+            return df_list
+
         if pool is None:
             from multiprocessing.dummy import Pool
             pool = Pool(4)
+
+        if (len(df_list) < 3):
+            return self.pandas_outer_join(df_list)
 
         while(True):
             # split into two
