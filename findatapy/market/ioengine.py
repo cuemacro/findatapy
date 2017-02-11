@@ -150,7 +150,11 @@ class IOEngine(object):
 
             try:
                 r = redis.StrictRedis(host=db_server, port=db_port, db=0)
-                r.delete(fname)
+
+                if(fname == 'flush_all_keys'):
+                    r.flushall()
+                else:
+                    r.delete(fname)
 
             except Exception as e:
                 self.logger.warning("Cannot delete non-existent key " + fname + " in Redis: " + str(e))
@@ -722,8 +726,11 @@ class SpeedCache(object):
             return self.io_engine.read_time_series_cache_from_disk(key, engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
         except: pass
 
+    def dump_all_keys(self):
+        self.dump_key('flush_all_keys')
+
     def dump_key(self, key):
-        if self.engine == 'no_cache': return None
+        if self.engine == 'no_cache': return
 
         try:
             return self.io_engine.remove_time_series_cache_on_disk(key, engine=self.engine,
@@ -760,7 +767,7 @@ class SpeedCache(object):
                 if add is not None:
                     if isinstance(add, list): add = '_'.join(str(e) for e in add)
 
-                key.append(str(k) + ':' + str(add))
+                key.append(str(k) + '-' + str(add))
 
         key.sort()
         key = '_'.join(str(e) for e in key).replace(type(obj).__name__, '').replace('___', '_')
