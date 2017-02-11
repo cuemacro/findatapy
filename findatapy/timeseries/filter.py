@@ -213,7 +213,7 @@ class Filter(object):
         """
         offset = 0 # inclusive
 
-        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
+        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset, exclude_start_end = False)
 
     def filter_time_series_by_days(self, days, data_frame):
         """Filter time series by start/finish dates
@@ -255,7 +255,7 @@ class Filter(object):
         """
         offset = 1 # exclusive of start finish date
 
-        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
+        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset, exclude_start_end = True)
 
         # try:
         #     # filter by dates for intraday data
@@ -276,7 +276,7 @@ class Filter(object):
         #
         # return data_frame
 
-    def filter_time_series_by_date_offset(self, start_date, finish_date, data_frame, offset):
+    def filter_time_series_by_date_offset(self, start_date, finish_date, data_frame, offset, exclude_start_end = False):
         """Filter time series by start/finish dates (and an offset)
 
         Parameters
@@ -324,11 +324,17 @@ class Filter(object):
             # if we have dates stored as opposed to TimeStamps (ie. daily data), we use a simple (slower) method
             # for filtering daily data
             if(start_date is not None):
-                 data_frame = data_frame.loc[start_date < data_frame.index]
+                if exclude_start_end:
+                    data_frame = data_frame.loc[start_date < data_frame.index]
+                else:
+                    data_frame = data_frame.loc[start_date <= data_frame.index]
 
             if(finish_date is not None):
-                 # filter by start_date and finish_date
-                 data_frame = data_frame.loc[data_frame.index < finish_date]
+                if exclude_start_end:
+                    data_frame = data_frame.loc[data_frame.index < finish_date]
+                else:
+                    # filter by start_date and finish_date
+                    data_frame = data_frame.loc[data_frame.index <= finish_date]
 
         return data_frame
 
