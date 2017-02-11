@@ -32,6 +32,9 @@ class DataConstants(object):
     folder_historic_CSV = "x"
     folder_time_series_data = "x"
 
+    ###### FOR DATABASE
+    db_server = '127.0.0.1'
+
     ###### FOR TEMPORARY IN-MEMRORY CACHE (Redis)
     db_cache_server = '127.0.0.1'
     db_cache_port = '6379'
@@ -116,9 +119,9 @@ class DataConstants(object):
 
 
     # or we can store credentials (or anything else) in a file "datacred.py" in the same folder, which will overwrite the above
+
     try:
         from findatapy.util.datacred import DataCred
-
         cred = DataCred()
 
         folder_historic_CSV = cred.folder_historic_CSV
@@ -147,6 +150,8 @@ class DataConstants(object):
 
         quandl_api_key = cred.quandl_api_key
         fred_api_key = cred.fred_api_key
+
+        db_server = cred.db_server
 
         db_cache_server = cred.db_cache_server
         db_cache_port = cred.db_cache_port
