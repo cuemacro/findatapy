@@ -376,7 +376,8 @@ class Filter(object):
 
                 # data_frame = data_frame[data_frame.index < finish_date]
 
-        return data_frame.ix[start_index:finish_index]
+        # CAREFUL: need + 1 otherwise will only return 1 less than usual
+        return data_frame.iloc[start_index:finish_index + 1]
 
     def filter_time_series_by_time_of_day(self, hour, minute, data_frame, in_tz = None, out_tz = None):
         """Filter time series by time of day
