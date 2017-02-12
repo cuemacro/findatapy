@@ -349,35 +349,37 @@ class Filter(object):
             finish date of calendar
         data_frame : DataFrame
             data frame to be filtered
-        offset : int
+        offset : int (not implemented!)
             offset to be applied
 
         Returns
         -------
         DataFrame
         """
-        start_index = 0
-        finish_index = len(data_frame.index) - offset
+
+        # start_index = 0
+        # finish_index = len(data_frame.index) - offset
 
         # filter by dates for intraday data
-        if(start_date is not None):
-            start_index = data_frame.index.searchsorted(start_date)
-
-            if (0 <= start_index + offset < len(data_frame.index)):
-                start_index = start_index + offset
-
-                # data_frame = data_frame.ix[start_date < data_frame.index]
-
-        if(finish_date is not None):
-            finish_index = data_frame.index.searchsorted(finish_date)
-
-            if (0 <= finish_index - offset < len(data_frame.index)):
-                finish_index = finish_index - offset
-
-                # data_frame = data_frame[data_frame.index < finish_date]
-
+        # if(start_date is not None):
+        #     start_index = data_frame.index.searchsorted(start_date)
+        #
+        #     if (0 <= start_index + offset < len(data_frame.index)):
+        #         start_index = start_index + offset
+        #
+        #         # data_frame = data_frame.ix[start_date < data_frame.index]
+        #
+        # if(finish_date is not None):
+        #     finish_index = data_frame.index.searchsorted(finish_date)
+        #
+        #     if (0 <= finish_index - offset < len(data_frame.index)):
+        #         finish_index = finish_index - offset
         # CAREFUL: need + 1 otherwise will only return 1 less than usual
-        return data_frame.iloc[start_index:finish_index + 1]
+        # return data_frame.iloc[start_date:finish_date]
+
+        # just use pandas, quicker and simpler code!
+        return data_frame.loc[start_date:finish_date]
+
 
     def filter_time_series_by_time_of_day(self, hour, minute, data_frame, in_tz = None, out_tz = None):
         """Filter time series by time of day
