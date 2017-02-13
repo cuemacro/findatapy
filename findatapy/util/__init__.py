@@ -9,3 +9,4 @@ from findatapy.util.loggermanager import LoggerManager
 from findatapy.util.singleton import Singleton
 from findatapy.util.tickerfactory import TickerFactory
 from findatapy.util.twitter import Twitter
+from findatapy.util.swimpool import SwimPool
