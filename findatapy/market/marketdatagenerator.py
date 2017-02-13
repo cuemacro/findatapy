@@ -401,6 +401,10 @@ class MarketDataGenerator(object):
             thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
 
         if thread_no > 0:
+            # limit the threads to the number of available CPUs
+            from multiprocessing import cpu_count
+            thread_no = min(cpu_count(),thread_no)
+            
             pool = Pool(thread_no)
 
             # open the market data downloads in their own threads and return the results
