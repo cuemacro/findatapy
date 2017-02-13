@@ -76,6 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 13 Feb 2017 - Added SwimPool class
 * 12 Feb 2017 - Fixed small filtering bug (for start/finish date) and began adding tests
 * 11 Feb 2017 - Added example to show how to use Redis caching
 * 09 Feb 2017 - Added in-memory caching when loading market data (via Redis)
