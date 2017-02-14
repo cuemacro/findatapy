@@ -76,6 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 14 Feb 2017 - Speeded up returns statistic computation and created DataQuality class
 * 13 Feb 2017 - Added SwimPool class
 * 12 Feb 2017 - Fixed small filtering bug (for start/finish date) and began adding tests
 * 11 Feb 2017 - Added example to show how to use Redis caching
