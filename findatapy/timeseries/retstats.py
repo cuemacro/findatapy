@@ -55,14 +55,14 @@ class RetStats(object):
         -------
         DataFrame
         """
-        calculations = Calculations()
 
+        # TODO work on optimizing this method
         self._rets = returns_df.mean(axis=0) * ann_factor
         self._vol = returns_df.std(axis=0) * math.sqrt(ann_factor)
         self._inforatio = self._rets / self._vol
         self._kurtosis = returns_df.kurtosis(axis=0) / math.sqrt(ann_factor)
 
-        index_df = calculations.create_mult_index(returns_df)
+        index_df = (1.0 + returns_df).cumprod()
 
         if pandas.__version__ < '0.17':
             max2here = pandas.expanding_max(index_df)
@@ -73,6 +73,8 @@ class RetStats(object):
 
         self._dd = dd2here.min()
         self._yoy_rets = index_df.resample('A').mean().pct_change()
+
+        return self
 
     def ann_returns(self):
         """Gets annualised returns
