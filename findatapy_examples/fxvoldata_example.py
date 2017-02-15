@@ -1,38 +1,61 @@
-from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
+__author__ = 'saeedamen'  # Saeed Amen
 
-market = Market(market_data_generator=MarketDataGenerator())
+#
+# Copyright 2016 Cuemacro
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#
+# See the License for the specific language governing permissions and limitations under the License.
+#
 
-# choose run_example = 0 for everything
-# run_example = 1 - download implied volatility data from Bloomberg for FX
-# run_example = 2 - download implied volatility data (not in configuration file) from Bloomberg for FX
 
-run_example = 0
+if __name__ == '__main__':
+    try:
+        import multiprocessing;
 
-###### download FX volatility quotations from Bloomberg
-if run_example == 1 or run_example == 0:
+        multiprocessing.freeze_support()
+    except:
+        pass
 
-    ####### Bloomberg examples (you need to have a Bloomberg Terminal installed for this to work!)
-    # let's download past month of 1M ATM data for EURUSD
+    from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
 
-    # we can use shortcuts given that implied vol surfaces for most major crosses have been defined
-    md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='NYC', category='fx-implied-vol',
-                                   tickers=['EURUSDV1M'])
+    market = Market(market_data_generator=MarketDataGenerator())
 
-    df = market.fetch_market(md_request)
-    print(df.tail(n=10))
+    # choose run_example = 0 for everything
+    # run_example = 1 - download implied volatility data from Bloomberg for FX
+    # run_example = 2 - download implied volatility data (not in configuration file) from Bloomberg for FX
 
-    # we can also download the whole volatility surface for EURUSD, this way.. without having to define every point!
-    md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-implied-vol',
-                                   tickers=['EURUSD'])
+    run_example = 0
 
-    df = market.fetch_market(md_request)
+    ###### download FX volatility quotations from Bloomberg
+    if run_example == 1 or run_example == 0:
 
-    # we can also download the whole all market data for EURUSD for pricing options (vol surface)
-    md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-vol-market',
-                                   tickers=['EURUSD'])
+        ####### Bloomberg examples (you need to have a Bloomberg Terminal installed for this to work!)
+        # let's download past month of 1M ATM data for EURUSD
 
-    df = market.fetch_market(md_request)
-    print(df.tail(n=10))
+        # we can use shortcuts given that implied vol surfaces for most major crosses have been defined
+        md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='NYC', category='fx-implied-vol',
+                                       tickers=['EURUSDV1M'])
+
+        df = market.fetch_market(md_request)
+        print(df.tail(n=10))
+
+        # we can also download the whole volatility surface for EURUSD, this way.. without having to define every point!
+        md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-implied-vol',
+                                       tickers=['EURUSD'])
+
+        df = market.fetch_market(md_request)
+
+        # we can also download the whole all market data for EURUSD for pricing options (vol surface)
+        md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-vol-market',
+                                       tickers=['EURUSD'])
+
+        df = market.fetch_market(md_request)
+        print(df.tail(n=10))
 
 ###### download FX volatility quotations from Bloomberg defining all fields
 if run_example == 2 or run_example == 0:

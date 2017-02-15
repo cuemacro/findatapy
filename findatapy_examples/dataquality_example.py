@@ -22,17 +22,31 @@ if __name__ == '__main__':
         pass
 
     from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
+    from findatapy.timeseries import DataQuality
 
     market = Market(market_data_generator=MarketDataGenerator())
+    dq = DataQuality()
 
+    # in the config file, we can use keywords 'open', 'high', 'low', 'close' and 'volume' for Yahoo and Google finance data
+
+    # download equities data from Yahoo
     md_request = MarketDataRequest(
-        start_date="01 Jun 2000",                   # start date (download data over past decade)
-        data_source='fred',                         # use FRED as data source
-        tickers=['US CPI YoY', 'EZ CPI YoY'],       # ticker
-        fields=['close'],                           # which fields to download
-        vendor_tickers=['CPIAUCSL', 'CP0000EZ17M086NEST'],  # ticker (FRED)
-        vendor_fields=['close'])                    # which FRED fields to download
+        start_date="decade",            # start date
+        data_source='yahoo',            # use Bloomberg as data source
+        tickers=['Apple', 'Citigroup'], # ticker (findatapy)
+        fields=['close'],               # which fields to download
+        vendor_tickers=['aapl', 'c'],   # ticker (Yahoo)
+        vendor_fields=['Close'])        # which Bloomberg fields to download)
 
     df = market.fetch_market(md_request)
 
-    print(df.tail(n=10))
+    # create duplicated DataFrame
+    df = df.append(df)
+    count, dups = dq.count_repeated_dates(df)
+
+    print("Number of duplicated elements")
+    print(count)
+
+    print("Duplicated dates")
+    print(dups)
+

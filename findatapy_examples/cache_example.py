@@ -50,31 +50,55 @@ There is a much bigger difference when we download large amounts of data (eg. in
 2017-02-11 13:54:55,643 - __main__ - INFO - Read from Redis cache.. that was a lot quicker!
 
 """
-from findatapy.market import Market, MarketDataRequest, MarketDataGenerator, IOEngine
-from findatapy.util import LoggerManager
 
-market = Market(market_data_generator=MarketDataGenerator())
-logger = LoggerManager().getLogger(__name__)
+__author__ = 'saeedamen'  # Saeed Amen
 
-# in the config file, we can use keywords 'open', 'high', 'low', 'close' and 'volume' for Yahoo and Google finance data
+#
+# Copyright 2016 Cuemacro
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#
+# See the License for the specific language governing permissions and limitations under the License.
+#
 
-# download equities data from Yahoo
-md_request = MarketDataRequest(
-    start_date="01 Jan 2002",       # start date
-    finish_date="05 Feb 2017",      # finish date
-    data_source='yahoo',            # use Bloomberg as data source
-    tickers=['Apple', 'Citigroup', 'Microsoft', 'Oracle', 'IBM', 'Walmart', 'Amazon', 'UPS', 'Exxon'],  # ticker (findatapy)
-    fields=['close'],               # which fields to download
-    vendor_tickers=['aapl', 'c', 'msft', 'orcl', 'ibm', 'wmt', 'amzn', 'ups', 'xom'],                   # ticker (Yahoo)
-    vendor_fields=['Close'],
-    cache_algo='internet_load_return')        # which Bloomberg fields to download)
 
-logger.info("Load data from Yahoo directly")
-df = market.fetch_market(md_request)
+if __name__ == '__main__':
+    try:
+        import multiprocessing;
 
-logger.info("Loaded data from Yahoo directly, now try reading from Redis in-memory cache")
-md_request.cache_algo = 'cache_algo_return' # change flag to cache algo so won't attempt to download via web
+        multiprocessing.freeze_support()
+    except:
+        pass
 
-df = market.fetch_market(md_request)
+    from findatapy.market import Market, MarketDataRequest, MarketDataGenerator, IOEngine
+    from findatapy.util import LoggerManager
 
-logger.info("Read from Redis cache.. that was a lot quicker!")
+    market = Market(market_data_generator=MarketDataGenerator())
+    logger = LoggerManager().getLogger(__name__)
+
+    # in the config file, we can use keywords 'open', 'high', 'low', 'close' and 'volume' for Yahoo and Google finance data
+
+    # download equities data from Yahoo
+    md_request = MarketDataRequest(
+        start_date="01 Jan 2002",       # start date
+        finish_date="05 Feb 2017",      # finish date
+        data_source='yahoo',            # use Bloomberg as data source
+        tickers=['Apple', 'Citigroup', 'Microsoft', 'Oracle', 'IBM', 'Walmart', 'Amazon', 'UPS', 'Exxon'],  # ticker (findatapy)
+        fields=['close'],               # which fields to download
+        vendor_tickers=['aapl', 'c', 'msft', 'orcl', 'ibm', 'wmt', 'amzn', 'ups', 'xom'],                   # ticker (Yahoo)
+        vendor_fields=['Close'],
+        cache_algo='internet_load_return')        # which Bloomberg fields to download)
+
+    logger.info("Load data from Yahoo directly")
+    df = market.fetch_market(md_request)
+
+    logger.info("Loaded data from Yahoo directly, now try reading from Redis in-memory cache")
+    md_request.cache_algo = 'cache_algo_return' # change flag to cache algo so won't attempt to download via web
+
+    df = market.fetch_market(md_request)
+
+    logger.info("Read from Redis cache.. that was a lot quicker!")
