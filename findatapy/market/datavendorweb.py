@@ -485,9 +485,9 @@ class DataVendorPandasWeb(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-            # only return the requested tickers
-            data_frame = pandas.DataFrame(data = data_frame[ticker_requested],
-                                          index = data_frame.index, columns = ticker_requested)
+            # return all the tickers (this might be imcomplete list, but we will pad the list later)
+            # data_frame = pandas.DataFrame(data = data_frame[ticker_requested],
+            #                               index = data_frame.index, columns = ticker_requested)
 
         self.logger.info("Completed request from Pandas Web.")
 
