@@ -172,6 +172,7 @@ class Market(object):
         if data_frame is None:
             data_frame = self.market_data_generator.fetch_market_data(md_request)
 
+        # push into cache
         self.speed_cache.put_dataframe(key, data_frame)
 
         return data_frame
@@ -181,8 +182,9 @@ class Market(object):
 from findatapy.util.fxconv import FXConv
 
 class FXCrossFactory(object):
-    """Class generates FX spot time series and FX total return time series (assuming we already have
-    total return indices available from xxxUSD form) from underlying series.
+    """Generates FX spot time series and FX total return time series (assuming we already have
+    total return indices available from xxxUSD form) from underlying series. Can also produce cross rates from the USD
+    crosses.
 
     """
 
@@ -190,8 +192,6 @@ class FXCrossFactory(object):
         self.logger = LoggerManager().getLogger(__name__)
         self.fxconv = FXConv()
 
-        from findatapy.market import SpeedCache
-        self.speed_cache = SpeedCache()
         self.cache = {}
 
         self.calculations = Calculations()
@@ -466,7 +466,7 @@ from findatapy.util import LoggerManager
 from findatapy.timeseries import Calculations, Filter, Timezone
 
 class FXVolFactory(object):
-    """Generates FX implied volatility time series and surfaces (using very simple interpolation!).
+    """Generates FX implied volatility time series and surfaces (using very simple interpolation!) and only in delta space.
 
     """
     # types of quotation on vol surface
@@ -518,16 +518,7 @@ class FXVolFactory(object):
 
         market_data_generator = self.market_data_generator
 
-        if isinstance(cross, str): cross = [cross]
-        if isinstance(tenor, str): tenor = [tenor]
-        if isinstance(part, str): part = [part]
-
-        tickers = []
-
-        for cr in cross:
-            for tn in tenor:
-                for pt in part:
-                    tickers.append(cr + pt + tn)
+        tickers = self.get_labels(cross, part, tenor)
 
         market_data_request = MarketDataRequest(
             start_date=start, finish_date=end,
@@ -544,6 +535,20 @@ class FXVolFactory(object):
         data_frame.index.name = 'Date'
 
         return data_frame
+
+    def get_labels(self, cross, part, tenor):
+        if isinstance(cross, str): cross = [cross]
+        if isinstance(tenor, str): tenor = [tenor]
+        if isinstance(part, str): part = [part]
+
+        tickers = []
+
+        for cr in cross:
+            for tn in tenor:
+                for pt in part:
+                    tickers.append(cr + pt + tn)
+
+        return tickers
 
     def extract_vol_surface_for_date(self, df, cross, date_index):
 

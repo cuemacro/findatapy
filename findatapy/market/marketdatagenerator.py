@@ -28,7 +28,6 @@ class MarketDataGenerator(object):
     in subclasses of DataVendor class. This provides a common wrapper for all these data sources.
 
     """
-    _time_series_cache = {} # shared across all instances of object!
 
     def __init__(self):
         self.config = ConfigManager().get_instance()
@@ -40,12 +39,6 @@ class MarketDataGenerator(object):
         self.days_expired_intraday_contract_download = -1
 
         return
-
-    def flush_cache(self):
-        """Flushs internal cache of time series
-        """
-
-        self._time_series_cache = {}
 
     def set_intraday_code(self, code):
         self._intraday_code = code
@@ -175,33 +168,6 @@ class MarketDataGenerator(object):
 
                 return None
 
-    def get_market_data_cached(self, market_data_request):
-        """Loads time series from cache (if it exists)
-
-        Parameters
-        ----------
-        market_data_request : MarketDataRequest
-            contains various properties describing time series to fetched, including ticker, start & finish date etc.
-
-        Returns
-        -------
-        pandas.DataFrame
-        """
-
-        if (market_data_request.freq == "intraday"):
-            ticker = market_data_request.tickers
-        else:
-            ticker = None
-
-        fname = self.create_time_series_hash_key(market_data_request, ticker)
-
-        if (fname in self._time_series_cache):
-            data_frame = self._time_series_cache[fname]
-
-            return self.filter.filter_time_series(market_data_request, data_frame)
-
-        return None
-
     def create_time_series_hash_key(self, market_data_request, ticker = None):
         """Creates a hash key for retrieving the time series
 
@@ -218,7 +184,7 @@ class MarketDataGenerator(object):
         if(isinstance(ticker, list)):
             ticker = ticker[0]
 
-        return self.create_cache_file_name(self.create_category_key(market_data_request, ticker))
+        return self.create_cache_file_name(MarketDataRequest().create_category_key(market_data_request, ticker))
 
     def download_intraday_tick(self, market_data_request):
         """Loads intraday time series from specified data provider
@@ -390,9 +356,9 @@ class MarketDataGenerator(object):
             from multiprocessing.dummy import Pool
         else:
             # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
-            # must use the multiprocessing_on_dill library otherwise can't pickle objects correctly
+            # must use the multiprocess library otherwise can't pickle objects correctly
             # note: currently not very stable
-            from multiprocessing_on_dill import Pool
+            from multiprocess import Pool
             # from pathos.pools import ProcessPool as Pool
 
         thread_no = DataConstants().market_thread_no['other']
@@ -427,8 +393,8 @@ class MarketDataGenerator(object):
             if data_frame_group is not None:
                 try:
                     data_frame_agg = self.calculations.pandas_outer_join(data_frame_group)
-                except:
-                    self.logger.warning('Possible overlap of columns? Have you specifed same ticker several times')
+                except Exception as e:
+                    self.logger.warning('Possible overlap of columns? Have you specifed same ticker several times: ' + str(e))
 
         return data_frame_agg
 
@@ -445,7 +411,7 @@ class MarketDataGenerator(object):
         pandas.DataFrame
         """
 
-        key = self.create_category_key(market_data_request)
+        key = MarketDataRequest().create_category_key(market_data_request)
 
         is_key_overriden = False
 
@@ -495,8 +461,8 @@ class MarketDataGenerator(object):
             else:
                 data_frame_agg = self.fetch_group_time_series(market_data_request_list)
 
-        fname = self.create_cache_file_name(key)
-        self._time_series_cache[fname] = data_frame_agg  # cache in memory (ok for daily data)
+        # fname = self.create_cache_file_name(key)
+        # self._time_series_cache[fname] = data_frame_agg  # cache in memory (ok for daily data)
 
         return data_frame_agg
 
@@ -507,35 +473,6 @@ class MarketDataGenerator(object):
             ConfigManager().get_instance().get_expiry_for_ticker(market_data_request.data_source, market_data_request.ticker)
 
         return market_data_request
-
-    def create_category_key(self, market_data_request, ticker=None):
-        """Returns a category key for the associated MarketDataRequest
-
-        Parameters
-        ----------
-        market_data_request : MarketDataRequest
-            contains various properties describing time series to fetched, including ticker, start & finish date etc.
-
-        Returns
-        -------
-        str
-        """
-
-        category = 'default-cat'
-        cut = 'default-cut'
-
-        if market_data_request.category is not None: category = market_data_request.category
-
-        environment = market_data_request.environment
-        source = market_data_request.data_source
-        freq = market_data_request.freq
-
-        if market_data_request.cut is not None: cut = market_data_request.cut
-
-        if (ticker is not None): key = environment + "." + category + '.' + source + '.' + freq + '.' + cut + '.' + ticker
-        else: key = environment + "." + category + '.' + source + '.' + freq + '.' + cut
-
-        return key
 
     def create_cache_file_name(self, filename):
         return DataConstants().folder_time_series_data + "/" + filename

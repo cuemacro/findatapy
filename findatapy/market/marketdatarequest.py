@@ -34,7 +34,7 @@ class MarketDataRequest(object):
     # tickers (can be list) eg. EURUSD
     # category (eg. fx, equities, fixed_income, cal_event, fundamental)
     # freq_mult (eg. 1)
-    # freq
+    # freq (tick, intraday or daily)
     # gran_freq (minute, daily, hourly, daily, weekly, monthly, yearly)
     # fields (can be list)
     # vendor_tickers (optional)
@@ -44,7 +44,20 @@ class MarketDataRequest(object):
     # environment (eg. prod, backtest) - old data is saved with prod, backtest will overwrite the last data point
 
     def generate_key(self):
+        """Generate a key to describe this MarketDataRequest object, which can be used in a cache, as a hash-style key
+
+        Returns
+        -------
+        str
+            Key to describe this MarketDataRequest
+
+        """
         from findatapy.market.ioengine import SpeedCache
+
+        if self.freq == 'daily': ticker = None
+        else: ticker = self.tickers[0]
+
+        self.__category_key = self.create_category_key(self, ticker=ticker)
 
         return SpeedCache().generate_key(self, ['logger', '__futures_curve', '__cache_algo'])
 
@@ -115,6 +128,39 @@ class MarketDataRequest(object):
             self.trade_side = trade_side
             self.expiry_date = expiry_date
             self.futures_curve = futures_curve
+
+    def create_category_key(self, market_data_request, ticker=None):
+        """Returns a category key for the associated MarketDataRequest, which can be used to create filenames (or
+        as part of a storage key in a cache)
+
+        Parameters
+        ----------
+        market_data_request : MarketDataRequest
+            contains various properties describing time series to fetched, including ticker, start & finish date etc.
+
+        Returns
+        -------
+        str
+        """
+
+        category = 'default-cat'
+        cut = 'default-cut'
+
+        if market_data_request.category is not None: category = market_data_request.category
+
+        environment = market_data_request.environment
+        source = market_data_request.data_source
+        freq = market_data_request.freq
+
+        if market_data_request.cut is not None: cut = market_data_request.cut
+
+        if (ticker is not None):
+            key = str(environment) + "." + str(category) + '.' + str(source) + '.' + str(freq) + '.' + str(cut) \
+                  + '.' + str(ticker)
+        else:
+            key = str(environment) + "." + str(category) + '.' + str(source) + '.' + str(freq) + '.' + str(cut)
+
+        return key
 
     @property
     def data_source(self):

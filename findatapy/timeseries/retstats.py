@@ -23,6 +23,17 @@ class RetStats(object):
 
     """
 
+    def __init__(self, returns_df = None, ann_factor = None):
+        self._returns_df = returns_df
+        self._ann_factor = ann_factor
+
+        self._rets = None
+        self._vol = None
+        self._inforatio = None
+        self._kurtosis = None
+        self._dd = None
+        self._yoy_rets = None
+
     def calculate_ret_stats_from_prices(self, prices_df, ann_factor):
         """Calculates return statistics for an asset's price
 
@@ -41,7 +52,7 @@ class RetStats(object):
 
         self.calculate_ret_stats(calculations.calculate_returns(prices_df), ann_factor)
 
-    def calculate_ret_stats(self, returns_df, ann_factor):
+    def calculate_ret_stats(self, returns_df = None, ann_factor = None):
         """Calculates return statistics for an asset's returns including IR, vol, ret and drawdowns
 
         Parameters
@@ -55,6 +66,9 @@ class RetStats(object):
         -------
         DataFrame
         """
+
+        if returns_df is None: returns_df = self._returns_df
+        if ann_factor is None: ann_factor = self._ann_factor
 
         # TODO work on optimizing this method
         self._rets = returns_df.mean(axis=0) * ann_factor
@@ -83,6 +97,9 @@ class RetStats(object):
         -------
         float
         """
+
+        if self._rets is None: self.calculate_ret_stats()
+
         return self._rets
 
     def ann_vol(self):
@@ -92,6 +109,8 @@ class RetStats(object):
         -------
         float
         """
+        if self._vol is None: self.calculate_ret_stats()
+
         return self._vol
 
     def inforatio(self):
@@ -101,6 +120,9 @@ class RetStats(object):
         -------
         float
         """
+
+        if self._inforatio is None: self.calculate_ret_stats()
+
         return self._inforatio
 
     def drawdowns(self):
@@ -110,6 +132,8 @@ class RetStats(object):
         -------
         float
         """
+        if self._dd is None: self.calculate_ret_stats()
+
         return self._dd
 
     def kurtosis(self):
@@ -119,6 +143,8 @@ class RetStats(object):
         -------
         float
         """
+        if self._kurtosis is None: self.calculate_ret_stats()
+
         return self._kurtosis
 
     def yoy_rets(self):
@@ -128,6 +154,8 @@ class RetStats(object):
         -------
         float
         """
+        if self._yoy_rets is None: self.calculate_ret_stats()
+
         return self._yoy_rets
 
     def summary(self):
@@ -137,6 +165,9 @@ class RetStats(object):
         -------
         str
         """
+
+        if self._rets is None: self.calculate_ret_stats()
+
         stat_list = []
 
         for i in range(0, len(self._rets.index)):

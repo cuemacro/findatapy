@@ -462,21 +462,24 @@ class Calculations(object):
 
         # get the first non-nan values for rets and then start index
         # one before that (otherwise will ignore first rets point)
-        first_date_indices = df_rets.apply(lambda series: series.first_valid_index())
-        first_ord_indices = list()
+        # first_date_indices = df_rets.apply(lambda series: series.first_valid_index())
+        # first_ord_indices = list()
+        #
+        # for i in first_date_indices:
+        #     try:
+        #         ind = df.index.searchsorted(i)
+        #     except:
+        #         ind = 0
+        #
+        #     if ind > 0: ind = ind - 1
+        #
+        #     first_ord_indices.append(ind)
+        #
+        # for i in range(0, len(df.columns)):
+        #     df.iloc[first_ord_indices[i],i] = 100
 
-        for i in first_date_indices:
-            try:
-                ind = df.index.searchsorted(i)
-            except:
-                ind = 0
-
-            if ind > 0: ind = ind - 1
-
-            first_ord_indices.append(ind)
-
-        for i in range(0, len(df.columns)):
-            df.iloc[first_ord_indices[i],i] = 100
+        for c in df.columns:
+            df.loc[df[c].first_valid_index(), c] = 100
 
         return df
 
@@ -765,7 +768,11 @@ class Calculations(object):
         df_right = df_right.fillna(method='ffill')
 
         # now realign back to days when we trade
+        # df_left.to_csv('left.csv'); df_right.to_csv('right.csv')
+
         df_left, df_right = df_left.align(df_right, join='left', axis=0)
+
+
 
         return df_left, df_right
 

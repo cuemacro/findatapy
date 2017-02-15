@@ -154,6 +154,13 @@ class IOEngine(object):
                 if(fname == 'flush_all_keys'):
                     r.flushall()
                 else:
+                    # allow deletion of keys by pattern matching
+                    if "*" in fname:
+                        x = r.keys(fname)
+
+                        if len(x) > 0:
+                            r.delete(x)
+
                     r.delete(fname)
 
             except Exception as e:
@@ -762,7 +769,8 @@ class SpeedCache(object):
         key = []
 
         for k in obj.__dict__:
-            if k not in key_drop:
+            # provided the key is not in one of the dropped keys
+            if not(any(k in a for a in key_drop)):
                 add = obj.__dict__[k]
 
                 if add is not None:
