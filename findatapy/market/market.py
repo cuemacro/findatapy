@@ -120,7 +120,7 @@ class Market(object):
                         if len(t) == 6:
                             df.append(fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
                                                               cut=md_request.cut, data_source=md_request.data_source, part=fxvf.part,
-                               cache_algo_return=md_request.cache_algo))
+                               cache_algo=md_request.cache_algo))
 
                     if df != []:
                         data_frame = Calculations().pandas_outer_join(df)
