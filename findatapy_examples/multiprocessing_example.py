@@ -20,7 +20,7 @@ def load_tickers():
 
     market = Market(market_data_generator=MarketDataGenerator())
 
-    DataConstants.market_thread_technique = 'threading'
+    DataConstants.market_thread_technique = 'thread'
 
     # get recent list of S&P500 (some of these will fail eg. BRK.B because incorrect ticker - findatapy should handle
     # this error gracefully)
