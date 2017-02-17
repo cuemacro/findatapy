@@ -37,7 +37,6 @@ class MarketDataGenerator(object):
         self.io_engine = IOEngine()
         self._intraday_code = -1
         self.days_expired_intraday_contract_download = -1
-        self.swim_pool = SwimPool()
 
         return
 
@@ -358,7 +357,7 @@ class MarketDataGenerator(object):
             thread_no = DataConstants.market_thread_no[market_data_request_list[0].data_source]
 
         if thread_no > 0:
-            pool = self.swim_pool.create_pool(thread_technique = DataConstants.market_thread_technique, thread_no=thread_no)
+            pool = SwimPool().create_pool(thread_technique = DataConstants.market_thread_technique, thread_no=thread_no)
 
             # open the market data downloads in their own threads and return the results
             result = pool.map_async(self.fetch_single_time_series, market_data_request_list)
