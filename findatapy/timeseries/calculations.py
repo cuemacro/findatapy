@@ -478,6 +478,7 @@ class Calculations(object):
         # for i in range(0, len(df.columns)):
         #     df.iloc[first_ord_indices[i],i] = 100
 
+        # probably a quicker way to do this, maybe using group by?
         for c in df.columns:
             df.loc[df[c].first_valid_index(), c] = 100
 

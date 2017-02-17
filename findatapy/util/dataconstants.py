@@ -79,6 +79,8 @@ class DataConstants(object):
     # "thread" or "multiprocessing" (experimental!) library to use when downloading data
     market_thread_technique = "thread"
 
+    multiprocessing_library = 'multiprocessing_on_dill' # 'multiprocessing_on_dill' or 'multiprocess'
+
     # how many threads to use for loading external data (don't do too many on slow machines!)
     # also some data sources will complain if you start too many parallel threads to call data!
     # for some data providers might get better performance from 1 thread only!

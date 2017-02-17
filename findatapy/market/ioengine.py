@@ -705,8 +705,9 @@ class IOEngine(object):
 import hashlib
 
 class SpeedCache(object):
-    """Wrapper for cache hosted in external in memory database (by default Redis). This allows us to share hash across
-    Python instances, rather than having repopulate each time we restart Python.
+    """Wrapper for cache hosted in external in memory database (by default Redis, although in practice, can use
+    any database supported in this class). This allows us to share hash across Python instances, rather than having
+    repopulate each time we restart Python. Also can let us share cache easily across threads, without replicating.
 
     """
     def __init__(self, db_cache_server = None, db_cache_port = None, engine = 'redis'):

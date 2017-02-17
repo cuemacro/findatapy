@@ -19,7 +19,7 @@ import pandas
 from findatapy.market.ioengine import IOEngine
 from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Filter, Calculations
-from findatapy.util import DataConstants, LoggerManager, ConfigManager
+from findatapy.util import DataConstants, LoggerManager, ConfigManager, SwimPool
 
 class MarketDataGenerator(object):
     """Returns market data time series by directly calling market data sources.
@@ -37,6 +37,7 @@ class MarketDataGenerator(object):
         self.io_engine = IOEngine()
         self._intraday_code = -1
         self.days_expired_intraday_contract_download = -1
+        self.swim_pool = SwimPool()
 
         return
 
@@ -351,23 +352,13 @@ class MarketDataGenerator(object):
 
         data_frame_agg = None
 
-        # depends on the nature of operation as to whether we should use threading or multiprocessing library
-        if DataConstants().market_thread_technique is "thread":
-            from multiprocessing.dummy import Pool
-        else:
-            # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
-            # must use the multiprocess library otherwise can't pickle objects correctly
-            # note: currently not very stable
-            from multiprocess import Pool
-            # from pathos.pools import ProcessPool as Pool
-
-        thread_no = DataConstants().market_thread_no['other']
+        thread_no = DataConstants.market_thread_no['other']
 
         if market_data_request_list[0].data_source in DataConstants().market_thread_no:
-            thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
+            thread_no = DataConstants.market_thread_no[market_data_request_list[0].data_source]
 
         if thread_no > 0:
-            pool = Pool(thread_no)
+            pool = self.swim_pool.create_pool(thread_technique = DataConstants.market_thread_technique, thread_no=thread_no)
 
             # open the market data downloads in their own threads and return the results
             result = pool.map_async(self.fetch_single_time_series, market_data_request_list)
