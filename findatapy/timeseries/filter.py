@@ -313,13 +313,13 @@ class Filter(object):
             #     except:
             #         i = 0
 
-            try:
-                start_date = start_date.date()
-            except: pass
-
-            try:
-                finish_date = finish_date.date()
-            except: pass
+            # try:
+            #     start_date = start_date.date()
+            # except: pass
+            #
+            # try:
+            #     finish_date = finish_date.date()
+            # except: pass
 
             # if we have dates stored as opposed to TimeStamps (ie. daily data), we use a simple (slower) method
             # for filtering daily data
