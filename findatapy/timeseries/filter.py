@@ -378,6 +378,9 @@ class Filter(object):
         # return data_frame.iloc[start_date:finish_date]
 
         # just use pandas, quicker and simpler code!
+        if data_frame is None:
+            return None
+
         return data_frame.loc[start_date:finish_date]
 
 
