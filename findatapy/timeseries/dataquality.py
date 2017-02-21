@@ -46,14 +46,18 @@ class DataQuality(object):
         Returns
         -------
         float
-            Between 0 and 100 representing the number of NaN values in a DataFrame
+            Between 0 and 100 representing the number of NaN values in a DataFrame (0 if the dataframe is None)
         """
+
+        if df is None:
+            return 100.0
 
         if start_date is not None:
             df = df[df.index >= start_date]
 
-        nan = float(df.isnull().sum())
-        valid = float(df.count())
+        nan = float(df.isnull().sum().sum())
+
+        valid = float(df.count().sum())
         total = nan + valid
 
         if total == 0: return 0
@@ -61,7 +65,8 @@ class DataQuality(object):
         return round(100.0 * (nan / total), 1)
 
     def percentage_nan_by_columns(self, df, start_date = None):
-        """Calculates the percentage of NaN values in a DataFrame and reports results by column.
+        """Calculates the percentage of NaN values in a DataFrame and reports results by column. Likely, can do this
+        for whole dataframe in one operation.
 
         Parameters
         ----------
