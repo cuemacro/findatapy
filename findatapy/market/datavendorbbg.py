@@ -14,6 +14,7 @@ __author__ = 'saeedamen' # Saeed Amen
 
 from findatapy.market.datavendor import DataVendor
 from findatapy.market.marketdatarequest import MarketDataRequest
+from findatapy.timeseries import Calculations
 
 import abc
 import datetime
@@ -428,8 +429,10 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
     def event_loop(self, session, eventQueue):
         not_done = True
 
-        data_frame = pandas.DataFrame()
         data_frame_slice = None
+
+        data_frame_list = []
+        data_frame_cols = []
 
         while not_done:
             # nextEvent() method can be called with timeout to let
@@ -452,25 +455,31 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
 
             # append DataFrame only if not empty
             if data_frame_slice is not None:
-                if (data_frame.empty):
-                    data_frame = data_frame_slice
-                else:
-                    # make sure we do not reattach a message we've already read
-                    # sometimes Bloomberg can give us back the same message several times
-                    # CAREFUL with this!
-                    # compares the ticker names, and make sure they don't already exist in the time series
-                    data_frame = self.combine_slices(data_frame, data_frame_slice)
+                data_frame_list.append(self.combine_slices(data_frame_cols, data_frame_slice))
+
+                # keep list of columns we've already found (occasionally BBG seems to return columns more than once?)
+                # (this will fail for intraday time series)
+                try:
+                    data_frame_cols.append(list(data_frame_slice.columns.get_level_values(1).values)[0])
+                except: pass
+
+        from findatapy.timeseries import Calculations
+
+        if data_frame_cols == []:   # intraday case
+            data_frame = pandas.concat(data_frame_list)
+        else:                       # daily frequencies
+            data_frame = Calculations().iterative_outer_join(data_frame_list)
 
         # make sure we do not have any duplicates in the time series
         if data_frame is not None:
-            if data_frame.empty == False:
-                data_frame.drop_duplicates(keep='last')
+            #if data_frame.empty == False:
+            data_frame.drop_duplicates(keep='last')
 
         self._data_frame = data_frame
 
     # process raw message returned by Bloomberg
     def process_response_event(self, event):
-        data_frame = pandas.DataFrame()
+        data_frame_list = []
 
         for msg in event:
             # generates a lot of output - so don't use unless for debugging purposes
@@ -483,14 +492,9 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
             data_frame_slice = self.process_message(msg)
 
             if (data_frame_slice is not None):
-                if (data_frame.empty):
-                    data_frame = data_frame_slice
-                else:
-                    data_frame = data_frame.append(data_frame_slice)
-            else:
-                data_frame = data_frame_slice
+                data_frame_list.append(data_frame_slice)
 
-        return data_frame
+        return pandas.concat(data_frame_list)
 
     def get_previous_trading_date(self):
         tradedOn = datetime.date.today()
@@ -562,7 +566,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
 
     # create request for data
     @abc.abstractmethod
-    def combine_slices(self, data_frame, data_frame_slice):
+    def combine_slices(self, data_frame_cols, data_frame_slice):
         # to be implemented by subclass
         return
 
@@ -585,19 +589,20 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         self.logger = LoggerManager().getLogger(__name__)
         self._options = []
 
-    def combine_slices(self, data_frame, data_frame_slice):
+    def combine_slices(self, data_frame_cols, data_frame_slice):
         # data
         try:
             if (data_frame_slice.columns.get_level_values(1).values[0]
-                not in data_frame.columns.get_level_values(1).values):
+                not in data_frame_cols):
 
-                return data_frame.join(data_frame_slice, how="outer")
+                # return data_frame.join(data_frame_slice, how="outer")
+                return data_frame_slice
         except Exception as e :
             self.logger.warn('Data slice empty ' + str(e))
 
-            return data_frame
+            return None
 
-        return data_frame
+        return None
 
     # populate options for Bloomberg request for asset daily request
     def fill_options(self, market_data_request):
@@ -612,17 +617,50 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
     def process_message(self, msg):
         # Process received events
-        ticker = msg.getElement('securityData').getElement('security').getValue()
-        fieldData = msg.getElement('securityData').getElement('fieldData')
 
-        # SLOW loop (careful, not all the fields will be returned every time
-        # hence need to include the field name in the tuple)
-        data = defaultdict(dict)
+        # SLOW loop (careful, not all the fields will be returned every time hence need to include the field name in the tuple)
+        # perhaps try to run in parallel?
 
-        for i in range(fieldData.numValues()):
-            for j in range(1, fieldData.getValue(i).numElements()):
-                data[(str(fieldData.getValue(i).getElement(j).name()), ticker)][fieldData.getValue(i).getElement(0).getValue()] \
-                    = fieldData.getValue(i).getElement(j).getValue()
+        implementation = 'cython'
+
+        if implementation == 'simple':
+            ticker = msg.getElement('securityData').getElement('security').getValue()
+            fieldData = msg.getElement('securityData').getElement('fieldData')
+
+            data = defaultdict(dict)
+            #
+            # # FASTER avoid calling getValue/getElement methods in blpapi, very slow, better to cache variables
+            for i in range(fieldData.numValues()):
+                mini_field_data = fieldData.getValue(i)
+                date = mini_field_data.getElement(0).getValue()
+
+                for j in range(1, mini_field_data.numElements()):
+                    field_value = mini_field_data.getElement(j)
+
+                    data[(str(field_value.name()), ticker)][date] = field_value.getValue()
+
+            # ORIGINAL repeated calling getValue/getElement much slower
+            # for i in range(fieldData.numValues()):
+            #     for j in range(1, fieldData.getValue(i).numElements()):
+            #         data[(str(fieldData.getValue(i).getElement(j).name()), ticker)][fieldData.getValue(i).getElement(0).getValue()] \
+            #             = fieldData.getValue(i).getElement(j).getValue()
+        elif implementation == 'py4j':
+            pass
+
+            # TODO Py4J
+            # from findatapy.market.bbgloop import bbgloop
+            # from py4j.java_gateway import JavaGateway
+
+            # gateway = JavaGateway()
+            # data = gateway.entry_point.parseFieldDataArray(msg)
+        elif implementation == 'cython':
+            ticker = msg.getElement('securityData').getElement('security').getValue()
+            fieldData = msg.getElement('securityData').getElement('fieldData')
+
+            from findatapy.market.bbgloop import bbgloop
+
+            data = bbgloop(fieldData, ticker)
+            # TODO cython
 
         data_frame = pandas.DataFrame(data)
 
@@ -728,13 +766,13 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
 
         return data_frame
 
-    def combine_slices(self, data_frame, data_frame_slice):
-        if (data_frame_slice.columns.get_level_values(1).values[0]
-            not in data_frame.columns.get_level_values(1).values):
+    def combine_slices(self, data_frame_cols, data_frame_slice):
+        if (data_frame_slice.columns.get_level_values(1).values[0] not in data_frame_cols):
 
-            return data_frame.join(data_frame_slice, how="outer")
+            # return data_frame.join(data_frame_slice, how="outer")
+            return data_frame_slice
 
-        return data_frame
+        return None
 
     # create request for data
     def send_bar_request(self, session, eventQueue):
@@ -776,8 +814,9 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         self.NUM_EVENTS = blpapi.Name("numEvents")
         self.TIME = blpapi.Name("time")
 
-    def combine_slices(self, data_frame, data_frame_slice):
-        return data_frame.append(data_frame_slice)
+    def combine_slices(self, data_frame_cols, data_frame_slice):
+        # return data_frame.append(data_frame_slice)
+        return data_frame_slice
 
     # populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
@@ -907,7 +946,8 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
         self.SESSION_TERMINATED = blpapi.Name("SessionTerminated")
 
     def combine_slices(self, data_frame, data_frame_slice):
-        return data_frame.append(data_frame_slice)
+        # return data_frame.append(data_frame_slice)
+        return data_frame_slice
 
     # populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
@@ -934,7 +974,6 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
         data = msg.getElement(self.TICK_DATA).getElement(self.TICK_DATA)
 
         self.logger.info("Processing tick data for " + str(self._options.security))
-        tuple = []
 
         data_vals = data.values()
 
