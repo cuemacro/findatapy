@@ -119,7 +119,6 @@ class DataConstants(object):
     # FRED (Federal Reserve of St Louis data) settings
     fred_api_key = "x"
 
-
     # or we can store credentials (or anything else) in a file "datacred.py" in the same folder, which will overwrite the above
 
     try:
