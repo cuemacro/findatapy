@@ -135,7 +135,7 @@ class IOEngine(object):
         return self.read_csv_data_frame(f_name, freq, cutoff = cutoff, dateparse = dateparse,
                             postfix = postfix, intraday_tz = intraday_tz, excel_sheet = excel_sheet)
 
-    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1', db_port='6379'):
+    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1', db_port='6379', timeout = 10):
 
         if 'hdf5' in engine:
             engine = 'hdf5'
@@ -149,7 +149,8 @@ class IOEngine(object):
             fname = os.path.basename(fname).replace('.', '_')
 
             try:
-                r = redis.StrictRedis(host=db_server, port=db_port, db=0)
+                r = redis.StrictRedis(host=db_server, port=db_port, db=0, socket_timeout=timeout,
+                 socket_connect_timeout=timeout)
 
                 if(fname == 'flush_all_keys'):
                     r.flushall()
@@ -176,7 +177,9 @@ class IOEngine(object):
             self.logger.info('Load MongoDB library: ' + fname)
 
             c = pymongo.MongoClient(db_server, connect=False)
-            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
+            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS,
+                           connectTimeoutMS=socketTimeoutMS)
+
             store.delete_library(fname)
 
             c.close()
@@ -197,7 +200,7 @@ class IOEngine(object):
     def write_time_series_cache_to_disk(self, fname, data_frame,
                                         engine = 'hdf5_fixed', append_data = False, db_server = DataConstants().db_server,
                                         db_port = None, username = None, password = None,
-                                        filter_out_matching = None):
+                                        filter_out_matching = None, timeout = 10):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
@@ -216,6 +219,8 @@ class IOEngine(object):
             True - append data to disk
         db_server : str
             Database server for arctic (default: '127.0.0.1')
+        timeout : int
+            Number of seconds to do timeout
         """
 
         # default HDF5 format
@@ -241,7 +246,8 @@ class IOEngine(object):
             fname = os.path.basename(fname).replace('.', '_')
 
             try:
-                r = redis.StrictRedis(host=db_server, port=db_port, db=0)
+                r = redis.StrictRedis(host=db_server, port=db_port, db=0, socket_timeout=timeout,
+                 socket_connect_timeout=timeout)
                 r.set(fname, data_frame.to_msgpack(compress='blosc'))
                 self.logger.info("Pushed " + fname + " to Redis")
             except Exception as e:
@@ -257,7 +263,9 @@ class IOEngine(object):
             self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
             c = pymongo.MongoClient(db_server, connect=False)
-            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
+
+            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS,
+                           connectTimeoutMS=socketTimeoutMS)
 
             database = None
 
@@ -519,7 +527,7 @@ class IOEngine(object):
                 return item.data
 
             except Exception as e:
-                self.logger.warning('Library does not exist: ' + fname + ', ' + str (e))
+                self.logger.warning('Library does not exist: ' + fname + ' & message is ' + str (e))
 
                 return None
 
