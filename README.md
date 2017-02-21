@@ -76,6 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 21 Feb 2017 - Optimised code to speed up downloading Bloomberg data considerably
 * 17 Feb 2017 - Added switch between multiprocess and multiprocessing on dill libraries in SpeedCache
 * 15 Feb 2017 - Added multiprocessing_example, switched to using multiprocess library and improved SpeedCache (for deletion of keys)
 * 14 Feb 2017 - Speeded up returns statistic computation and created DataQuality class
