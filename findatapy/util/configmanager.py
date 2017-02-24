@@ -18,6 +18,8 @@ from findatapy.util.singleton import Singleton
 from findatapy.util.loggermanager import LoggerManager
 from dateutil.parser import parse
 
+import re
+
 import threading
 
 class ConfigManager(object):
@@ -241,6 +243,19 @@ class ConfigManager(object):
     def get_expiry_for_ticker(source, ticker):
         return ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
                 source + '.' + ticker]
+
+    @staticmethod
+    def get_filtered_tickers_list_for_category(category, source, freq, cut, filter):
+        tickers = ConfigManager._dict_time_series_category_tickers_library_to_library[
+                category + '.' + source + '.' + freq + '.' + cut]
+
+        filtered_tickers = []
+
+        for tick in tickers:
+            if re.search(filter, tick):
+                filtered_tickers.append(tick)
+
+        return filtered_tickers
 
     @staticmethod
     def get_tickers_list_for_category(category, source, freq, cut):
