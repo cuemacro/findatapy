@@ -14,6 +14,7 @@ __author__ = 'saeedamen' # Saeed Amen
 
 import math
 import pandas
+import collections
 
 from findatapy.timeseries.calculations import Calculations
 
@@ -33,6 +34,34 @@ class RetStats(object):
         self._kurtosis = None
         self._dd = None
         self._yoy_rets = None
+
+    def split_into_dict(self):
+        """If we have multiple columns in our returns, we can opt to split up the RetStats object into a dictionary of
+        smaller RetStats object, one for each asset return
+
+        Returns
+        -------
+        dict
+            Dictionary of RetStats objects
+        """
+
+        ret_stats_dict = collections.OrderedDict()
+
+        for d in self._returns_df.columns:
+
+            returns_df = pandas.DataFrame(self._returns_df[d])
+
+            # if column is of the form asset / signal, just keep the asset part
+            try:
+                d = d.split(' / ')[0]
+            except:
+                pass
+
+            returns_df.columns = [d]
+
+            ret_stats_dict[d] = RetStats(returns_df, self._ann_factor)
+
+        return ret_stats_dict
 
     def calculate_ret_stats_from_prices(self, prices_df, ann_factor):
         """Calculates return statistics for an asset's price
