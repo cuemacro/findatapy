@@ -161,8 +161,8 @@ class Market(object):
                     if df != []:
                         data_frame = Calculations().pandas_outer_join(df)
 
-            if md_request.futures_curve is not None:
-                data_frame = md_request.futures_curve.fetch_continuous_futures_time_series\
+            if md_request.abstract_curve is not None:
+                data_frame = md_request.abstract_curve.fetch_continuous_time_series\
                     (md_request, self.market_data_generator)
 
             # TODO add more special examples here for different asset classes
