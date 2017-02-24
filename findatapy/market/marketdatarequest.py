@@ -40,7 +40,7 @@ class MarketDataRequest(object):
     # vendor_tickers (optional)
     # vendor_fields (optional)
     # cache_algo (eg. internet, disk, memory) - internet will forcibly download from the internet
-    # futures_curve (optional)
+    # abstract_curve (optional)
     # environment (eg. prod, backtest) - old data is saved with prod, backtest will overwrite the last data point
 
     def generate_key(self):
@@ -59,7 +59,7 @@ class MarketDataRequest(object):
 
         self.__category_key = self.create_category_key(self, ticker=ticker)
 
-        return SpeedCache().generate_key(self, ['logger', '__futures_curve', '__cache_algo'])
+        return SpeedCache().generate_key(self, ['logger', '_MarketDataRequest__abstract_curve', '_MarketDataRequest__cache_algo'])
 
     def __init__(self, data_source = None,
                  start_date ='year', finish_date = datetime.datetime.utcnow(),
@@ -68,7 +68,7 @@ class MarketDataRequest(object):
                  fields = ['close'], cache_algo = "internet_load_return",
                  vendor_tickers = None, vendor_fields = None,
                  environment = "backtest", trade_side = 'trade', expiry_date = None,
-                 md_request = None, futures_curve = None
+                 md_request = None, abstract_curve = None
                  ):
 
         self.logger = LoggerManager().getLogger(__name__)
@@ -92,7 +92,7 @@ class MarketDataRequest(object):
                 self.data_source = copy.deepcopy(md_request.data_source)
                 self.start_date = copy.deepcopy(md_request.start_date)
                 self.finish_date = copy.deepcopy(md_request.finish_date)
-                self.tickers = copy.deepcopy(md_request.tickers)
+
                 self.category = copy.deepcopy(md_request.category)  # special predefined categories
 
                 self.cut = copy.deepcopy(md_request.cut)                        # closing time of the data (eg. NYC, LDN, TOK etc)
@@ -103,7 +103,9 @@ class MarketDataRequest(object):
                 self.environment = copy.deepcopy(md_request.environment)        # backtest environment only supported at present
                 self.trade_side = copy.deepcopy(md_request.trade_side)
                 self.expiry_date = copy.deepcopy(md_request.expiry_date)
-                self.futures_curve = copy.deepcopy(md_request.futures_curve)
+                self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
+
+                self.tickers = copy.deepcopy(md_request.tickers)    # need this after category in case have wildcard
         else:
             self.freq_mult = freq_mult
 
@@ -116,7 +118,6 @@ class MarketDataRequest(object):
             self.data_source = data_source
             self.start_date = start_date
             self.finish_date = finish_date
-            self.tickers = tickers
             self.category = category                # special predefined categories
 
             self.cut = cut                          # closing time of the data (eg. NYC, LDN, TOK etc)
@@ -127,7 +128,9 @@ class MarketDataRequest(object):
             self.environment = environment          # backtest environment only supported at present
             self.trade_side = trade_side
             self.expiry_date = expiry_date
-            self.futures_curve = futures_curve
+            self.abstract_curve = abstract_curve
+
+            self.tickers = tickers
 
     def create_category_key(self, market_data_request, ticker=None):
         """Returns a category key for the associated MarketDataRequest, which can be used to create filenames (or
@@ -195,7 +198,34 @@ class MarketDataRequest(object):
             if not isinstance(tickers, list):
                 tickers = [tickers]
 
-        self.__tickers = tickers
+        config = None
+
+        new_tickers = []
+
+        if tickers is not None:
+            for tick in tickers:
+                if '*' in tick:
+                    start = ''
+
+                    if tick[-1] == "*" and tick[0] != "*":
+                        start = "^"
+
+                    tick = start + "(" + tick.replace('*','') + ")"
+
+                    if config is None:
+                        from findatapy.util import ConfigManager
+                        config = ConfigManager().get_instance()
+
+                    new_tickers.append(config.get_filtered_tickers_list_for_category(
+                        self.__category, self.__data_source, self.__freq, self.__cut, tick))
+                else:
+                    new_tickers.append(tick)
+
+            new_tickers = self._flatten_list(new_tickers)
+
+            self.__tickers = new_tickers
+        else:
+            self.__tickers = tickers
 
     @property
     def fields(self):
@@ -417,14 +447,37 @@ class MarketDataRequest(object):
         self.__expiry_date = self.date_parser(expiry_date)
 
     @property
-    def futures_curve(self):
-        return self.__futures_curve
+    def abstract_curve(self):
+        return self.__abstract_curve
 
-    @futures_curve.setter
-    def futures_curve(self, futures_curve):
-        if futures_curve is not None:
-            self.__futures_curve_key = futures_curve.generate_key()
+    @abstract_curve.setter
+    def abstract_curve(self, abstract_curve):
+        if abstract_curve is not None:
+            self.__abstract_curve_key = abstract_curve.generate_key()
         else:
-            self.__futures_curve_key = None
+            self.__abstract_curve_key = None
 
-        self.__futures_curve = futures_curve
+        self.__abstract_curve = abstract_curve
+
+    def _flatten_list(self, list_of_lists):
+        """Flattens list, particularly useful for combining baskets
+
+        Parameters
+        ----------
+        list_of_lists : str (list)
+            List to be flattened
+
+        Returns
+        -------
+
+        """
+        result = []
+
+        for i in list_of_lists:
+            # Only append if i is a basestring (superclass of string)
+            if isinstance(i, str):
+                result.append(i)
+            # Otherwise call this function recursively
+            else:
+                result.extend(self._flatten_list(i))
+        return result
