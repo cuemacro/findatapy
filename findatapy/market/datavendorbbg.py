@@ -465,7 +465,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
 
         from findatapy.timeseries import Calculations
 
-        if data_frame_cols == []:   # intraday case
+        if data_frame_cols == [] and data_frame_list != []:   # intraday case
             data_frame = pandas.concat(data_frame_list)
         else:                       # daily frequencies
             data_frame = Calculations().iterative_outer_join(data_frame_list)
@@ -494,7 +494,11 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
             if (data_frame_slice is not None):
                 data_frame_list.append(data_frame_slice)
 
-        return pandas.concat(data_frame_list)
+        if data_frame_list == []:
+            self.logger.warn("No elements for ticker.")
+            return None
+        else:
+            return pandas.concat(data_frame_list)
 
     def get_previous_trading_date(self):
         tradedOn = datetime.date.today()
@@ -621,7 +625,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         # SLOW loop (careful, not all the fields will be returned every time hence need to include the field name in the tuple)
         # perhaps try to run in parallel?
 
-        implementation = 'cython'
+        implementation = 'simple'
 
         if implementation == 'simple':
             ticker = msg.getElement('securityData').getElement('security').getValue()
@@ -660,6 +664,13 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
             from findatapy.market.bbgloop import bbgloop
 
             data = bbgloop(fieldData, ticker)
+        elif implementation == 'numba':
+            ticker = msg.getElement('securityData').getElement('security').getValue()
+            fieldData = msg.getElement('securityData').getElement('fieldData')
+
+            from findatapy.market.bbgloop_numba import bbgloop_numba
+
+            data = bbgloop_numba(fieldData, ticker)
             # TODO cython
 
         data_frame = pandas.DataFrame(data)
