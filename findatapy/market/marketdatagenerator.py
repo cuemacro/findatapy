@@ -305,7 +305,7 @@ class MarketDataGenerator(object):
                 expiry_date = pandas.Timestamp(expiry_date).date()
 
                 # use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
-                # if the expiry is before the start date of our download don't both loading
+                # if the expiry is before the start date of our download don't bother downloading this ticker
                 if  expiry_date < start_date:
                     tickers[i] = None
 
