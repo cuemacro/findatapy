@@ -779,7 +779,7 @@ class SpeedCache(object):
 
         for k in obj.__dict__:
             # provided the key is not in one of the dropped keys
-            if not(any(k in a for a in key_drop)):
+            if not(any(a == k for a in key_drop)):
                 add = obj.__dict__[k]
 
                 if add is not None:
