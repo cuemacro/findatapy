@@ -32,6 +32,8 @@ class Calculations(object):
 
     """
 
+    ##### calculate
+
     def calculate_signal_tc(self, signal_data_frame, tc, period_shift = 1):
         """Calculates the transaction costs for a particular signal
 
@@ -168,7 +170,7 @@ class Calculations(object):
         reset_points = reset_points.cumsum()
 
         # make sure they have the same column names (otherwise issues around pandas calc - assume same ordering for cols)
-        old_cols = strategy_returns_data_frame.columns
+        old_cols = strategy_returns_data_frame.columnsii
         strategy_returns_data_frame.columns = signal_data_frame_pushed.columns
 
         for c in reset_points.columns:
@@ -179,6 +181,100 @@ class Calculations(object):
         strategy_returns_data_frame.columns = old_cols
 
         return strategy_returns_data_frame
+
+    def calculate_trade_no(self, signal_data_frame):
+
+        ####### how many trades have there been (ignore size of the trades)
+        trades = abs(signal_data_frame - signal_data_frame.shift(-1))
+        trades = trades[trades > 0].count()
+
+        signal_data_frame = pandas.DataFrame(index=trades.index, columns=['Trades'], data=trades)
+
+        return signal_data_frame
+
+    def calculate_trade_duration(self, signal_data_frame):
+        """Calculates cumulative trade durations
+
+        Parameters
+        ----------
+        signal_data_frame : DataFrame
+            trading signals
+        strategy_returns_data_frame: DataFrame
+            returns of strategy to be tested
+        period_shift : int
+            number of periods to shift signal
+
+        Returns
+        -------
+        DataFrame
+        """
+
+        # TODO
+        # # signal need to be aligned to NEXT period for returns
+        # signal_data_frame_pushed = signal_data_frame.shift(1)
+        #
+        # # find all the trade points
+        # reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
+        #
+        # reset_points = reset_points.cumsum()
+        #
+        # time_data_frame = pandas.DataFrame(index = signal_data_frame.index, columns = signal_data_frame.columns,
+        #                                    data=numpy.ones([len(signal_data_frame.index), len(signal_data_frame.columns)]))
+        #
+        # # make sure they have the same column names (otherwise issues around pandas calc - assume same ordering for cols)
+        # old_cols = time_data_frame.columns
+        # time_data_frame.columns = signal_data_frame_pushed.columns
+        #
+        # for c in reset_points.columns:
+        #     time_data_frame[c + 'cumperiods'] = reset_points[c]
+        #     time_data_frame[c] = time_data_frame.groupby([c + 'cumperiods'])[c].cumsum()
+        #     time_data_frame = time_data_frame.drop([c + 'cumperiods'], axis=1)
+        #
+        # time_data_frame.columns = old_cols
+        #
+        # return time_data_frame
+
+    def calculate_final_trade_duration(self, signal_data_frame):
+        """Calculates cumulative trade durations
+
+        Parameters
+        ----------
+        signal_data_frame : DataFrame
+            trading signals
+        strategy_returns_data_frame: DataFrame
+            returns of strategy to be tested
+        period_shift : int
+            number of periods to shift signal
+
+        Returns
+        -------
+        DataFrame
+        """
+
+        # signal need to be aligned to NEXT period for returns
+        signal_data_frame_pushed = signal_data_frame.shift(1)
+
+        # find all the trade points
+        reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
+
+        reset_points = reset_points.cumsum()
+
+        time_data_frame = pandas.DataFrame(index=signal_data_frame.index, columns=signal_data_frame.columns,
+                                           data=numpy.ones(
+                                               [len(signal_data_frame.index), len(signal_data_frame.columns)]))
+
+        # make sure they have the same column names (otherwise issues around pandas calc - assume same ordering for cols)
+        old_cols = time_data_frame.columns
+        time_data_frame.columns = signal_data_frame_pushed.columns
+
+        for c in reset_points.columns:
+            time_data_frame[c + 'cumperiods'] = reset_points[c]
+            time_data_frame[c] = time_data_frame.groupby([c + 'cumperiods'])[c].cumsum()
+            time_data_frame = time_data_frame.drop([c + 'cumperiods'], axis=1)
+
+        time_data_frame.columns = old_cols
+
+        return time_data_frame
 
     def calculate_risk_stop_signals(self, signal_data_frame, cum_rets_trades, stop_loss, take_profit):
         """
