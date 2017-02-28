@@ -14,6 +14,7 @@ __author__ = 'saeedamen' # Saeed Amen
 
 from findatapy.market.datavendor import DataVendor
 from findatapy.market.marketdatarequest import MarketDataRequest
+from findatapy.util import ConfigManager
 from findatapy.timeseries import Calculations
 
 import abc
@@ -33,13 +34,16 @@ class DataVendorBBG(DataVendor):
 
     # these fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
     list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day', 'futures-chain-tickers',
-                          'futures-chain-last-trade-dates', 'first-notice-date', 'first-tradeable-day']
+                          'futures-chain-last-trade-dates', 'first-notice-date', 'first-tradeable-day',
+                          'cal-non-settle-dates']
 
     list_of_ref_vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST', 'LAST_TRADEABLE_DT', 'FUT_CHAIN',
-                                 'FUT_CHAIN_LAST_TRADE_DATES', 'FUT_NOTICE_FIRST', 'FUT_FIRST_TRADE_DT']
+                                 'FUT_CHAIN_LAST_TRADE_DATES', 'FUT_NOTICE_FIRST', 'FUT_FIRST_TRADE_DT',
+                                 'CALENDAR_NON_SETTLEMENT_DATES']
 
     def __init__(self):
         super(DataVendorBBG, self).__init__()
+
         self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
@@ -361,11 +365,11 @@ class DataVendorBBGOpen(DataVendorBBG):
 
 class BBGLowLevelTemplate(object): # in order that the init function works in child classes
 
+    convert_override_fields = {'settlement-calendar-code' : 'SETTLEMENT_CALENDAR_CODE'}
+
     _session = None
 
     def __init__(self):
-        self._data_frame = None
-
         self.RESPONSE_ERROR = blpapi.Name("responseError")
         self.SESSION_TERMINATED = blpapi.Name("SessionTerminated")
         self.CATEGORY = blpapi.Name("category")
@@ -374,8 +378,6 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
         return
 
     def load_time_series(self, market_data_request):
-
-        options = self.fill_options(market_data_request)
 
         #if(BBGLowLevelTemplate._session is None):
         session = self.start_bloomberg_session()
@@ -409,14 +411,20 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
                 return
 
             self.logger.info("Creating request...")
-            eventQueue = None # blpapi.EventQueue()
+
+            eventQueue = blpapi.EventQueue()
+            # eventQueue = None
 
             # create a request
-            self.send_bar_request(session, eventQueue)
+            from blpapi import CorrelationId
+            cid = CorrelationId()
+            options = self.fill_options(market_data_request)
+
+            self.send_bar_request(session, eventQueue, options, cid)
+
             self.logger.info("Waiting for data to be returned...")
 
-            # wait for events from session and collect the data
-            self.event_loop(session, eventQueue)
+            data_frame = self.event_loop(session)
 
         finally:
             # stop the session (will fail if NoneType)
@@ -424,9 +432,9 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
                 session.stop()
             except: pass
 
-        return self._data_frame
+        return data_frame
 
-    def event_loop(self, session, eventQueue):
+    def event_loop(self, session):
         not_done = True
 
         data_frame_slice = None
@@ -438,6 +446,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
             # nextEvent() method can be called with timeout to let
             # the program catch Ctrl-C between arrivals of new events
             event = session.nextEvent() # removed time out
+            # event = eventQueue.nextEvent()
 
             # Bloomberg will send us responses in chunks
             if event.eventType() == blpapi.Event.PARTIAL_RESPONSE:
@@ -475,7 +484,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
             #if data_frame.empty == False:
             data_frame.drop_duplicates(keep='last')
 
-        self._data_frame = data_frame
+        return data_frame
 
     # process raw message returned by Bloomberg
     def process_response_event(self, event):
@@ -564,7 +573,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
 
     # create request for data
     @abc.abstractmethod
-    def send_bar_request(self, session, eventQueue):
+    def send_bar_request(self, session, eventQueue, options, cid):
         # to be implemented by subclass
         return
 
@@ -591,7 +600,6 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         super(BBGLowLevelDaily, self).__init__()
 
         self.logger = LoggerManager().getLogger(__name__)
-        self._options = []
 
     def combine_slices(self, data_frame_cols, data_frame_slice):
         # data
@@ -610,14 +618,16 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
     # populate options for Bloomberg request for asset daily request
     def fill_options(self, market_data_request):
-        self._options = OptionsBBG()
+        options = OptionsBBG()
 
-        self._options.security = market_data_request.tickers
-        self._options.startDateTime = market_data_request.start_date
-        self._options.endDateTime = market_data_request.finish_date
-        self._options.fields = market_data_request.fields
+        options.security = market_data_request.tickers
+        options.startDateTime = market_data_request.start_date
+        options.endDateTime = market_data_request.finish_date
+        options.fields = market_data_request.fields
 
-        return self._options
+        options.overrides = market_data_request.overrides
+
+        return options
 
     def process_message(self, msg):
         # Process received events
@@ -686,22 +696,22 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         return data_frame
 
     # create request for data
-    def send_bar_request(self, session, eventQueue):
+    def send_bar_request(self, session, eventQueue, options, cid):
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest("HistoricalDataRequest")
 
-        request.set("startDate", self._options.startDateTime.strftime('%Y%m%d'))
-        request.set("endDate", self._options.endDateTime.strftime('%Y%m%d'))
+        request.set("startDate", options.startDateTime.strftime('%Y%m%d'))
+        request.set("endDate", options.endDateTime.strftime('%Y%m%d'))
 
         # # only one security/eventType per request
-        for field in self._options.fields:
+        for field in options.fields:
             request.getElement("fields").appendValue(field)
 
-        for security in self._options.security:
+        for security in options.security:
             request.getElement("securities").appendValue(security)
 
         self.logger.info("Sending Bloomberg Daily Request:" + str(request))
-        session.sendRequest(request)
+        session.sendRequest(request=request, correlationId=cid)
 
 class BBGLowLevelRef(BBGLowLevelTemplate):
 
@@ -709,18 +719,19 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         super(BBGLowLevelRef, self).__init__()
 
         self.logger = LoggerManager().getLogger(__name__)
-        self._options = []
 
     # populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
-        self._options = OptionsBBG()
+        options = OptionsBBG()
 
-        self._options.security = market_data_request.tickers
-        self._options.startDateTime = market_data_request.start_date
-        self._options.endDateTime = market_data_request.finish_date
-        self._options.fields = market_data_request.fields
+        options.security = market_data_request.tickers
+        options.startDateTime = market_data_request.start_date
+        options.endDateTime = market_data_request.finish_date
+        options.fields = market_data_request.fields
 
-        return self._options
+        options.overrides = market_data_request.overrides
+
+        return options
 
     def process_message(self, msg):
         data = collections.defaultdict(dict)
@@ -745,7 +756,14 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                     field_name = "%s" % field.name()
 
                     for i, row in enumerate(field.values()):
-                        data[(field_name, ticker)][index] = re.findall(r'"(.*?)"', "%s" % row)[0]
+                        try:
+                            field_val = re.findall(r'"(.*?)"', "%s" % row)[0]
+                        except:
+                            e = row.getElement(0)
+                            # k = str(e.name())
+                            field_val = e.getValue()
+
+                        data[(field_name, ticker)][index] = field_val
 
                         index = index + 1
                 else:
@@ -786,24 +804,34 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         return None
 
     # create request for data
-    def send_bar_request(self, session, eventQueue):
+    def send_bar_request(self, session, eventQueue, options, cid):
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest('ReferenceDataRequest')
 
         self.add_override(request, 'TIME_ZONE_OVERRIDE', 23)    # force GMT time
-        self.add_override(request, 'INCLUDE_EXPIRED_CONTRACTS', "Y")  # force GMT time
-        self.add_override(request, 'START_DT', self._options.startDateTime.strftime('%Y%m%d'))
-        self.add_override(request, 'END_DT', self._options.endDateTime.strftime('%Y%m%d'))
+        self.add_override(request, 'INCLUDE_EXPIRED_CONTRACTS', "Y")  # include expired contracts
+        self.add_override(request, 'START_DT', options.startDateTime.strftime('%Y%m%d'))
+        self.add_override(request, 'END_DT', options.endDateTime.strftime('%Y%m%d'))
 
         # only one security/eventType per request
-        for field in self._options.fields:
+        for field in options.fields:
             request.getElement("fields").appendValue(field)
 
-        for security in self._options.security:
+        for security in options.security:
             request.getElement("securities").appendValue(security)
 
+        if options.overrides != {}:
+            for k in options.overrides.keys():
+                new_k = k
+
+                # is there a pretty name for this?
+                if k in super().convert_override_fields:
+                    new_k = super().convert_override_fields[k]
+
+                self.add_override(request, new_k, options.overrides[k])
+
         self.logger.info("Sending Bloomberg Ref Request:" + str(request))
-        session.sendRequest(request)
+        session.sendRequest(request=request, correlationId=cid)
 
 from operator import itemgetter
 
@@ -831,29 +859,30 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
 
     # populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
-        self._options = OptionsBBG()
+        options = OptionsBBG()
 
-        self._options.security = market_data_request.tickers[0]    # get 1st ticker only!
-        self._options.event = market_data_request.trade_side.upper()
-        self._options.barInterval = market_data_request.freq_mult
-        self._options.startDateTime = market_data_request.start_date
-        self._options.endDateTime = market_data_request.finish_date
-        self._options.gapFillInitialBar = False
+        options.security = market_data_request.tickers[0]    # get 1st ticker only!
+        options.event = market_data_request.trade_side.upper()
+        options.barInterval = market_data_request.freq_mult
+        options.startDateTime = market_data_request.start_date
+        options.endDateTime = market_data_request.finish_date
+        options.gapFillInitialBar = False
+        options.overrides = market_data_request.overrides
 
-        if hasattr(self._options.startDateTime, 'microsecond'):
-            self._options.startDateTime = self._options.startDateTime.replace(microsecond=0)
+        if hasattr(options.startDateTime, 'microsecond'):
+            options.startDateTime = options.startDateTime.replace(microsecond=0)
 
-        if hasattr(self._options.endDateTime, 'microsecond'):
-            self._options.endDateTime = self._options.endDateTime.replace(microsecond=0)
+        if hasattr(options.endDateTime, 'microsecond'):
+            options.endDateTime = options.endDateTime.replace(microsecond=0)
 
-        return self._options
+        return options
 
     # iterate through Bloomberg output creating a DataFrame output
     # implements abstract method
     def process_message(self, msg):
         data = msg.getElement(self.BAR_DATA).getElement(self.BAR_TICK_DATA)
 
-        self.logger.info("Processing intraday data for " + str(self._options.security))
+        # self.logger.info("Processing intraday data for " + str(self._options.security))
 
         data_vals = list(data.values())
 
@@ -915,27 +944,27 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
                       columns=['open', 'high', 'low', 'close', 'volume', 'events'])
 
     # implement abstract method: create request for data
-    def send_bar_request(self, session, eventQueue):
+    def send_bar_request(self, session, eventQueue, options, cid):
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest("IntradayBarRequest")
 
         # only one security/eventType per request
-        request.set("security", self._options.security)
-        request.set("eventType", self._options.event)
-        request.set("interval", self._options.barInterval)
+        request.set("security", options.security)
+        request.set("eventType", options.event)
+        request.set("interval", options.barInterval)
 
         # self.add_override(request, 'TIME_ZONE_OVERRIDE', 'GMT')
 
-        if self._options.startDateTime and self._options.endDateTime:
-            request.set("startDateTime", self._options.startDateTime)
-            request.set("endDateTime", self._options.endDateTime)
+        if options.startDateTime and options.endDateTime:
+            request.set("startDateTime", options.startDateTime)
+            request.set("endDateTime", options.endDateTime)
 
-        if self._options.gapFillInitialBar:
+        if options.gapFillInitialBar:
             request.append("gapFillInitialBar", True)
 
         self.logger.info("Sending Intraday Bloomberg Request...")
 
-        session.sendRequest(request)
+        session.sendRequest(request=request, correlationId=cid)
 
 class BBGLowLevelTick(BBGLowLevelTemplate):
 
@@ -962,29 +991,29 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
 
     # populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
-        self._options = OptionsBBG()
+        options = OptionsBBG()
 
-        self._options.security = market_data_request.tickers[0]    # get 1st ticker only!
-        self._options.event = market_data_request.trade_side.upper()
+        options.security = market_data_request.tickers[0]    # get 1st ticker only!
+        options.event = market_data_request.trade_side.upper()
         # self._options.barInterval = market_data_request.freq_mult
-        self._options.startDateTime = market_data_request.start_date
-        self._options.endDateTime = market_data_request.finish_date
+        options.startDateTime = market_data_request.start_date
+        options.endDateTime = market_data_request.finish_date
         # self._options.gapFillInitialBar = False
 
-        if hasattr(self._options.startDateTime, 'microsecond'):
-            self._options.startDateTime = self._options.startDateTime.replace(microsecond=0)
+        if hasattr(options.startDateTime, 'microsecond'):
+            options.startDateTime = self._options.startDateTime.replace(microsecond=0)
 
-        if hasattr(self._options.endDateTime, 'microsecond'):
-            self._options.endDateTime = self._options.endDateTime.replace(microsecond=0)
+        if hasattr(options.endDateTime, 'microsecond'):
+            options.endDateTime = options.endDateTime.replace(microsecond=0)
 
-        return self._options
+        return options
 
     # iterate through Bloomberg output creating a DataFrame output
     # implements abstract method
     def process_message(self, msg):
         data = msg.getElement(self.TICK_DATA).getElement(self.TICK_DATA)
 
-        self.logger.info("Processing tick data for " + str(self._options.security))
+       #  self.logger.info("Processing tick data for " + str(self._options.security))
 
         data_vals = data.values()
 
@@ -1018,25 +1047,25 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
                       columns=['close', 'ticksize'])
 
     # implement abstract method: create request for data
-    def send_bar_request(self, session, eventQueue):
+    def send_bar_request(self, session, eventQueue, options, cid):
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest("IntradayTickRequest")
 
         # only one security/eventType per request
-        request.set("security", self._options.security)
+        request.set("security", options.security)
         request.getElement("eventTypes").appendValue("TRADE")
         # request.set("eventTypes", self._options.event)
         request.set("includeConditionCodes", True)
 
         # self.add_override(request, 'TIME_ZONE_OVERRIDE', 'GMT')
 
-        if self._options.startDateTime and self._options.endDateTime:
-            request.set("startDateTime", self._options.startDateTime)
-            request.set("endDateTime", self._options.endDateTime)
+        if options.startDateTime and options.endDateTime:
+            request.set("startDateTime", options.startDateTime)
+            request.set("endDateTime", options.endDateTime)
 
         self.logger.info("Sending Tick Bloomberg Request...")
 
-        session.sendRequest(request)
+        session.sendRequest(request=request, correlationId=cid)
 
 #######################################################################################################################
 
