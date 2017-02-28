@@ -730,3 +730,4 @@ class RatesFactory(object):
 
         return data_frame
 
+
