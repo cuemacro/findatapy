@@ -42,6 +42,7 @@ class MarketDataRequest(object):
     # cache_algo (eg. internet, disk, memory) - internet will forcibly download from the internet
     # abstract_curve (optional)
     # environment (eg. prod, backtest) - old data is saved with prod, backtest will overwrite the last data point
+    # overrides (optional) - if you need to specify any data overrides (eg. for BBG)
 
     def generate_key(self):
         """Generate a key to describe this MarketDataRequest object, which can be used in a cache, as a hash-style key
@@ -59,7 +60,8 @@ class MarketDataRequest(object):
 
         self.__category_key = self.create_category_key(self, ticker=ticker)
 
-        return SpeedCache().generate_key(self, ['logger', '_MarketDataRequest__abstract_curve', '_MarketDataRequest__cache_algo'])
+        return SpeedCache().generate_key(self, ['logger', '_MarketDataRequest__abstract_curve', '_MarketDataRequest__cache_algo',
+                                                '_MarketDataRequest__overrides'])
 
     def __init__(self, data_source = None,
                  start_date ='year', finish_date = datetime.datetime.utcnow(),
@@ -68,7 +70,7 @@ class MarketDataRequest(object):
                  fields = ['close'], cache_algo = "internet_load_return",
                  vendor_tickers = None, vendor_fields = None,
                  environment = "backtest", trade_side = 'trade', expiry_date = None,
-                 md_request = None, abstract_curve = None
+                 md_request = None, abstract_curve = None, overrides = {}
                  ):
 
         self.logger = LoggerManager().getLogger(__name__)
@@ -103,7 +105,8 @@ class MarketDataRequest(object):
                 self.environment = copy.deepcopy(md_request.environment)        # backtest environment only supported at present
                 self.trade_side = copy.deepcopy(md_request.trade_side)
                 self.expiry_date = copy.deepcopy(md_request.expiry_date)
-                self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
+                # self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
+                self.overrides = copy.deepcopy(md_request.overrides)
 
                 self.tickers = copy.deepcopy(md_request.tickers)    # need this after category in case have wildcard
         else:
@@ -129,6 +132,8 @@ class MarketDataRequest(object):
             self.trade_side = trade_side
             self.expiry_date = expiry_date
             self.abstract_curve = abstract_curve
+            
+            self.overrides = overrides
 
             self.tickers = tickers
 
@@ -458,6 +463,14 @@ class MarketDataRequest(object):
             self.__abstract_curve_key = None
 
         self.__abstract_curve = abstract_curve
+        
+    @property
+    def overrides(self):
+        return self.__overrides
+
+    @overrides.setter
+    def overrides(self, overrides):
+        self.__overrides = overrides
 
     def _flatten_list(self, list_of_lists):
         """Flattens list, particularly useful for combining baskets
