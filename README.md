@@ -76,6 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 28 Feb 2017 - Added passthrough for BBG overrides via MarketDataRequest
 * 23 Feb 2017 - Added ability to specify tickers with wildcards
 * 21 Feb 2017 - Optimised code to speed up downloading Bloomberg data considerably
 * 17 Feb 2017 - Added switch between multiprocess and multiprocessing on dill libraries in SpeedCache
