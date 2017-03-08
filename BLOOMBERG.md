@@ -19,8 +19,10 @@ however I have not tested this.
         * eg. C:\blp\blpapi_cpp_3.9.10.1
     * On Windows to change PATH and BLPAPI_ROOT environment variables go to Control Panel / System and Security /
     System / Advanced System Settings / Advanced / Environment Variables
-    * python setup.py build
-    * python setup.py install
+    * python setup.py build (to build & compile - alternatively if you have Python 3.5 and Windows, you can download file
+    [blpapi-3.9.0.zip](https://github.com/cuemacro/findatapy/blob/master/blpapi-3.9.0.zip), which I have
+    pre-built using Microsoft Visual Studio 2015)
+    * python setup.py install (to install)
 * For Python 3.4 - prebuilt executable can be run, which means we can skip the build steps above
     * Might need to tweak registry to avoid "Python 3.4 not found in registry error" (blppython.reg example) when using this executable
 * The library doesn't support the old Bloomberg COM API (since much slower than the new Open API)
