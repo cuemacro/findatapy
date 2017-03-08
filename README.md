@@ -76,7 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
-* 08 Mar 2017 - Fixed bug with DukasCopy data (was getting wrong month)
+* 08 Mar 2017 - Fixed bug with DukasCopy data (was getting wrong month) and added blpapi pre-built
 * 28 Feb 2017 - Added passthrough for BBG overrides via MarketDataRequest
 * 23 Feb 2017 - Added ability to specify tickers with wildcards
 * 21 Feb 2017 - Optimised code to speed up downloading Bloomberg data considerably
