@@ -571,7 +571,9 @@ class DataVendorDukasCopy(DataVendor):
 
             data_frame = self.get_tick(market_data_request, market_data_request_vendor)
 
-            if data_frame is not None: data_frame.tz_localize('UTC')
+            import pytz
+
+            if data_frame is not None: data_frame.tz_localize(pytz.utc)
 
         self.logger.info("Completed request from Dukascopy")
 
@@ -633,7 +635,7 @@ class DataVendorDukasCopy(DataVendor):
         tick_path = self.tick_name.format(
                 symbol = symbol,
                 year = str(time.year).rjust(4, '0'),
-                month = str(time.month).rjust(2, '0'),
+                month = str(time.month-1).rjust(2, '0'),
                 day = str(time.day).rjust(2, '0'),
                 hour = str(time.hour).rjust(2, '0')
             )
