@@ -14,12 +14,8 @@ __author__ = 'saeedamen'  # Saeed Amen
 
 
 if __name__ == '__main__':
-    try:
-        import multiprocessing;
-
-        multiprocessing.freeze_support()
-    except:
-        pass
+    ###### below line CRUCIAL when running Windows, otherwise multiprocessing doesn't work! (not necessary on Linux)
+    from findatapy.util import SwimPool; SwimPool()
 
     from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
     from findatapy.timeseries import DataQuality

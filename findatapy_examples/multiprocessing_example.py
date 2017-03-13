@@ -556,8 +556,6 @@ def load_tickers():
 if __name__ == "__main__":
 
     ###### below line CRUCIAL when running Windows, otherwise multiprocessing doesn't work! (not necessary on Linux)
-    try:
-        import multiprocess; multiprocess.freeze_support()
-    except: pass
+    from findatapy.util import SwimPool; SwimPool()
 
     load_tickers()
