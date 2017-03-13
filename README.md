@@ -76,6 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 13 Mar 2017 - Changed examples to use SwimPool
 * 08 Mar 2017 - Fixed bug with DukasCopy data (was getting wrong month) and added blpapi pre-built
 * 28 Feb 2017 - Added passthrough for BBG overrides via MarketDataRequest
 * 23 Feb 2017 - Added ability to specify tickers with wildcards
