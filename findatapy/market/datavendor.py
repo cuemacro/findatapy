@@ -103,7 +103,7 @@ class DataVendor(object):
             try:
                 f = self.config.convert_library_to_vendor_field(source, field)
             except:
-                self.logger.error("Couldn't find field conversion, did you type it correctly: " + field)
+                self.logger.warn("Couldn't find field conversion, did you type it correctly: " + field)
 
                 return
 
@@ -192,9 +192,9 @@ class DataVendor(object):
                 try:
                     v = self.config.convert_vendor_to_library_field(data_source, vendor_field)
                 except:
-                    self.logger.error("Couldn't find field conversion, did you type it correctly: " + vendor_field)
+                    self.logger.error("Couldn't find field conversion, did you type it correctly: " + vendor_field + ", using 'close' as default.")
 
-                    return
+                    v = 'close'
 
                 fields_converted.append(v)
 
