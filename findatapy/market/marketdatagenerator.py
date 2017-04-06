@@ -111,12 +111,17 @@ class MarketDataGenerator(object):
         pandas.DataFrame
         """
 
-        tickers = market_data_request.tickers
+
         # data_vendor = self.get_data_vendor(market_data_request.data_source)
 
         # check if tickers have been specified (if not load all of them for a category)
         # also handle single tickers/list tickers
         create_tickers = False
+
+        if market_data_request.vendor_tickers is not None and market_data_request.tickers is None:
+            market_data_request.tickers = market_data_request.vendor_tickers
+
+        tickers = market_data_request.tickers
 
         if tickers is None :
             create_tickers = True
@@ -164,7 +169,7 @@ class MarketDataGenerator(object):
 
                 import traceback
 
-                self.logger.error(traceback.format_exc())
+                self.logger.warn("No data returned for " + str(market_data_request.tickers))
 
                 return None
 
@@ -266,7 +271,7 @@ class MarketDataGenerator(object):
                 market_data_request_single = copy.copy(market_data_request)
                 market_data_request_single.tickers = ticker
 
-                if hasattr(market_data_request, 'vendor_tickers'):
+                if market_data_request.vendor_tickers is not None:
                     market_data_request_single.vendor_tickers = [market_data_request.vendor_tickers[ticker_cycle]]
                     ticker_cycle = ticker_cycle + 1
 
