@@ -1001,7 +1001,7 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
         # self._options.gapFillInitialBar = False
 
         if hasattr(options.startDateTime, 'microsecond'):
-            options.startDateTime = self._options.startDateTime.replace(microsecond=0)
+            options.startDateTime = options.startDateTime.replace(microsecond=0)
 
         if hasattr(options.endDateTime, 'microsecond'):
             options.endDateTime = options.endDateTime.replace(microsecond=0)
