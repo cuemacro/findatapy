@@ -76,7 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
-* 07 Apr 2017 - Fix issue with returned Quandl labels
+* 07 Apr 2017 - Fix issue with returned Quandl labels in returned time series
 * 06 Apr 2017 - Fixed issue with not specifying field
 * 13 Mar 2017 - Changed examples to use SwimPool
 * 08 Mar 2017 - Fixed bug with DukasCopy data (was getting wrong month) and added blpapi pre-built
