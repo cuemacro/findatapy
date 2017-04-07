@@ -63,6 +63,13 @@ class DataVendorQuandl(DataVendor):
 
             returned_fields = [x.replace('value', 'close') for x in returned_fields]    # special case for close
 
+            # quandl doesn't always return the field name
+            for i in range(0,len(returned_fields)):
+                ticker = returned_tickers[i].split('/')[1].split(' - ')[0].lower()
+
+                if ticker == returned_fields[i]:
+                    returned_fields[i] = 'close'
+
             # replace time fields (can cause problems later for times to start with 0)
             for i in range(0, 10):
                 returned_fields = [x.replace('0'+ str(i) + ':00', str(i) + ':00') for x in returned_fields]
@@ -78,8 +85,11 @@ class DataVendorQuandl(DataVendor):
 
             ticker_combined = []
 
-            for i in range(0, len(fields)):
-                ticker_combined.append(tickers[i] + "." + fields[i])
+            for i in range(0, len(tickers)):
+                try:
+                    ticker_combined.append(tickers[i] + "." + fields[i])
+                except:
+                    ticker_combined.append(tickers[i] + ".close")
 
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
