@@ -311,8 +311,9 @@ class FXCrossFactory(object):
             pool = Pool(thread_no)
 
             # open the market data downloads in their own threads and return the results
-            data_frame_agg = self.calculations.iterative_outer_join(
-                pool.map_async(self._get_individual_fx_cross, market_data_request_list).get())
+            df_list = pool.map_async(self._get_individual_fx_cross, market_data_request_list).get()
+
+            data_frame_agg = self.calculations.iterative_outer_join(df_list)
 
             # data_frame_agg = self.calculations.pandas_outer_join(result.get())
 
@@ -327,7 +328,7 @@ class FXCrossFactory(object):
             data_frame_agg = self.calculations.pandas_outer_join(data_frame_agg)
 
         # strip the nan elements
-        data_frame_agg = data_frame_agg.dropna()
+        # data_frame_agg = data_frame_agg.dropna()
 
         # self.speed_cache.put_dataframe(key, data_frame_agg)
 
@@ -353,37 +354,21 @@ class FXCrossFactory(object):
                 market_data_request.tickers = base_USD
                 market_data_request.category = 'fx'
 
-                if base_USD + '.close' in self.cache:
-                    base_vals = self.cache[base_USD + '.close']
-                else:
-                    base_vals = self.market_data_generator.fetch_market_data(market_data_request)
-                    self.cache[base_USD + '.close'] = base_vals
+                base_vals = self.market_data_generator.fetch_market_data(market_data_request)
 
                 # download terms USD cross
                 market_data_request.tickers = terms_USD
                 market_data_request.category = 'fx'
 
-                if terms_USD + '.close' in self.cache:
-                    terms_vals = self.cache[terms_USD + '.close']
-                else:
-                    terms_vals = self.market_data_generator.fetch_market_data(market_data_request)
-                    self.cache[terms_USD + '.close'] = terms_vals
+                terms_vals = self.market_data_generator.fetch_market_data(market_data_request)
 
                 # if quoted USD/base flip to get USD terms
                 if (base_USD[0:3] == 'USD'):
-                    if 'USD' + base in '.close' in self.cache:
-                        base_vals = self.cache['USD' + base + '.close']
-                    else:
-                        base_vals = 1 / base_vals
-                        self.cache['USD' + base + '.close'] = base_vals
+                    base_vals = 1 / base_vals
 
                 # if quoted USD/terms flip to get USD terms
                 if (terms_USD[0:3] == 'USD'):
-                    if 'USD' + terms in '.close' in self.cache:
-                        terms_vals = self.cache['USD' + terms + '.close']
-                    else:
-                        terms_vals = 1 / terms_vals
-                        self.cache['USD' + terms + '.close'] = base_vals
+                    terms_vals = 1 / terms_vals
 
                 base_vals.columns = ['temp'];
                 terms_vals.columns = ['temp']
@@ -402,23 +387,21 @@ class FXCrossFactory(object):
                 market_data_request.tickers = correct_cr
                 market_data_request.category = 'fx'
 
-                if correct_cr + '.close' in self.cache:
-                    cross_vals = self.cache[correct_cr + '.close']
-                else:
-                    cross_vals = self.market_data_generator.fetch_market_data(market_data_request)
+                cross_vals = self.market_data_generator.fetch_market_data(market_data_request)
 
+                # special case for USDUSD!
+                if base + terms == 'USDUSD':
+                    if freq == 'daily':
+                        cross_vals = cross_vals.fillna(1)
+                        filter = Filter()
+                        cross_vals = filter.filter_time_series_by_holidays(cross_vals, cal = 'WEEKDAY')
+                else:
                     # flip if not convention
                     if (correct_cr != cr):
-                        if cr + '.close' in self.cache:
-                            cross_vals = self.cache[cr + '.close']
-                        else:
-                            cross_vals = 1 / cross_vals
-                            self.cache[cr + '.close'] = cross_vals
-
-                    self.cache[correct_cr + '.close'] = cross_vals
+                        cross_vals = 1 / cross_vals
 
                 # cross_vals = self.market_data_generator.harvest_time_series(market_data_request)
-                cross_vals.columns.names = [cr + '.close']
+                cross_vals.columns = [cr + '.close']
 
         elif type[0:3] == "tot":
             if freq == 'daily':
@@ -440,10 +423,22 @@ class FXCrossFactory(object):
                 else:
                     pass
 
-                base_rets = self.calculations.calculate_returns(base_vals)
-                terms_rets = self.calculations.calculate_returns(terms_vals)
+                # base_rets = self.calculations.calculate_returns(base_vals)
+                # terms_rets = self.calculations.calculate_returns(terms_vals)
 
-                cross_rets = base_rets.sub(terms_rets.iloc[:, 0], axis=0)
+                # special case for USDUSD case (and if base or terms USD are USDUSD
+                if base + terms == 'USDUSD':
+                    base_rets = self.calculations.calculate_returns(base_vals)
+                    cross_rets = base_rets.fillna(0)
+                elif base + 'USD' == 'USDUSD':
+                    cross_rets = -self.calculations.calculate_returns(terms_vals)
+                elif terms + 'USD' == 'USDUSD':
+                    cross_rets = self.calculations.calculate_returns(base_vals)
+                else:
+                    base_rets = self.calculations.calculate_returns(base_vals)
+                    terms_rets = self.calculations.calculate_returns(terms_vals)
+
+                    cross_rets = base_rets.sub(terms_rets.iloc[:, 0], axis=0)
 
                 # first returns of a time series will by NaN, given we don't know previous point
                 cross_rets.iloc[0] = 0
