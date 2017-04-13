@@ -76,6 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 13 Apr 2017 - Fixed issues with FX cross calculations (and refactored)
 * 07 Apr 2017 - Fix issue with returned Quandl labels in returned time series, downloading of Bloomberg tick data
 * 06 Apr 2017 - Fixed issue with not specifying field
 * 13 Mar 2017 - Changed examples to use SwimPool
