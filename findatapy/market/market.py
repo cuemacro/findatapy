@@ -392,7 +392,7 @@ class FXCrossFactory(object):
                 # special case for USDUSD!
                 if base + terms == 'USDUSD':
                     if freq == 'daily':
-                        cross_vals = cross_vals.fillna(1)
+                        cross_vals = pandas.DataFrame(1, index= cross_vals.index, columns=cross_vals.columns)
                         filter = Filter()
                         cross_vals = filter.filter_time_series_by_holidays(cross_vals, cal = 'WEEKDAY')
                 else:
@@ -429,7 +429,7 @@ class FXCrossFactory(object):
                 # special case for USDUSD case (and if base or terms USD are USDUSD
                 if base + terms == 'USDUSD':
                     base_rets = self.calculations.calculate_returns(base_vals)
-                    cross_rets = base_rets.fillna(0)
+                    cross_rets = pandas.DataFrame(0, index = base_rets.index, columns=base_rets.columns)
                 elif base + 'USD' == 'USDUSD':
                     cross_rets = -self.calculations.calculate_returns(terms_vals)
                 elif terms + 'USD' == 'USDUSD':
