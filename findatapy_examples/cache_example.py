@@ -86,7 +86,7 @@ if __name__ == '__main__':
         tickers=['Apple', 'Citigroup', 'Microsoft', 'Oracle', 'IBM', 'Walmart', 'Amazon', 'UPS', 'Exxon'],  # ticker (findatapy)
         fields=['close'],               # which fields to download
         vendor_tickers=['aapl', 'c', 'msft', 'orcl', 'ibm', 'wmt', 'amzn', 'ups', 'xom'],                   # ticker (Yahoo)
-        vendor_fields=['Close'],        # which Google finance fields to download)
+        vendor_fields=['Close'],        # which Google Finance fields to download)
         cache_algo='internet_load_return')
 
     logger.info("Load data from Google directly")
