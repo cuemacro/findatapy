@@ -70,29 +70,29 @@ if __name__ == '__main__':
     ###### below line CRUCIAL when running Windows, otherwise multiprocessing doesn't work! (not necessary on Linux)
     from findatapy.util import SwimPool; SwimPool()
 
-    from findatapy.market import Market, MarketDataRequest, MarketDataGenerator, IOEngine
+    from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
     from findatapy.util import LoggerManager
 
     market = Market(market_data_generator=MarketDataGenerator())
     logger = LoggerManager().getLogger(__name__)
 
-    # in the config file, we can use keywords 'open', 'high', 'low', 'close' and 'volume' for Yahoo and Google finance data
+    # in the config file, we can use keywords 'open', 'high', 'low', 'close' and 'volume' for Google finance data
 
-    # download equities data from Yahoo
+    # download equities data from Google
     md_request = MarketDataRequest(
         start_date="01 Jan 2002",       # start date
         finish_date="05 Feb 2017",      # finish date
-        data_source='yahoo',            # use Bloomberg as data source
+        data_source='google',           # use Google Finance as data source
         tickers=['Apple', 'Citigroup', 'Microsoft', 'Oracle', 'IBM', 'Walmart', 'Amazon', 'UPS', 'Exxon'],  # ticker (findatapy)
         fields=['close'],               # which fields to download
         vendor_tickers=['aapl', 'c', 'msft', 'orcl', 'ibm', 'wmt', 'amzn', 'ups', 'xom'],                   # ticker (Yahoo)
-        vendor_fields=['Close'],
-        cache_algo='internet_load_return')        # which Bloomberg fields to download)
+        vendor_fields=['Close'],        # which Google finance fields to download)
+        cache_algo='internet_load_return')
 
-    logger.info("Load data from Yahoo directly")
+    logger.info("Load data from Google directly")
     df = market.fetch_market(md_request)
 
-    logger.info("Loaded data from Yahoo directly, now try reading from Redis in-memory cache")
+    logger.info("Loaded data from Google directly, now try reading from Redis in-memory cache")
     md_request.cache_algo = 'cache_algo_return' # change flag to cache algo so won't attempt to download via web
 
     df = market.fetch_market(md_request)
