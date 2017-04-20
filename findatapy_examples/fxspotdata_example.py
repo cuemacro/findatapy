@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # run_example = 4 - download FX data from Bloomberg
     # run_example = 5 - download second FX data from Bloomberg
 
-    run_example = 4
+    run_example = 0
 
     ###### backtest simple trend following strategy for FX spot basket
     if run_example == 1 or run_example == 0:
