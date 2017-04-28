@@ -328,7 +328,7 @@ class FXCrossFactory(object):
             data_frame_agg = self.calculations.pandas_outer_join(data_frame_agg)
 
         # strip the nan elements
-        # data_frame_agg = data_frame_agg.dropna()
+        data_frame_agg = data_frame_agg.dropna(how='all')
 
         # self.speed_cache.put_dataframe(key, data_frame_agg)
 
