@@ -76,6 +76,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 28 Apr 2017 - Issues with returning weekend data for FX spot fixed
 * 18 Apr 2017 - Fixed FX spot calc
 * 13 Apr 2017 - Fixed issues with FX cross calculations (and refactored)
 * 07 Apr 2017 - Fix issue with returned Quandl labels in returned time series, downloading of Bloomberg tick data
