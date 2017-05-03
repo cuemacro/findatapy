@@ -39,6 +39,11 @@ A few things to note:
 documented
 * Uses Apache 2.0 licence
 
+# Contributors
+
+* Contributors are welcome for this project
+* Take a look at planned features for chartpy, findatapy and finmarketpy are [here](https://github.com/cuemacro/finmarketpy/blob/master/PLANNED_FEATURES.md)
+
 # Gallery
 
 To appear
@@ -76,6 +81,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 03 May 2017 - Added section for contributors
 * 28 Apr 2017 - Issues with returning weekend data for FX spot fixed
 * 18 Apr 2017 - Fixed FX spot calc
 * 13 Apr 2017 - Fixed issues with FX cross calculations (and refactored)
