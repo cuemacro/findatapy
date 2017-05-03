@@ -41,8 +41,9 @@ documented
 
 # Contributors
 
-* Contributors are welcome for this project
-* Take a look at planned features for chartpy, findatapy and finmarketpy are [here](https://github.com/cuemacro/finmarketpy/blob/master/PLANNED_FEATURES.md)
+Contributors are always welcome for finmarketpy, findatapy and chartpy. If you'd like to contribute, have a look at
+[Planned Features](PLANNED_FEATURES.md] for areas we're looking for help on. Or if you have any ideas for improvements
+to the libriares please let us know too!
 
 # Gallery
 
