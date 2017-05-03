@@ -7,6 +7,8 @@ a unified high level interface. Users can also define their own custom tickers, 
 is particularly useful for those downloading FX market data. Below example shows how to download AUDJPY data from Quandl (and automatically 
 calculates this via USD crosses).
 
+*Contributors for the project are very much welcome, sell below!*
+
 ```
 from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
 
