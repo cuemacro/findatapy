@@ -754,6 +754,9 @@ class Calendar(object):
 
         return bus_day_of_month
 
+    def set_market_holidays(self, holiday_df):
+        self.holiday_df = holiday_df
+
 # functions to test class
 if __name__ == '__main__':
 
