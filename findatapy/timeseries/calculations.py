@@ -20,7 +20,13 @@ import math
 import numpy
 import pandas
 import pandas.tseries.offsets
-from pandas.stats.api import ols
+
+try:
+    from pandas.stats.api import ols
+except:
+    # temporary fix to get compilation, need to rewrite regression code to get this to work
+    # later versions of pandas no longer support OLS
+    from statsmodels.formula.api import ols
 
 from findatapy.timeseries.filter import Filter
 from findatapy.timeseries.filter import Calendar
@@ -470,7 +476,8 @@ class Calculations(object):
         -------
         DataFrame
         """
-        return signal_data_frame.shift(period_shift) * returns_data_frame - self.calculate_signal_tc(signal_data_frame, tc, period_shift)
+        tc_costs = self.calculate_signal_tc(signal_data_frame, tc, period_shift)
+        return signal_data_frame.shift(period_shift) * returns_data_frame - tc_costs
 
     def calculate_signal_returns_with_tc_matrix(self, signal_data_frame, returns_data_frame, tc, period_shift = 1):
         """Calculates the trading startegy returns for given signal and asset with transaction costs with matrix multiplication
@@ -490,9 +497,10 @@ class Calculations(object):
         -------
         DataFrame
         """
+        tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc)
+
         return pandas.DataFrame(
-            signal_data_frame.shift(period_shift).values * returns_data_frame.values -
-                (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc), index = returns_data_frame.index)
+            signal_data_frame.shift(period_shift).values * returns_data_frame.values - tc_costs, index = returns_data_frame.index)
 
     def calculate_returns(self, data_frame, period_shift = 1):
         """Calculates the simple returns for an asset
