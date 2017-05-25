@@ -84,6 +84,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 25 May 2017 - Removed unneeded dependency in DataQuality
 * 22 May 2017 - Began to replace pandas OLS with statsmodels
 * 03 May 2017 - Added section for contributors
 * 28 Apr 2017 - Issues with returning weekend data for FX spot fixed
