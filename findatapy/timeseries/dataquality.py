@@ -20,7 +20,6 @@ import math
 import numpy
 import pandas
 import pandas.tseries.offsets
-from pandas.stats.api import ols
 
 from findatapy.timeseries.filter import Filter
 from findatapy.timeseries.filter import Calendar
