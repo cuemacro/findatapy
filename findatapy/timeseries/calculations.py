@@ -1105,6 +1105,11 @@ class Calculations(object):
         return data_frame.\
             groupby([Calendar().get_bus_day_of_month(date_index, cal)]).mean()
 
+    def average_by_cal_day(self, data_frame):
+
+        return data_frame.\
+            groupby(data_frame.index.day).mean()
+
     def average_by_month_day_hour_min_by_bus_day(self, data_frame, cal = "FX"):
         date_index = data_frame.index
 
@@ -1120,7 +1125,7 @@ class Calculations(object):
             groupby([date_index.month,
                      Calendar().get_bus_day_of_month(date_index, cal)]).mean()
 
-    def average_by_month_day_by_day(self, data_frame, cal = "FX"):
+    def average_by_month_day_by_day(self, data_frame):
         date_index = data_frame.index
 
         return data_frame.\
