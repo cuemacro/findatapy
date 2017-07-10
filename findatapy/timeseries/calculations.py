@@ -838,6 +838,24 @@ class Calculations(object):
 
         return df
 
+    def rolling_autocorr(self, data_frame, lag, axis=0):
+        """Calculates rolling auto-correlation wrapping around pandas functions
+
+        Parameters
+        ----------
+        data_frame : DataFrame
+            contains time series to run correlations on
+        lag : int
+            lag of the autocorrelation
+        axis : int (optional)
+            axis for computation (0 is columnwise and default)
+
+        Returns
+        -------
+        DataFrame
+        """
+        return data_frame.apply(lambda col: col.autocorr(lag), axis=axis)
+
     def calculate_column_matrix_signal_override(self, override_df, signal_df):
         length_cols = len(signal_df.columns)
         override_matrix = numpy.repeat(override_df.values.flatten()[numpy.newaxis,:], length_cols, 0)
