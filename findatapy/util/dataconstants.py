@@ -119,46 +119,14 @@ class DataConstants(object):
     # FRED (Federal Reserve of St Louis data) settings
     fred_api_key = "x"
 
-    # or we can store credentials (or anything else) in a file "datacred.py" in the same folder, which will overwrite the above
+    # overwrite field variables with those listed in DataCred
+    def __init__(self):
+        try:
+            from findatapy.util.datacred import DataCred
+            cred_keys = DataCred.__dict__.keys()
 
-    try:
-        from findatapy.util.datacred import DataCred
-        cred = DataCred()
-
-        folder_historic_CSV = cred.folder_historic_CSV
-        folder_time_series_data = cred.folder_time_series_data
-
-        config_root_folder = cred.config_root_folder
-
-        time_series_categories_fields = cred.time_series_categories_fields
-
-        # we can have multiple tickers files (separated by ";")
-        time_series_tickers_list = cred.time_series_tickers_list
-
-        time_series_fields_list = cred.time_series_fields_list
-
-        # config file for long term econ data
-        all_econ_tickers = cred.all_econ_tickers
-        econ_country_codes = cred.econ_country_codes
-        econ_country_groups = cred.econ_country_groups
-
-        default_market_data_generator = cred.default_market_data_generator
-
-        TWITTER_APP_KEY = cred.TWITTER_APP_KEY
-        TWITTER_APP_SECRET = cred.TWITTER_APP_SECRET
-        TWITTER_OAUTH_TOKEN = cred.TWITTER_OAUTH_TOKEN
-        TWITTER_OAUTH_TOKEN_SECRET = cred.TWITTER_OAUTH_TOKEN_SECRET
-
-        quandl_api_key = cred.quandl_api_key
-        fred_api_key = cred.fred_api_key
-
-        db_server = cred.db_server
-
-        db_cache_server = cred.db_cache_server
-        db_cache_port = cred.db_cache_port
-        write_cache_engine = cred.write_cache_engine
-
-        override_multi_threading_for_categories = cred.override_multi_threading_for_categories
-
-    except:
-        pass
+            for k in DataConstants.__dict__.keys():
+                if k in cred_keys and '__' not in k:
+                    setattr(DataConstants, k, getattr(DataCred, k))
+        except:
+            pass
