@@ -618,7 +618,6 @@ class DataVendorDukasCopy(DataVendor):
     def download_tick(self, market_data_request):
 
         symbol = market_data_request.tickers[0]
-        df_list = []
 
         self.logger.info("About to download from Dukascopy... for " + symbol)
 
