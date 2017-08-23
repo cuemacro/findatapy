@@ -21,6 +21,7 @@ setup(name='findatapy',
                           'multiprocess',
                           'multiprocessing_on_dill',
                           'redis',
+                          'numba',
                           'blosc',
                           'openpyxl'],
 	  zip_safe=False)
