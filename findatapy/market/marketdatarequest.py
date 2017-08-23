@@ -393,7 +393,9 @@ class MarketDataRequest(object):
                     # self.logger.warning("Attempted to parse date")
                     i = 0
         else:
-            date1 = date
+            import pandas
+
+            date1 = pandas.Timestamp(date)
 
         return date1
 
