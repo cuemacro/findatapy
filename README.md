@@ -84,6 +84,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 23 Aug 2017 - Improved overwritting of constants by cred file
 * 10 Jul 2017 - Added method for calculation of autocorrelation in Calculations
 * 07 Jun 2017 - Added methods for calendar day seasonality in Calculations
 * 25 May 2017 - Removed unneeded dependency in DataQuality
