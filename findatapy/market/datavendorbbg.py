@@ -459,6 +459,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
             else:
                 for msg in event:
                     if event.eventType() == blpapi.Event.SESSION_STATUS:
+
                         if msg.messageType() == self.SESSION_TERMINATED:
                             not_done = False
 
