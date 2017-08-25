@@ -101,13 +101,12 @@ class Market(object):
                 elif md_request.category == 'fx-tot':
                     type = 'tot'
 
-                if (md_request.freq != 'tick' and md_request.fields == ['close']) or (md_request.freq == 'tick'
-                                                                                      and md_request.data_source == 'dukascopy'):
-                    data_frame = fxcf.get_fx_cross(md_request.start_date, md_request.finish_date,
-                                             md_request.tickers,
-                     cut = md_request.cut, data_source = md_request.data_source, freq = md_request.freq,
-                                             cache_algo=md_request.cache_algo, type = type,
-                     environment = md_request.environment, fields=md_request.fields)
+                if (md_request.freq != 'tick' and md_request.fields == ['close']) or \
+                        (md_request.freq == 'tick' and md_request.data_source in ['dukascopy', 'fxcm']):
+                    data_frame = fxcf.get_fx_cross(md_request.start_date, md_request.finish_date, md_request.tickers,
+                        cut = md_request.cut, data_source = md_request.data_source, freq = md_request.freq,
+                        cache_algo=md_request.cache_algo, type = type,
+                        environment = md_request.environment, fields=md_request.fields)
 
             # for implied volatility we can return the full surface
             if (md_request.category == 'fx-implied-vol'):

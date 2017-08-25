@@ -535,7 +535,7 @@ class DataVendorDukasCopy(DataVendor):
     """Class for downloading tick data from DukasCopy (note: past month of data is not available). Selecting very large
     histories is not recommended as you will likely run out memory given the amount of data requested.
 
-    Parsing of files is rewritten version https://github.com/nelseric/ticks/
+    Parsing of files is re-written version https://github.com/nelseric/ticks/
         parsing has been speeded up considerably
         on-the-fly downloading/parsing
 
@@ -622,16 +622,17 @@ class DataVendorDukasCopy(DataVendor):
         self.logger.info("About to download from Dukascopy... for " + symbol)
 
         # single threaded
-        df_list = [self.fetch_file(time, symbol) for time in
-                  self.hour_range(market_data_request.start_date, market_data_request.finish_date)]
+        # df_list = [self.fetch_file(time, symbol) for time in
+        #          self.hour_range(market_data_request.start_date, market_data_request.finish_date)]
 
-        # TODO parallel (has pickle issues)
-        # time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
-        # import multiprocessing_on_dill as multiprocessing
-        #
-        # pool = multiprocessing.Pool(processes=4)
-        # results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
-        # df_list = [p.get() for p in results]
+        # parallel threaded (even with GIL, fast because lots of waiting for IO!)
+        from findatapy.util import SwimPool
+        time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
+
+        pool = SwimPool().create_pool('thread', 8)
+        results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
+        df_list = [p.get() for p in results]
+        pool.close()
 
         try:
             return pandas.concat(df_list)
@@ -678,7 +679,7 @@ class DataVendorDukasCopy(DataVendor):
                 i = i + 1
 
         if (tick_request is None):
-            self.logger("Failed to download from " + tick_url)
+            self.logger.warning("Failed to download from " + tick_url)
             return None
 
         return tick_request.content
@@ -706,11 +707,12 @@ class DataVendorDukasCopy(DataVendor):
         if symbol[3:6] == 'JPY':
             divisor = 1000
 
+        # special case!
         if symbol == 'BRENTCMDUSD':
             divisor = 1000
 
         # prices are returned without decimal point (need to divide)
-        df['bid'] =  df['bid'] /  divisor
+        df['bid'] =  df['bid'] / divisor
         df['ask'] =  df['ask'] / divisor
 
         return df
@@ -749,6 +751,203 @@ class DataVendorDukasCopy(DataVendor):
         if n < 1: n = 1
 
         return [list[i:i + n] for i in range(0, len(list), n)]
+
+    def get_daily_data(self):
+        pass
+
+##########################
+
+##from StringIO import StringIO
+from io import BytesIO
+import gzip
+import urllib
+import datetime
+
+
+
+##Available Currencies
+##AUDCAD,AUDCHF,AUDJPY, AUDNZD,CADCHF,EURAUD,EURCHF,EURGBP
+##EURJPY,EURUSD,GBPCHF,GBPJPY,GBPNZD,GBPUSD,GBPCHF,GBPJPY
+##GBPNZD,NZDCAD,NZDCHF.NZDJPY,NZDUSD,USDCAD,USDCHF,USDJPY
+
+class DataVendorFXCM(DataVendor):
+    """Class for downloading tick data from FXCM. Selecting very large
+    histories is not recommended as you will likely run out memory given the amount of data requested.
+
+    Based on https://github.com/FXCMAPI/FXCMTickData/blob/master/TickData34.py
+
+    """
+
+    url_suffix = '.csv.gz' ##Extension of the file name
+
+    def __init__(self):
+        super(DataVendor, self).__init__()
+        self.logger = LoggerManager().getLogger(__name__)
+
+        import logging
+        logging.getLogger("requests").setLevel(logging.WARNING)
+        self.config = ConfigManager()
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+        """Retrieves market data from external data source (in this case Bloomberg)
+
+        Parameters
+        ----------
+        market_data_request : TimeSeriesRequest
+            contains all the various parameters detailing time series start and finish, tickers etc
+
+        Returns
+        -------
+        DataFrame
+        """
+
+        market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
+        data_frame = None
+        self.logger.info("Request FXCM data")
+
+        # doesn't support non-tick data
+        if (market_data_request.freq in ['daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'intraday', 'minute', 'hourly']):
+            self.logger.warning("FXCM loader is for tick data only")
+
+            return None
+
+        # assume one ticker only (MarketDataGenerator only calls one ticker at a time)
+        if (market_data_request.freq in ['tick']):
+            # market_data_request_vendor.tickers = market_data_request_vendor.tickers[0]
+
+            data_frame = self.get_tick(market_data_request, market_data_request_vendor)
+
+            import pytz
+
+            if data_frame is not None: data_frame.tz_localize(pytz.utc)
+
+        self.logger.info("Completed request from FXCM")
+
+        return data_frame
+
+    def kill_session(self):
+        return
+
+    def get_tick(self, market_data_request, market_data_request_vendor):
+
+        data_frame = self.download_tick(market_data_request_vendor)
+
+        # convert from vendor to findatapy tickers/fields
+        if data_frame is not None:
+            returned_fields = data_frame.columns
+            returned_tickers = [market_data_request_vendor.tickers[0]] * (len(returned_fields))
+
+        if data_frame is not None:
+            fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+            tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
+
+            ticker_combined = []
+
+            for i in range(0, len(fields)):
+                ticker_combined.append(tickers[i] + "." + fields[i])
+
+            data_frame.columns = ticker_combined
+            data_frame.index.name = 'Date'
+
+        return data_frame
+
+    def download_tick(self, market_data_request):
+
+        symbol = market_data_request.tickers[0]
+
+        self.logger.info("About to download from FXCM... for " + symbol)
+
+        # single threaded
+        # df_list = [self.fetch_file(week_year, symbol) for week_year in
+        #           self.week_range(market_data_request.start_date, market_data_request.finish_date)]
+
+        # parallel threaded (note: lots of waiting on IO, so even with GIL quicker!)
+        week_list = self.week_range(market_data_request.start_date, market_data_request.finish_date)
+        from findatapy.util import SwimPool
+
+        pool = SwimPool().create_pool('thread', 8)
+        results = [pool.apply_async(self.fetch_file, args=(week, symbol)) for week in week_list]
+        df_list = [p.get() for p in results]
+        pool.close()
+
+        try:
+            return pandas.concat(df_list)
+        except:
+            return None
+
+    def fetch_file(self, week_year, symbol):
+        self.logger.info("Downloading... " + str(week_year))
+
+        week = week_year[0]
+        year = week_year[1]
+
+        tick_path = symbol + '/' + str(year) + '/' + str(week) + self.url_suffix
+
+        return self.retrieve_df(DataConstants().fxcm_base_url + tick_path)
+
+    def parse_datetime(self):
+        pass
+
+    def retrieve_df(self, tick_url):
+        i = 0
+
+        data_frame = None
+
+        try:
+            from StringIO import StringIO
+        except:
+            from io import StringIO
+
+        # try up to 5 times to download
+        while i < 5:
+            try:
+
+                requests = urllib.request.urlopen(tick_url)
+                buf = BytesIO(requests.read())
+
+                with gzip.GzipFile(fileobj=buf, mode='rb') as f:
+
+                    # slightly awkward date parser (much faster than using other Python methods)
+                    # TODO use ciso8601 library (uses C parser, slightly quicker)
+                    dateparse = lambda x: datetime.datetime(int(x[6:10]), int(x[0:2]), int(x[3:5]),
+                                                   int(x[11:13]), int(x[14:16]), int(x[17:19]), int(x[20:23])*1000)
+
+                    data_frame = pandas.read_csv(StringIO(f.read().decode('utf-16')), index_col=0, parse_dates=True,
+                                                 date_parser=dateparse)
+
+                    data_frame.columns = ['bid', 'ask']
+
+                i = 5
+            except:
+                i = i + 1
+
+        if (data_frame is None):
+            self.logger.warning("Failed to download from " + tick_url)
+            return None
+
+        return data_frame
+
+    def week_range(self, start_date, finish_date):
+
+        weeks = pandas.bdate_range(start_date - timedelta(days=7), finish_date+timedelta(days=7), freq='W')
+
+        week_year = []
+
+        for w in weeks:
+            week = w.week
+
+            if week != 52:
+                year = w.year
+
+            week_year.append((week, year))
+
+        # if less than a week a
+        if week_year == []:
+            week_year.append((start_date.week, start_date.year))
+
+        return week_year
 
     def get_daily_data(self):
         pass

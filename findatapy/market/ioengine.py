@@ -395,7 +395,7 @@ class IOEngine(object):
         return fname + ".bcolz"
 
     def write_r_compatible_hdf_dataframe(self, data_frame, fname, fields = None):
-        """Write a DataFrame to disk in as an R compatible HDF5 file
+        """Write a DataFrame to disk in as an R compatible HDF5 file.
 
         Parameters
         ----------
@@ -710,8 +710,6 @@ class IOEngine(object):
 
 #######################################################################################################################
 
-import hashlib
-
 class SpeedCache(object):
     """Wrapper for cache hosted in external in memory database (by default Redis, although in practice, can use
     any database supported in this class). This allows us to share hash across Python instances, rather than having
@@ -792,6 +790,7 @@ class SpeedCache(object):
 
         return type(obj).__name__ + "_" + str(len(str(key))) + "_" + str(key)
 
+# TODO refactor code to use DBEngine
 class DBEngine(object):
     pass
 
