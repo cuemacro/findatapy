@@ -3,7 +3,7 @@ quandl,close,close
 quandl,open,open
 quandl,high,high
 quandl,low,low
-quandl,adjusted-close,adjusted-close
+quandl,adj-close,adj-close
 quandl,close,settle
 quandl,prev-day-open-interest,prev-day-open-interest
 quandl,volume,volume
@@ -22,6 +22,8 @@ dukascopy,ask,ask
 dukascopy,bidv,bidv
 dukascopy,askv,askv
 dukascopy,volume,temp
+fxcm,bid,bid
+fxcm,ask,ask
 bloomberg,close,PX_LAST
 bloomberg,high,PX_HIGH
 bloomberg,low,PX_LOW
