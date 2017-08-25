@@ -622,17 +622,17 @@ class DataVendorDukasCopy(DataVendor):
         self.logger.info("About to download from Dukascopy... for " + symbol)
 
         # single threaded
-        df_list = [self.fetch_file(time, symbol) for time in
-                 self.hour_range(market_data_request.start_date, market_data_request.finish_date)]
+        # df_list = [self.fetch_file(time, symbol) for time in
+        #        self.hour_range(market_data_request.start_date, market_data_request.finish_date)]
 
         # parallel threaded (even with GIL, fast because lots of waiting for IO!)
-        # from findatapy.util import SwimPool
-        # time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
-        #
-        # pool = SwimPool().create_pool('thread', 4)
-        # results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
-        # df_list = [p.get() for p in results]
-        # pool.close()
+        from findatapy.util import SwimPool
+        time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
+
+        pool = SwimPool().create_pool('thread', 4)
+        results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
+        df_list = [p.get() for p in results]
+        pool.close()
 
         try:
             return pandas.concat(df_list)
@@ -668,23 +668,30 @@ class DataVendorDukasCopy(DataVendor):
 
     def fetch_tick(self, tick_url):
         i = 0
-        tick_request = None
+        tick_request_content = None
+
+        self.logger.debug("Loading URL " + tick_url)
 
         # try up to 5 times to download
-        while i < 5:
+        while i < 10:
             try:
-                tick_request = requests.get(tick_url)
-                tick_request.close()
-                i = 5
-            except Exception as e:
-                print(e)
-                i = i + 1
+                tick_request = requests.get(tick_url, timeout = 10)
 
-        if (tick_request is None):
+                tick_request_content = tick_request.content
+                tick_request.close()
+
+                break
+            except Exception as e:
+                self.logger.warning("Problem downloading.. " + str(e))
+                i = i + 1
+                import time
+                time.sleep(i * 2)
+
+        if (tick_request_content is None):
             self.logger.warning("Failed to download from " + tick_url)
             return None
 
-        return tick_request.content
+        return tick_request_content
 
     def write_tick(self, content, out_path):
         data_file = open(out_path, "wb+")
