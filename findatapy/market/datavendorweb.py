@@ -622,17 +622,17 @@ class DataVendorDukasCopy(DataVendor):
         self.logger.info("About to download from Dukascopy... for " + symbol)
 
         # single threaded
-        # df_list = [self.fetch_file(time, symbol) for time in
-        #          self.hour_range(market_data_request.start_date, market_data_request.finish_date)]
+        df_list = [self.fetch_file(time, symbol) for time in
+                 self.hour_range(market_data_request.start_date, market_data_request.finish_date)]
 
         # parallel threaded (even with GIL, fast because lots of waiting for IO!)
-        from findatapy.util import SwimPool
-        time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
-
-        pool = SwimPool().create_pool('thread', 8)
-        results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
-        df_list = [p.get() for p in results]
-        pool.close()
+        # from findatapy.util import SwimPool
+        # time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
+        #
+        # pool = SwimPool().create_pool('thread', 4)
+        # results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
+        # df_list = [p.get() for p in results]
+        # pool.close()
 
         try:
             return pandas.concat(df_list)
@@ -674,8 +674,10 @@ class DataVendorDukasCopy(DataVendor):
         while i < 5:
             try:
                 tick_request = requests.get(tick_url)
+                tick_request.close()
                 i = 5
-            except:
+            except Exception as e:
+                print(e)
                 i = i + 1
 
         if (tick_request is None):
@@ -867,7 +869,7 @@ class DataVendorFXCM(DataVendor):
         week_list = self.week_range(market_data_request.start_date, market_data_request.finish_date)
         from findatapy.util import SwimPool
 
-        pool = SwimPool().create_pool('thread', 8)
+        pool = SwimPool().create_pool('thread', 4)
         results = [pool.apply_async(self.fetch_file, args=(week, symbol)) for week in week_list]
         df_list = [p.get() for p in results]
         pool.close()
@@ -918,6 +920,8 @@ class DataVendorFXCM(DataVendor):
                                                  date_parser=dateparse)
 
                     data_frame.columns = ['bid', 'ask']
+
+                    f.close()
 
                 i = 5
             except:
