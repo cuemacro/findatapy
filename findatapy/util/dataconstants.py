@@ -107,6 +107,10 @@ class DataConstants(object):
     dukascopy_base_url = "http://www.dukascopy.com/datafeed/"
     dukascopy_write_temp_tick_disk = False
 
+    # FXCM settings
+    fxcm_base_url = 'https://tickdata.fxcorporate.com/'
+    fxcm_write_temp_tick_disk = False
+
     # Quandl settings
     quandl_api_key = "x"
 
