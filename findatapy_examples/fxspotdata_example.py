@@ -27,10 +27,10 @@ if __name__ == '__main__':
     # run_example = 3 - download FX data from FRED
     # run_example = 4 - download FX data from Bloomberg
     # run_example = 5 - download second FX data from Bloomberg
+    # run_example = 6 - download free tick data from FXCM example (compare with DukasCopy)
 
-    run_example = 0
+    run_example = 6
 
-    ###### backtest simple trend following strategy for FX spot basket
     if run_example == 1 or run_example == 0:
 
         ####### DukasCopy examples
@@ -150,3 +150,26 @@ if __name__ == '__main__':
         df = df.resample('1s').mean()
 
         print(df.tail(n=60))
+
+    if run_example == 6 or run_example == 0:
+        ####### FXCM (and compare with DukasCopy) examples
+        # let's download data for end of 2016/start 2017 for EUR/USD - the raw data has bid/ask, if we specify close, we calculate
+        # it as the average
+
+        # first we can do it by defining all the vendor fields, tickers etc. so we bypass the configuration file
+        md_request = MarketDataRequest(start_date='01 Dec 2016', finish_date='07 Dec 2016',
+                                       fields=['bid'], vendor_fields=['bid'],
+                                       freq='tick', data_source='fxcm',
+                                       tickers=['EURUSD'], vendor_tickers=['EURUSD'])
+
+        df_tick = market.fetch_market(md_request)
+        df = df_tick.resample('1min').mean()
+
+        md_request.data_source = 'dukascopy'
+        df1 = market.fetch_market(md_request).resample('1min').mean()
+
+        df1.columns = [c + '_dk' for c in df1.columns]
+        df = df1.join(df)
+
+        print(df_tick.tail(n=100))
+        print(df.tail(n=100))
