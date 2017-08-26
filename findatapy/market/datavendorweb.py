@@ -629,7 +629,7 @@ class DataVendorDukasCopy(DataVendor):
         from findatapy.util import SwimPool
         time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
 
-        pool = SwimPool().create_pool('thread', 4)
+        pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['dukascopy'])
         results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
         df_list = [p.get() for p in results]
         pool.close()
@@ -876,7 +876,7 @@ class DataVendorFXCM(DataVendor):
         week_list = self.week_range(market_data_request.start_date, market_data_request.finish_date)
         from findatapy.util import SwimPool
 
-        pool = SwimPool().create_pool('thread', 4)
+        pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['fxcm'])
         results = [pool.apply_async(self.fetch_file, args=(week, symbol)) for week in week_list]
         df_list = [p.get() for p in results]
         pool.close()
