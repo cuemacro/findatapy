@@ -84,7 +84,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
-* 24 Aug 2017 - Added FXCM downloader (partially finished)
+* 26 Aug 2017 - Improved threading for FXCM and DukasCopy downloaders
+* 25 Aug 2017 - Added FXCM downloader (partially finished)
 * 23 Aug 2017 - Improved overwritting of constants by cred file
 * 10 Jul 2017 - Added method for calculation of autocorrelation in Calculations
 * 07 Jun 2017 - Added methods for calendar day seasonality in Calculations
