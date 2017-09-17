@@ -12,7 +12,9 @@ however I have not tested this.
 * Also download C++ version of Bloomberg API and extract into any location
     * eg. C:\blp\blpapi_cpp_3.9.10.1
 * For Python 3.5 - need to compile blpapi source using Microsoft Visual Studio 2015 yourself
-    * Install Microsoft Visual Studio 2015 (Community Edition is free)
+    * Install Microsoft Visual Studio 2015 (Community Edition is free) and careful to include Visual C++ or [Visual C++ 2015 build](http://landinghub.visualstudio.com/visual-cpp-build-tools)
+         * You may need to add the following (or similar) to your Windows path `C:\Program Files (x86)\Windows Kits\8.1\bin\x64`
+         * This should prevent the following compilation error where 'rl.exe' is not found
     * Before doing do be sure to add environment variables for the Bloomberg DLL (blpapi3_64.dll) to PATH variable
         * eg. C:\blp\blpapi_cpp_3.9.10.1\bin
     * Make sure BLPAPI_ROOT root is set as an environmental variable in Windows
