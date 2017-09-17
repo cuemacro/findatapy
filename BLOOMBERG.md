@@ -11,20 +11,23 @@ however I have not tested this.
 * Use experimental Python 3.4 version from Bloomberg http://www.bloomberglabs.com/api/libraries/
 * Also download C++ version of Bloomberg API and extract into any location
     * eg. C:\blp\blpapi_cpp_3.9.10.1
-* For Python 3.5 - need to compile blpapi source using Microsoft Visual Studio 2015 yourself
-    * Install Microsoft Visual Studio 2015 (Community Edition is free) and careful to include Visual C++ or [Visual C++ 2015 build](http://landinghub.visualstudio.com/visual-cpp-build-tools)
-         * You may need to add the following (or similar) to your Windows path `C:\Program Files (x86)\Windows Kits\8.1\bin\x64`
+* For Python 3.5 - need to compile blpapi source using Visual C++ compiler yourself
+    * Install Microsoft Visual Studio 2015 (Community Edition is free) and careful to include Visual C++ or it is quicker simply
+    to install [Visual C++ 2015 build](http://landinghub.visualstudio.com/visual-cpp-build-tools)
+         * You may need to add the following (or similar) to your Windows `PATH`, `C:\Program Files (x86)\Windows Kits\8.1\bin\x64`
          * This should prevent the following compilation error where 'rl.exe' is not found
-    * Before doing do be sure to add environment variables for the Bloomberg DLL (blpapi3_64.dll) to PATH variable
+         * Also we may need to add an environment variable `VS140COMNTOOLS` which points to
+         `C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\` so the C++ compiler can be found
+    * Before doing do be sure to add environment variables for the Bloomberg DLL (blpapi3_64.dll) to Windows `PATH` variable
         * eg. C:\blp\blpapi_cpp_3.9.10.1\bin
-    * Make sure BLPAPI_ROOT root is set as an environmental variable in Windows
+    * Make sure `BLPAPI_ROOT` root is set as an environmental variable in Windows
         * eg. C:\blp\blpapi_cpp_3.9.10.1
     * On Windows to change PATH and BLPAPI_ROOT environment variables go to Control Panel / System and Security /
     System / Advanced System Settings / Advanced / Environment Variables
     * python setup.py build (to build & compile - alternatively if you have Python 3.5 and Windows, you can download file
     [blpapi-3.9.0.zip](https://github.com/cuemacro/findatapy/blob/master/blpapi-3.9.0.zip), which I have
-    pre-built using Microsoft Visual Studio 2015)
-    * python setup.py install (to install)
+    pre-built using Visual C++ 2015 version 14.0)
+    * `python setup.py install` (to install)
 * For Python 3.4 - prebuilt executable can be run, which means we can skip the build steps above
     * Might need to tweak registry to avoid "Python 3.4 not found in registry error" (blppython.reg example) when using this executable
 * The library doesn't support the old Bloomberg COM API (since much slower than the new Open API)
