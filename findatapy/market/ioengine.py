@@ -135,7 +135,8 @@ class IOEngine(object):
         return self.read_csv_data_frame(f_name, freq, cutoff = cutoff, dateparse = dateparse,
                             postfix = postfix, intraday_tz = intraday_tz, excel_sheet = excel_sheet)
 
-    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1', db_port='6379', timeout = 10):
+    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1', db_port='6379', timeout = 10, username = None,
+                                         password = None):
 
         if 'hdf5' in engine:
             engine = 'hdf5'
@@ -176,7 +177,11 @@ class IOEngine(object):
 
             self.logger.info('Load MongoDB library: ' + fname)
 
-            c = pymongo.MongoClient(db_server, connect=False)
+            if username is not None and password is not None:
+                c = pymongo.MongoClient(db_server, connect=False, username=username, password=password)
+            else:
+                c = pymongo.MongoClient(db_server, connect=False)
+
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS,
                            connectTimeoutMS=socketTimeoutMS)
 
@@ -262,7 +267,10 @@ class IOEngine(object):
 
             self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
-            c = pymongo.MongoClient(db_server, connect=False)
+            if username is not None and password is not None:
+                c = pymongo.MongoClient(db_server, connect=False, username=username, password=password)
+            else:
+                c = pymongo.MongoClient(db_server, connect=False)
 
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS,
                            connectTimeoutMS=socketTimeoutMS)
@@ -506,7 +514,10 @@ class IOEngine(object):
 
             self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
-            c = pymongo.MongoClient(db_server, connect=False)
+            if username is not None and password is not None:
+                c = pymongo.MongoClient(db_server, connect=False, username=username, password=password)
+            else:
+                c = pymongo.MongoClient(db_server, connect=False)
 
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
 
