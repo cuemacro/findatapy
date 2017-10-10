@@ -360,13 +360,13 @@ class MarketDataGenerator(object):
 
         data_frame_agg = None
 
-        thread_no = DataConstants.market_thread_no['other']
+        thread_no = DataConstants().market_thread_no['other']
 
         if market_data_request_list[0].data_source in DataConstants().market_thread_no:
-            thread_no = DataConstants.market_thread_no[market_data_request_list[0].data_source]
+            thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
 
         if thread_no > 0:
-            pool = SwimPool().create_pool(thread_technique = DataConstants.market_thread_technique, thread_no=thread_no)
+            pool = SwimPool().create_pool(thread_technique = DataConstants().market_thread_technique, thread_no=thread_no)
 
             # open the market data downloads in their own threads and return the results
             result = pool.map_async(self.fetch_single_time_series, market_data_request_list)
