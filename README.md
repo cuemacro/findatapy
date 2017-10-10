@@ -84,6 +84,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 10 Oct 2017 - Added handling of username and password for arctic
 * 26 Aug 2017 - Improved threading for FXCM and DukasCopy downloaders
 * 25 Aug 2017 - Added FXCM downloader (partially finished)
 * 23 Aug 2017 - Improved overwritting of constants by cred file
