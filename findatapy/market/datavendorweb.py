@@ -904,6 +904,7 @@ class DataVendorFXCM(DataVendor):
 
         data_frame = None
 
+        # Python 2 vs. 3
         try:
             from StringIO import StringIO
         except:
@@ -1013,6 +1014,7 @@ class Fred(object):
 
         if self.api_key is None:
             import textwrap
+
             raise ValueError(textwrap.dedent("""\
                     You need to set a valid API key. You can set it in 3 ways:
                     pass the string with api_key, or set api_key_file to a
