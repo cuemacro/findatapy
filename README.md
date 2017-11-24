@@ -7,7 +7,7 @@ a unified high level interface. Users can also define their own custom tickers, 
 is particularly useful for those downloading FX market data. Below example shows how to download AUDJPY data from Quandl (and automatically 
 calculates this via USD crosses).
 
-*Contributors for the project are very much welcome, sell below!*
+*Contributors for the project are very much welcome, see below!*
 
 ```
 from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
@@ -84,6 +84,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 24 Nov 2017 - Minor bug fixes for DukasCopy downloader
 * 10 Oct 2017 - Added handling of username and password for arctic
 * 26 Aug 2017 - Improved threading for FXCM and DukasCopy downloaders
 * 25 Aug 2017 - Added FXCM downloader (partially finished)
