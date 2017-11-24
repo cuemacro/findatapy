@@ -545,7 +545,6 @@ class DataVendorDukasCopy(DataVendor):
     def __init__(self):
         super(DataVendor, self).__init__()
         self.logger = LoggerManager().getLogger(__name__)
-
         import logging
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.config = ConfigManager()
@@ -630,9 +629,13 @@ class DataVendorDukasCopy(DataVendor):
         time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
 
         pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['dukascopy'])
-        results = [pool.apply_async(self.fetch_file, args=(time, symbol)) for time in time_list]
+        results = [pool.apply_async(self.fetch_file, args=(time, symbol,)) for time in time_list]
         df_list = [p.get() for p in results]
+
         pool.close()
+        pool.join()
+
+        df_list = [x for x in df_list if x is not None]
 
         try:
             return pandas.concat(df_list)
@@ -663,11 +666,12 @@ class DataVendorDukasCopy(DataVendor):
 
         try:
             return self.retrieve_df(lzma.decompress(tick), symbol, time)
-        except:
+        except Exception as e:
             return None
 
     def fetch_tick(self, tick_url):
         i = 0
+
         tick_request_content = None
 
         self.logger.debug("Loading URL " + tick_url)
@@ -710,15 +714,15 @@ class DataVendorDukasCopy(DataVendor):
         df.drop('temp', axis = 1)
         df.index.name = 'Date'
 
-        divisor = 100000
+        divisor = 100000.0
 
         # where JPY is the terms currency we have different divisor
         if symbol[3:6] == 'JPY':
-            divisor = 1000
+            divisor = 1000.0
 
         # special case!
         if symbol == 'BRENTCMDUSD':
-            divisor = 1000
+            divisor = 1000.0
 
         # prices are returned without decimal point (need to divide)
         df['bid'] =  df['bid'] / divisor
