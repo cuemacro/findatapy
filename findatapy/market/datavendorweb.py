@@ -952,11 +952,13 @@ class DataVendorFXCM(DataVendor):
         week_year = []
 
         for w in weeks:
-            week = w.week
+            # week = w.week
 
-            if week != 52:
-                year = w.year
+            # if week != 52:
+            #    year = w.year
 
+            # week_year.append((week, year))
+            year, week = w.isocalendar()[0:2]
             week_year.append((week, year))
 
         # if less than a week a
