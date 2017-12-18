@@ -84,6 +84,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 18 Dec 2017 - Fixed FXCM downloader bug
 * 24 Nov 2017 - Minor bug fixes for DukasCopy downloader
 * 10 Oct 2017 - Added handling of username and password for arctic
 * 26 Aug 2017 - Improved threading for FXCM and DukasCopy downloaders
