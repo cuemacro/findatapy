@@ -84,6 +84,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 05 Jan 2018 - Fixed bug when downloading BBG reference data
 * 18 Dec 2017 - Fixed FXCM downloader bug
 * 24 Nov 2017 - Minor bug fixes for DukasCopy downloader
 * 10 Oct 2017 - Added handling of username and password for arctic
