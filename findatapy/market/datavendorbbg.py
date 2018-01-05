@@ -744,6 +744,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         single = False
 
         for securityData in list(securityDataArray.values()):
+
             ticker = securityData.getElementAsString("security")
             fieldData = securityData.getElement("fieldData")
 
@@ -783,12 +784,14 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                     fieldException.getElementAsString("fieldId"))
                 print("stop")
 
-        data_frame = pandas.DataFrame(data)
+        # explicitly state from_dict (buggy if create pandas.DataFrame(data)
+        data_frame = pandas.DataFrame.from_dict(data)
 
         # if obsolete ticker could return no values
         if (not(data_frame.empty)):
-            if not(single):
-                data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
+            # if not(single):
+            #    pass
+            # data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
 
             self.logger.info("Reading: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
         else:
