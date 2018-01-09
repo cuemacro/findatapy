@@ -36,6 +36,7 @@ class Market(object):
 
         self.speed_cache = SpeedCache()
         self.market_data_generator = market_data_generator
+        self.filter = Filter()
         self.md_request = md_request
 
     def fetch_market(self, md_request = None):
@@ -171,6 +172,10 @@ class Market(object):
         if data_frame is None:
             data_frame = self.market_data_generator.fetch_market_data(md_request)
 
+        # special case where we can sometimes have duplicated data times
+        if md_request.freq == 'intraday' and md_request.cut == 'BSTP':
+            data_frame = self.filter.remove_duplicate_indices(data_frame)
+
         # push into cache
         self.speed_cache.put_dataframe(key, data_frame)
 
@@ -305,6 +310,7 @@ class FXCrossFactory(object):
         # fudge, issue with multithreading and accessing HDF5 files
         # if self.market_data_generator.__class__.__name__ == 'CachedMarketDataGenerator':
         #    thread_no = 0
+        thread_no = 0
 
         if (thread_no > 0):
             pool = Pool(thread_no)
