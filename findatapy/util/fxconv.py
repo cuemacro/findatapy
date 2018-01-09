@@ -21,7 +21,7 @@ class FXConv(object):
 
     # TODO
     g10 = ['EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
-    order = ['XAU', 'XPT', 'XBT', 'XAG', 'EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
+    order = ['XBT', 'XET', 'XLC', 'XRP', 'XAU', 'XPT', 'XAG', 'EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
 
     def __init__(self):
         self.logger = LoggerManager().getLogger(__name__)
