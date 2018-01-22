@@ -657,6 +657,9 @@ class Filter(object):
 
         return data_frame
 
+    def remove_duplicate_indices(self, df):
+        return df[~df.index.duplicated(keep='first')]
+
 #######################################################################################################################
 
 import datetime
