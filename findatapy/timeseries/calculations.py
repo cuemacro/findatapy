@@ -895,8 +895,6 @@ class Calculations(object):
 
         df_left, df_right = df_left.align(df_right, join='left', axis=0)
 
-
-
         return df_left, df_right
 
     def functional_outer_join(self, df_list):
