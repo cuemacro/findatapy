@@ -20,6 +20,16 @@ fx-implied-vol,bloomberg,daily,10AM,close,1-Jan-09
 base-depos,bloomberg,daily,NYC,close,1-Jan-95
 base-depos,bloomberg,daily,TOK,close,1-Jan-95
 base-depos,bloomberg,daily,LDN,close,1-Jan-95
+crypto,bitcoincharts,tick,LOC,"close,volume",1-Jan-15
+crypto,poloniex,intraday,LOC,"close,high,low,open,quote-volume,volume,weighted-average",1-Jan-15
+crypto,poloniex,daily,LOC,"close,high,low,open,quote-volume,volume,weighted-average",1-Jan-15
+crypto,binance,intraday,LOC,"open,high,low,close,volume,quote-asset-volume,trade-numbers,taker-buy-base-asset-volume,taker-buy-quote-asset-volume",1-Jan-15
+crypto,binance,daily,LOC,"open,high,low,close,volume,quote-asset-volume,trade-numbers,taker-buy-base-asset-volume,taker-buy-quote-asset-volume",1-Jan-15
+crypto,bitfinex,intraday,LOC,"open,close,high,low,volume",1-Jan-15
+crypto,bitfinex,daily,LOC,"open,close,high,low,volume",1-Jan-15
+crypto,gdax,intraday,LOC,"low,high,open,close,volume",1-Jan-15
+crypto,gdax,daily,LOC,"low,high,open,close,volume",1-Jan-15
+crypto,kraken,intraday,LOC,"close,volume,buy-sell,market-limit,miscellaneous",1-Jan-15
 ,,,,,
 ,,,,,
 ,,,,,

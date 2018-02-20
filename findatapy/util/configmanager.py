@@ -95,53 +95,58 @@ class ConfigManager(object):
                 for line in reader:
                     category = line["category"]
                     source = line["source"]
-                    freq = line["freq"]
-                    ticker = line["ticker"]
-                    cut = line["cut"]
-                    sourceticker = line["sourceticker"]
-                    expiry = None
+                    freq_list = line["freq"].split(',')
 
-                    try:
-                        expiry = line['expiry']
-                    except:
-                        pass
+                    if isinstance(freq_list, str):
+                        freq_list = [freq_list]
 
-                    if category != "":
-                        # print("stop" + category + '.' +
-                        #                                                  source + '.' +
-                        #                                                  freq + '.' +
-                        #                                                  cut + '.' +
-                        #                                                  ticker)
-
-                        # conversion from library ticker to vendor sourceticker
-                        ConfigManager._dict_time_series_tickers_list_library_to_vendor[category + '.' +
-                                                                             source + '.' +
-                                                                             freq + '.' +
-                                                                             cut + '.' +
-                                                                             ticker] = sourceticker
+                    for freq in freq_list:
+                        ticker = line["ticker"]
+                        cut = line["cut"]
+                        sourceticker = line["sourceticker"]
+                        expiry = None
 
                         try:
-                            if expiry != '':
-                                expiry = parse(expiry)
-                            else: expiry = None
+                            expiry = line['expiry']
                         except:
                             pass
 
-                        # conversion from library ticker to library expiry date
-                        ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
-                                                                                       source + '.' +
-                                                                                       ticker] = expiry
+                        if category != "":
+                            # print("stop" + category + '.' +
+                            #                                                  source + '.' +
+                            #                                                  freq + '.' +
+                            #                                                  cut + '.' +
+                            #                                                  ticker)
 
-                        # conversion from vendor sourceticker to library ticker
-                        ConfigManager._dict_time_series_tickers_list_vendor_to_library[source + '.' + sourceticker] = ticker
+                            # conversion from library ticker to vendor sourceticker
+                            ConfigManager._dict_time_series_tickers_list_library_to_vendor[category + '.' +
+                                                                                 source + '.' +
+                                                                                 freq + '.' +
+                                                                                 cut + '.' +
+                                                                                 ticker] = sourceticker
 
-                        # library of tickers by category
-                        key = category + '.' + source + '.' + freq + '.' + cut
+                            try:
+                                if expiry != '':
+                                    expiry = parse(expiry)
+                                else: expiry = None
+                            except:
+                                pass
 
-                        if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
-                            ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(ticker)
-                        else:
-                            ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [ticker]
+                            # conversion from library ticker to library expiry date
+                            ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
+                                                                                           source + '.' +
+                                                                                           ticker] = expiry
+
+                            # conversion from vendor sourceticker to library ticker
+                            ConfigManager._dict_time_series_tickers_list_vendor_to_library[source + '.' + sourceticker] = ticker
+
+                            # library of tickers by category
+                            key = category + '.' + source + '.' + freq + '.' + cut
+
+                            if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
+                                ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(ticker)
+                            else:
+                                ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [ticker]
 
         ## populate fields conversions
         reader = csv.DictReader(open(DataConstants().time_series_fields_list))

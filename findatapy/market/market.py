@@ -165,6 +165,10 @@ class Market(object):
                 data_frame = md_request.abstract_curve.fetch_continuous_time_series\
                     (md_request, self.market_data_generator)
 
+            if (md_request.category == 'crypto'):
+                # add more features later
+                data_frame = self.market_data_generator.fetch_market_data(md_request)
+
             # TODO add more special examples here for different asset classes
             # the idea is that we do all the market data downloading here, rather than elsewhere
 
@@ -406,7 +410,7 @@ class FXCrossFactory(object):
                         cross_vals = 1 / cross_vals
 
                 # cross_vals = self.market_data_generator.harvest_time_series(market_data_request)
-                cross_vals.columns = [cr + '.close']
+               # cross_vals.columns = [cr + '.close']
 
         elif type[0:3] == "tot":
             if freq == 'daily':

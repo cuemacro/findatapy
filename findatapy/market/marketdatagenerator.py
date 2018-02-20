@@ -67,8 +67,11 @@ class MarketDataGenerator(object):
             return None
 
         if source == 'bloomberg':
-            from findatapy.market.datavendorbbg import DataVendorBBGOpen
-            data_vendor = DataVendorBBGOpen()
+            try:
+                from findatapy.market.datavendorbbg import DataVendorBBGOpen
+                data_vendor = DataVendorBBGOpen()
+            except:
+                self.logger.warn("Bloomberg needs to be installed")
 
         elif source == 'quandl':
             from findatapy.market.datavendorweb import DataVendorQuandl
@@ -97,6 +100,26 @@ class MarketDataGenerator(object):
         elif source in ['yahoo', 'google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
             from findatapy.market.datavendorweb  import DataVendorPandasWeb
             data_vendor = DataVendorPandasWeb()
+
+        elif source == 'bitcoincharts':
+            from findatapy.market.datavendorweb import DataVendorBitcoincharts
+            data_vendor = DataVendorBitcoincharts()
+        elif source == 'poloniex':
+            from findatapy.market.datavendorweb import DataVendorPoloniex
+            data_vendor = DataVendorPoloniex()
+        elif source == 'binance':
+            from findatapy.market.datavendorweb import DataVendorBinance
+            data_vendor = DataVendorBinance()
+        elif source == 'bitfinex':
+            from findatapy.market.datavendorweb import DataVendorBitfinex
+            data_vendor = DataVendorBitfinex()
+        elif source == 'gdax':
+            from findatapy.market.datavendorweb import DataVendorGdax
+            data_vendor = DataVendorGdax()
+        elif source == 'kraken':
+            from findatapy.market.datavendorweb import DataVendorKraken
+            data_vendor = DataVendorKraken()
+
 
         # TODO add support for other data sources (like Reuters)
 
@@ -141,6 +164,7 @@ class MarketDataGenerator(object):
         # intraday or tick: only one ticker per cache file
         if (market_data_request.freq in ['intraday', 'tick', 'second', 'hour', 'minute']):
             data_frame_agg = self.download_intraday_tick(market_data_request)
+     #       return data_frame_agg
 
         # daily: multiple tickers per cache file - assume we make one API call to vendor library
         else:
@@ -267,6 +291,7 @@ class MarketDataGenerator(object):
                 data_frame_agg = calcuations.pandas_outer_join(data_frame_group)
 
             return data_frame_agg
+
         else:
             market_data_request_list = []
 
@@ -340,6 +365,7 @@ class MarketDataGenerator(object):
 
         if len(market_data_request.tickers) > 0:
             data_frame_single = self.get_data_vendor(market_data_request.data_source).load_ticker(market_data_request)
+            #print(data_frame_single.head(n=10))
 
         if data_frame_single is not None:
             if data_frame_single.empty == False:
