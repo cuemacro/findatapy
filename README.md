@@ -83,6 +83,7 @@ In findatapy/examples you will find several demos
 * No formal releases yet
 
 # Coding log
+* 07 Mar 2018 - Fixed bugs for date_parser.
 * 20 Feb 2018 - Added cryptocurrency data generators and example
 * 22 Jan 2018 - Added function to remove duplicate consecutive data
 * 05 Jan 2018 - Fixed bug when downloading BBG reference data

@@ -355,9 +355,9 @@ class MarketDataRequest(object):
             if date is 'midnight':
                 date1 = datetime.datetime(date1.year, date1.month, date1.day, 0, 0, 0)
             elif date is 'decade':
-                date1 = date1 - timedelta(days=360 * 10)
+                date1 = date1 - timedelta(days=365 * 10)
             elif date is 'year':
-                date1 = date1 - timedelta(days=360)
+                date1 = date1 - timedelta(days=365)
             elif date is 'month':
                 date1 = date1 - timedelta(days=30)
             elif date is 'week':
