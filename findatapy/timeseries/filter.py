@@ -660,6 +660,64 @@ class Filter(object):
     def remove_duplicate_indices(self, df):
         return df[~df.index.duplicated(keep='first')]
 
+
+    def mask_time_series_by_time(self, df, time_list, time_zone):
+        """ Mask a time series by time of day and time zone specified
+        e.g. given a time series minutes data
+             want to keep data at specific time periods every day with a considered time zone
+
+        Parameters
+        ----------
+        df : DateTime
+            time series needed to be masked
+        time_list : list of tuples
+            deciding the time periods which we want to keep the data on each day
+            e.g. time_list = [('01:08', '03:02'),('12:24','12:55'),('17:31','19:24')]
+            * Note: assume no overlapping of these tuples
+        time_zone: str
+            e.g. 'Europe/London'
+
+        Returns
+        -------
+        DataFrame  (which the time zone is 'UTC')
+        """
+
+        # change the time zone from 'UTC' to a given one
+        df.index = df.index.tz_convert(time_zone)
+        df_mask = pandas.DataFrame(0,index=df.index,columns=['mask'])
+
+        # mask data with each given tuple
+        for i in range(0, len(time_list)):
+            start_hour = int(time_list[i][0].split(':')[0])
+            start_minute = int(time_list[i][0].split(':')[1])
+            end_hour = int(time_list[i][1].split(':')[0])
+            end_minute = int(time_list[i][1].split(':')[1])
+
+            # e.g. if tuple is ('01:08', '03:02'),
+            # take hours in target - take values in [01:00,04:00]
+            narray = np.where(df.index.hour.isin(range(start_hour,end_hour + 1)), 1, 0)
+            df_mask_temp = pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
+
+            # remove minutes not in target - remove values in [01:00,01:07], [03:03,03:59]
+            narray = np.where(((df.index.hour == start_hour) & (df.index.minute < start_minute)), 0, 1)
+            df_mask_temp = df_mask_temp * pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
+            narray = np.where((df.index.hour == end_hour) & (df.index.minute > end_minute), 0, 1)
+            df_mask_temp = df_mask_temp * pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
+
+            # collect all the periods we want to keep the data
+            df_mask = df_mask + df_mask_temp
+
+        narray = np.where(df_mask == 1, df, 0)
+        df = pandas.DataFrame(index=df.index,columns=df.columns.tolist(),data=narray)
+        df.index = df.index.tz_convert('UTC')  # change the time zone to 'UTC'
+
+        return df
+
+
+
+
+
+
 #######################################################################################################################
 
 import datetime

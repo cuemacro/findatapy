@@ -176,7 +176,7 @@ class Calculations(object):
         reset_points = reset_points.cumsum()
 
         # make sure they have the same column names (otherwise issues around pandas calc - assume same ordering for cols)
-        old_cols = strategy_returns_data_frame.columnsii
+        old_cols = strategy_returns_data_frame.columns
         strategy_returns_data_frame.columns = signal_data_frame_pushed.columns
 
         for c in reset_points.columns:
@@ -872,8 +872,10 @@ class Calculations(object):
         # remove any None elements (which can't be joined!)
         df_list = [i for i in df_list if i is not None]
 
-        if len(df_list) == 0: return None
-        elif len(df_list) == 1: return df_list[0]
+        if len(df_list) == 0:
+            return None
+        elif len(df_list) == 1:
+            return df_list[0]
 
         # df_list = [dd.from_pandas(df) for df in df_list]
 
@@ -954,6 +956,7 @@ class Calculations(object):
 
         pool.close()
         pool.join()
+
 
         return df_list[0]
 
@@ -1275,6 +1278,90 @@ class Calculations(object):
             series = pandas.DataFrame(series, dtype=float)
 
         return series
+
+
+    def insert_sparse_time_series(self, df_sparse_time_series, pre_window_size, post_window_size, unit):
+        """  Given a sparse time series dataframe, return inserted dataframe with given unit/window
+        e.g   for a given sparse time series df, df[30] = 4.0
+              pre and post window sizes are 5
+              then the function will insert 4.0 to df[26:30] and df[30:35]
+
+        *Note - may have chaotic results if df is not sparse enough (since the windows may overlap)
+
+        Parameters
+        ----------
+        df_sparse_time_series : DateTime
+            time series to be inserted
+        pre_window_size :  int
+            e.g. pre_window_size = 5
+        post_window_size:  int
+            e.g. post_window_size = 5
+        unit: minutes, hours, days
+            the unit shoould be same as used in the index of dataframe
+
+        Returns
+        -------
+        DataFrame
+        """
+
+        from datetime import timedelta
+        df = df_sparse_time_series
+        col = list(df)
+        for i in col:
+            non_empty_list = df[i].loc[df[i] != 0].index
+            ### unit options can be added if necessary
+            if unit == 'minutes':
+                post_window_list = non_empty_list + timedelta(minutes=post_window_size)
+                pre_window_list = non_empty_list - timedelta(minutes=pre_window_size)
+                backward_fill_bound = pre_window_list[0] - timedelta(minutes=1)
+            if unit == 'hours':
+                post_window_list = non_empty_list + timedelta(hours=post_window_size)
+                pre_window_list = non_empty_list - timedelta(hours=pre_window_size)
+                backward_fill_bound = pre_window_list[0] - timedelta(hours=1)
+            if unit == 'days':
+                post_window_list = non_empty_list + timedelta(days=post_window_size)
+                pre_window_list = non_empty_list - timedelta(days=pre_window_size)
+                backward_fill_bound = pre_window_list[0] - timedelta(days=1)
+
+            # now the given df should be [0 0 0 0 0 0 x 0 0 0 0 0 0]
+            # x is the non zero value
+            # specify the cases as window sizes can be 0
+            if post_window_size > 0:
+                narray = numpy.where(df[i].index.isin(post_window_list), 2, 0)
+                df[i] = df[[i]] + pandas.DataFrame(index=df.index, columns=[i], data=narray)
+            if pre_window_size > 0:
+                narray = numpy.where(df[i].index.isin(pre_window_list), 3, 0)
+                df[i] = df[[i]] + pandas.DataFrame(index=df.index, columns=[i], data=narray)
+
+            # now df should become [0 0 0 3 0 0 x 0 0 0 2 0 0 ]
+            # to make sure the final backward filling won't replace all elements to the first one
+            # we give a value at the backward_fill_bound (which is one unit before the pre window)
+            df[i].at[backward_fill_bound] = 4
+
+
+            # now df should become [0 0 4 3 0 0 x 0 0 0 2 0 0]
+
+            df[i].replace(to_replace=0, method='ffill', inplace=True)
+
+            # now df should become [0 0 4 3 3 3 x x x 2 2 2]
+
+            df[i].replace(to_replace=3, value=0, inplace=True)
+
+            # now df should become [0 0 4 0 0 0 x x x 2 2 2]
+
+            df[i].replace(to_replace=0, method='bfill', inplace=True)
+
+            # now df should become [4 4 4 x x x x x x 2 2 2]
+
+            df[i].replace(to_replace=2, value=0, inplace=True)
+
+            # now df should become [4 4 4 x x x x x x 0 0 0]
+
+            df[i].replace(to_replace=4, value=0, inplace=True)
+
+            # now df should become [0 0 0 x x x x x x 0 0 0]
+
+        return df
 
 
 if __name__ == '__main__':

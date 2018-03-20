@@ -83,6 +83,7 @@ In findatapy/examples you will find several demos
 * No formal releases yet
 
 # Coding log
+* 20 Mar 2018 - Added insert_sparse_time_series in Calculation, and mask_time_series_by_time in Filter.
 * 07 Mar 2018 - Fixed bugs for date_parser.
 * 20 Feb 2018 - Added cryptocurrency data generators and example
 * 22 Jan 2018 - Added function to remove duplicate consecutive data
