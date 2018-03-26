@@ -1073,7 +1073,7 @@ class DataVendorDukasCopy(DataVendor):
             return None
 
     def fetch_file(self, time, symbol):
-        if time.hour % 24 == 0: self.logger.info("Downloading... " + str(time))
+        if time.hour % 24 == 0: self.logger.debug("Downloading... " + str(time))
 
         tick_path = self.tick_name.format(
                 symbol = symbol,
