@@ -119,7 +119,9 @@ class MarketDataGenerator(object):
         elif source == 'kraken':
             from findatapy.market.datavendorweb import DataVendorKraken
             data_vendor = DataVendorKraken()
-
+        elif source == 'bitmex':
+            from findatapy.market.datavendorweb import DataVendorBitmex
+            data_vendor = DataVendorBitmex
 
         # TODO add support for other data sources (like Reuters)
 
