@@ -938,6 +938,73 @@ class DataVendorKraken(DataVendor):
 
 #########################################################################################################
 
+class DataVendorBitmex(DataVendor):
+    """Class for reading in data from various web sources into findatapy library including
+    """
+    # Data limit = 500,  150 calls / 5 minutes
+
+    def __init__(self):
+        super(DataVendorBitmex, self).__init__()
+        self.logger = LoggerManager().getLogger(__name__)
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+        market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
+        self.logger.info("Request data from Bitmex.")
+
+        import pandas as pd
+        import time
+
+        bitMEX_url = 'https://www.bitmex.com/api/v1/quote?symbol={}&count=500&reverse=false&startTime={}&endTime={}'
+        data_frame = pd.DataFrame(columns=['askPrice', 'askSize', 'bidPrice', 'bidSize', 'symbol', 'timestamp'])
+        start_time = market_data_request_vendor.start_date.timestamp()
+        finish_time = market_data_request_vendor.finish_date.timestamp()
+        symbol = market_data_request_vendor.tickers[0]
+        stop_flag = 0
+        while stop_flag == 0:
+            if stop_flag == 1:
+                break
+            json_url = bitMEX_url.format(symbol, start_time.isoformat(), finish_time.isoformat())
+            data_read = pd.read_json(json_url)
+            if (len(data_read) < 500):
+                    stop_flag = 1
+            data_frame = data_frame.append(data_read)
+            start_time = data_read['timestamp'][data_frame.index[-1]]
+            time.sleep(2)
+
+        if (len(data_frame) == 0):
+            print('###############################################################')
+            print('Warning: No data. Please change the start_date and finish_date.')
+            print('###############################################################')
+
+        data_frame = data_frame.drop(columns=['symbol'])
+        col = ['ask-price', 'ask-size', 'bid-price', 'bid-size', 'timestamp']
+        data_frame.columns = col
+        data_frame = data_frame.set_index('timestamp')
+        data_frame.index = pd.to_datetime(data_frame.index, unit='ms')
+        data_frame = data_frame[~data_frame.index.duplicated(keep='first')]
+        data_frame.columns = [market_data_request.tickers[0] + '.ask-price',
+                              market_data_request.tickers[0] + '.ask-size',
+                              market_data_request.tickers[0] + '.bid-price',
+                              market_data_request.tickers[0] + '.bid-size']
+
+
+        field_selected = []
+        for i in range(0, len(market_data_request_vendor.fields)):
+            field_selected.append(0)
+            field_selected[-1] = market_data_request.tickers[0] + '.' + market_data_request_vendor.fields[i]
+
+        self.logger.info("Completed request from Bitfinex.")
+
+        return data_frame[field_selected]
+
+
+
+
+#########################################################################################################
+
+
 import os
 from datetime import timedelta
 
