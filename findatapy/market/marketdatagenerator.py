@@ -192,7 +192,7 @@ class MarketDataGenerator(object):
             # pad columns a second time (is this necessary to do here again?)
             # TODO only do this for not daily data?
             try:
-                return self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)
+                return self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True).dropna(how = 'all')
             except:
                 if data_frame_agg is not None:
                     return data_frame_agg
