@@ -14,9 +14,16 @@ __author__ = 'saeedamen' # Saeed Amen
 
 """Contains implementations of DataVendor for
 
-Quandl (free/premium data source) - LoaderQuandl
-Pandas Data Reader (free data source - includes FRED, World Bank, Yahoo) - LoaderPandasWeb
-DukasCopy (retail FX broker - has historical tick data) - LoaderDukasCopy
+Quandl (free/premium data source) - DataVendorQuandl
+ALFRED (free datasource) - DataVendorALFRED
+Pandas Data Reader (free data source - includes FRED, World Bank, Yahoo) - DataVendorPandasWeb
+DukasCopy (retail FX broker - has historical tick data) - DataVendorDukasCopy
+ONS (free datasource) - DataVendorONS (incomplete)
+BOE (free datasource) - DataVendorBOE (incomplete)
+Bitcoinchart - DataVendorBitcoincharts
+
+
+
 """
 
 #######################################################################################################################
@@ -31,6 +38,8 @@ except:
     import Quandl
 
 from findatapy.market.datavendor import DataVendor
+
+from findatapy.market import IOEngine
 
 class DataVendorQuandl(DataVendor):
     """Reads in data from Quandl into findatapy library
@@ -1265,7 +1274,7 @@ class DataVendorDukasCopy(DataVendor):
     def get_daily_data(self):
         pass
 
-##########################
+########################################################################################################################
 
 ##from StringIO import StringIO
 from io import BytesIO
@@ -1467,7 +1476,7 @@ class DataVendorFXCM(DataVendor):
     def get_daily_data(self):
         pass
 
-##########################
+########################################################################################################################
 
 import os
 import sys
@@ -1947,3 +1956,49 @@ class Fred(object):
         if info is None:
             raise ValueError('No series exists for category id: ' + str(category_id))
         return info
+
+########################################################################################################################
+
+class DataVendorFlatFile(DataVendor):
+    """Reads in data from a user-specifed CSV or HDF5 flat file via findatapy library
+
+    """
+
+    def __init__(self):
+        super(DataVendorFlatFile, self).__init__()
+        self.logger = LoggerManager().getLogger(__name__)
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+
+        self.logger.info("Request " + market_data_request.data_source + " data")
+
+        if ".csv" in market_data_request.data_source:
+            data_frame = pandas.read_csv(market_data_request.data_source, index_col = 0, parse_dates = True,
+                                         infer_datetime_format = True)
+        elif ".h5" in market_data_request.data_source:
+            data_frame = IOEngine().read_time_series_cache_from_disk(market_data_request.data_source, engine = 'hdf5')
+
+        if data_frame is None or data_frame.index is []: return None
+
+        if data_frame is not None:
+            tickers = data_frame.columns
+
+        if data_frame is not None:
+            # tidy up tickers into a format that is more easily translatable
+            # we can often get multiple fields returned (even if we don't ask for them!)
+            # convert to lower case
+            ticker_combined = []
+
+            for i in range(0, len(tickers)):
+                if "." in tickers[i]:
+                    ticker_combined.append(tickers[i])
+                else:
+                    ticker_combined.append(tickers[i] + ".close")
+
+            data_frame.columns = ticker_combined
+            data_frame.index.name = 'Date'
+
+        self.logger.info("Completed request from " + market_data_request.data_source + " for " + str(ticker_combined))
+
+        return data_frame

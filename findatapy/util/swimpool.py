@@ -24,7 +24,7 @@ class SwimPool(object):
         self._pool = None
 
         if multiprocessing_library is None:
-            multiprocessing_library = DataConstants.multiprocessing_library
+            multiprocessing_library = DataConstants().multiprocessing_library
 
         self._multiprocessing_library = multiprocessing_library
 

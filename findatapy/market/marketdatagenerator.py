@@ -121,7 +121,10 @@ class MarketDataGenerator(object):
             data_vendor = DataVendorKraken()
         elif source == 'bitmex':
             from findatapy.market.datavendorweb import DataVendorBitmex
-            data_vendor = DataVendorBitmex
+            data_vendor = DataVendorBitmex()
+        elif '.csv' in source or '.h5' in source:
+            from findatapy.market.datavendorweb import DataVendorFlatFile
+            data_vendor = DataVendorFlatFile()
 
         # TODO add support for other data sources (like Reuters)
 
@@ -192,7 +195,19 @@ class MarketDataGenerator(object):
             # pad columns a second time (is this necessary to do here again?)
             # TODO only do this for not daily data?
             try:
-                return self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True).dropna(how = 'all')
+                data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)\
+                    .dropna(how = 'all')
+
+                if market_data_request.resample is not None:
+                    if 'last' in market_data_request.resample_how:
+                        data_frame_agg = data_frame_agg.resample(market_data_request.resample).last()
+                    elif 'first' in market_data_request.resample_how:
+                        data_frame_agg = data_frame_agg.resample(market_data_request.resample).first()
+
+                    if 'dropna' in market_data_request.resample_how:
+                        data_frame_agg = data_frame_agg.dropna(how = 'all')
+
+                return data_frame_agg
             except:
                 if data_frame_agg is not None:
                     return data_frame_agg
