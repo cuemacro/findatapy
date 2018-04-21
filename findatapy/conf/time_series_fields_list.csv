@@ -80,5 +80,12 @@ kraken,volume,volume
 kraken,buy-sell,buy-sell
 kraken,market-limit,market-limit
 kraken,miscellaneous,miscellaneous
+huobi,amount,amount
+huobi,close,close
+huobi,count,count
+huobi,high,high
+huobi,low,low
+huobi,open,open
+huobi,volume,vol
 ,,
 ,,
