@@ -149,7 +149,6 @@ class MarketDataGenerator(object):
         pandas.DataFrame
         """
 
-
         # data_vendor = self.get_data_vendor(market_data_request.data_source)
 
         # check if tickers have been specified (if not load all of them for a category)
