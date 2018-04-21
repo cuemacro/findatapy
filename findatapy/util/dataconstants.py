@@ -115,6 +115,9 @@ class DataConstants(object):
     # Quandl settings
     quandl_api_key = "x"
 
+    # Alpha Vantage settings
+    alpha_vantage_api_key = "x"
+
     # Twitter settings (you need to set these up on Twitter)
     TWITTER_APP_KEY             = "x"
     TWITTER_APP_SECRET          = "x"

@@ -23,6 +23,21 @@ if __name__ == '__main__':
 
     # in the config file, we can use keywords 'open', 'high', 'low', 'close' and 'volume' for Yahoo and Google finance data
 
+    # download equities data from Alpha Vantage
+    md_request = MarketDataRequest(
+        start_date="decade",            # start date
+        data_source='alphavantage',     # use Bloomberg as data source
+        tickers=['Apple', 'Microsoft', 'Citigroup'], # ticker (findatapy)
+        fields=['close'],               # which fields to download
+        vendor_tickers=['aapl', 'msft', 'c'],   # ticker (Alpha Vantage)
+        vendor_fields=['Close'])        # which Bloomberg fields to download)
+
+    df = market.fetch_market(md_request)
+
+    print(df.tail(n=10))
+
+    # NOTE: Yahoo API no longer works
+
     # download equities data from Yahoo
     md_request = MarketDataRequest(
         start_date="decade",            # start date

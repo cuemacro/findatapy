@@ -125,6 +125,9 @@ class MarketDataGenerator(object):
         elif '.csv' in source or '.h5' in source:
             from findatapy.market.datavendorweb import DataVendorFlatFile
             data_vendor = DataVendorFlatFile()
+        elif source == 'alphavantage':
+            from findatapy.market.datavendorweb import DataVendorAlphaVantage
+            data_vendor = DataVendorAlphaVantage()
 
         # TODO add support for other data sources (like Reuters)
 
@@ -142,7 +145,6 @@ class MarketDataGenerator(object):
         -------
         pandas.DataFrame
         """
-
 
         # data_vendor = self.get_data_vendor(market_data_request.data_source)
 
@@ -198,6 +200,7 @@ class MarketDataGenerator(object):
                 data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)\
                     .dropna(how = 'all')
 
+                # resample data using pandas if specified in the MarketDataRequest
                 if market_data_request.resample is not None:
                     if 'last' in market_data_request.resample_how:
                         data_frame_agg = data_frame_agg.resample(market_data_request.resample).last()
