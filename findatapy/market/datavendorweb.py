@@ -1000,6 +1000,87 @@ class DataVendorBitmex(DataVendor):
         return data_frame[field_selected]
 
 
+class DataVendorHuobi(DataVendor):
+    """Class for reading in data from various web sources into findatapy library including
+    """
+    # Data limit = 500,  150 calls / 5 minutes
+
+    def __init__(self):
+        super(DataVendorHuobi, self).__init__()
+        self.logger = LoggerManager().getLogger(__name__)
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+        import requests
+        import pandas as pd
+        import json
+        
+        def _calc_period_size(freq, start_dt, finish_dt):
+            actual_window = finish_dt - start_dt
+            extra_window = datetime.datetime.now() - finish_dt
+            request_window = actual_window + extra_window
+
+            if freq == 'daily':
+                return int(request_window.days), '1day'
+
+            if freq == 'tick':
+                request_minutes = request_window.total_seconds() / 60
+                return int(request_minutes), '1min'
+
+            raise ValueError("Unsupported freq: '{}'".format(freq))
+
+        # need to trick huobi to think we are a web-browser
+        header = {
+            "User-Agent": "Mozilla/5.0",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+
+        market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
+        self.logger.info("Request data from Huobi.")
+
+        request_size, period = _calc_period_size(
+            market_data_request_vendor.freq,
+            market_data_request_vendor.start_date,
+            market_data_request_vendor.finish_date)
+
+        if request_size > 2000:
+            raise ValueError("Requested data too old for candle-stick frequency of '{}'".format(market_data_request_vendor.freq))
+
+        url = "https://api.huobi.pro/market/history/kline?period={period}&size={size}&symbol={symbol}".format(
+            period=period,
+            size=request_size,
+            symbol=market_data_request_vendor.tickers[0]
+        )
+
+        response = requests.get(url, headers=header)
+        raw_data = json.loads(response.text)
+        df = pd.DataFrame(raw_data["data"])
+        df["timestamp"] = pd.to_datetime(df["id"], unit="s")
+
+        df = df.set_index("timestamp").sort_index(ascending=True)
+        df = df[~df.index.duplicated(keep='first')]
+
+        df.drop(["id"], axis=1, inplace=True)
+
+        if df.empty:
+            self.logger.info('###############################################################')
+            self.logger.info('Warning: No data. Please change the start_date and finish_date.')
+            self.logger.info('###############################################################')
+
+        df.columns = ["{}.{}".format(market_data_request.tickers[0], col) for col in df.columns]
+
+        field_selected = []
+        for i in range(0, len(market_data_request_vendor.fields)):
+            field_selected.append(0)
+            field_selected[-1] = market_data_request.tickers[0] + '.' + market_data_request_vendor.fields[i]
+
+        self.logger.info("Completed request from Huobi.")
+
+        df = df[field_selected]
+        return df
+
+
 
 
 #########################################################################################################

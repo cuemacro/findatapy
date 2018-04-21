@@ -122,6 +122,10 @@ class MarketDataGenerator(object):
         elif source == 'bitmex':
             from findatapy.market.datavendorweb import DataVendorBitmex
             data_vendor = DataVendorBitmex
+        elif source == 'huobi':
+            from findatapy.market.datavendorweb import DataVendorHuobi
+            data_vendor = DataVendorHuobi()
+
 
         # TODO add support for other data sources (like Reuters)
 
