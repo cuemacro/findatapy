@@ -1291,7 +1291,8 @@ import datetime
 
 class DataVendorFXCM(DataVendor):
     """Class for downloading tick data from FXCM. Selecting very large
-    histories is not recommended as you will likely run out memory given the amount of data requested.
+    histories is not recommended as you will likely run out memory given the amount of data requested. Loads csv.gz
+    files from FXCM and then converts into pandas DataFrames locally.
 
     Based on https://github.com/FXCMAPI/FXCMTickData/blob/master/TickData34.py
 
@@ -2084,5 +2085,93 @@ class DataVendorAlphaVantage(DataVendor):
 
         if trials == 5:
             self.logger.error("Couldn't download from Alpha Vantage after several attempts!")
+
+        return data_frame
+
+########################################################################################################################
+
+import fxcmpy
+
+class DataVendorFXCMPY(DataVendor):
+    """Reads in data from FXCM data using fxcmpy into findatapy library. Can be used for minute or daily data. For
+    tick data we should use DataVendorFXCM (but this data is delayed).
+
+    NOTE: NOT TESTED YET
+
+    """
+
+    def __init__(self):
+        super(DataVendorFXCM, self).__init__()
+        self.logger = LoggerManager().getLogger(__name__)
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+        market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
+        self.logger.info("Request FXCM data")
+
+        data_frame, _ = self.download(market_data_request_vendor)
+
+        if data_frame is None or data_frame.index is []: return None
+
+        # convert from vendor to findatapy tickers/fields
+        if data_frame is not None:
+            returned_tickers = data_frame.columns
+
+        if data_frame is not None:
+            # tidy up tickers into a format that is more easily translatable
+            # we can often get multiple fields returned (even if we don't ask for them!)
+            # convert to lower case
+            returned_fields = [(x.split('. ')[1]).lower() for x in returned_tickers]
+
+            import numpy as np
+            returned_tickers = np.repeat(market_data_request_vendor.tickers, len(returned_fields))
+
+            try:
+                fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+                tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
+            except:
+                print('error')
+
+            ticker_combined = []
+
+            for i in range(0, len(tickers)):
+                try:
+                    ticker_combined.append(tickers[i] + "." + fields[i])
+                except:
+                    ticker_combined.append(tickers[i] + ".close")
+
+            data_frame.columns = ticker_combined
+            data_frame.index.name = 'Date'
+
+        self.logger.info("Completed request from FXCM for " + str(ticker_combined))
+
+        return data_frame
+
+    def download(self, market_data_request):
+        trials = 0
+
+        con = fxcmpy.fxcmpy(access_token=DataConstants().fxcm_API, log_level='error')
+
+        data_frame = None
+
+        if market_data_request.freq == 'intraday':
+            per = 'm1'
+        else:
+            per = 'D1'
+
+        tickers = [t[0:4] +"/" + t[4:7] for t in market_data_request.tickers]
+
+        while(trials < 5):
+            try:
+                data_frame = con.get_candles(tickers, period=per,
+                                start=market_data_request.start_date, stop=market_data_request.finish_date)
+                break
+            except Exception as e:
+                trials = trials + 1
+                self.logger.info("Attempting... " + str(trials) + " request to download from FXCM due to following error: " + str(e))
+
+        if trials == 5:
+            self.logger.error("Couldn't download from FXCM after several attempts!")
 
         return data_frame
