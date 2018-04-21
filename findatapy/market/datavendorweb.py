@@ -1960,7 +1960,10 @@ class Fred(object):
 ########################################################################################################################
 
 class DataVendorFlatFile(DataVendor):
-    """Reads in data from a user-specifed CSV or HDF5 flat file via findatapy library
+    """Reads in data from a user-specifed CSV or HDF5 flat file via findatapy library. Does not do any ticker/field
+    mapping, as this could vary significantly between CSV/HDF5 files.
+
+    Users need to know the tickers/fields they wish to collect.
 
     """
 
