@@ -122,6 +122,9 @@ class MarketDataGenerator(object):
         elif source == 'bitmex':
             from findatapy.market.datavendorweb import DataVendorBitmex
             data_vendor = DataVendorBitmex()
+        elif source == 'huobi':
+            from findatapy.market.datavendorweb import DataVendorHuobi
+            data_vendor = DataVendorHuobi()
         elif '.csv' in source or '.h5' in source:
             from findatapy.market.datavendorweb import DataVendorFlatFile
             data_vendor = DataVendorFlatFile()
