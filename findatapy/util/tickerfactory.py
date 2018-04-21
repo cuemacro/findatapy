@@ -32,7 +32,7 @@ class TickerFactory(object):
         data_frame = pandas.read_csv(csv_file, dtype=object)
 
         rows = 100000
-        #category	source	freq	ticker	cut	fields	sourceticker
+        # category	source	freq	ticker	cut	fields	sourceticker
 
         data_frame_out = pandas.DataFrame(index=numpy.arange(0, rows),
                                           columns=('category', 'source', 'freq', 'ticker', 'cut', 'fields', 'sourceticker'))
@@ -60,14 +60,18 @@ class TickerFactory(object):
                                                 if isinstance(postmidfix, str):
                                                     ticker_ext = ticker + midfix + postmidfix
                                                     sourceticker = ticker + midfix + postmidfix + ' ' + postfix
-                                                    data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields, sourceticker]
+                                                    data_frame_out.loc[i] = [category, source, freq, ticker_ext,
+                                                                             cut, fields, sourceticker]
+
                                                     i = i + 1
                                 else:
                                     for postmidfix in data_frame['postmidfix']:
                                         if isinstance(postmidfix, str):
                                             ticker_ext = ticker + postmidfix
                                             sourceticker = ticker + postmidfix + ' ' + postfix
-                                            data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields, sourceticker]
+                                            data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields,
+                                                                     sourceticker]
+
                                             i = i + 1
 
 
