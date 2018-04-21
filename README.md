@@ -88,6 +88,7 @@ In findatapy/examples you will find several demos
     * use CSV/HDF5 files with MarketDataRequest (includes flatfile_example.py)
     * allow resample parameter for MarketDataRequest
     * added AlphaVantage as a data source
+    * added fxcmpy as a a data source (unfinished)
 * 20 Apr 2018 - Remove rows where all NaNs for daily data when returning from MarketDataGenerator
 * 26 Mar 2018 - Change logging level for downloading dates of DukasCopy
 * 20 Mar 2018 - Added insert_sparse_time_series in Calculation, and mask_time_series_by_time in Filter.
