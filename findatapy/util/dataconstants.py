@@ -79,7 +79,7 @@ class DataConstants(object):
     # "thread" or "multiprocessing" (experimental!) library to use when downloading data
     market_thread_technique = "thread"
 
-    multiprocessing_library = 'multiprocessing_on_dill' # 'multiprocessing_on_dill' or 'multiprocess' or 'multiprocessing'
+    multiprocessing_library = 'multiprocess' # 'multiprocessing_on_dill' or 'multiprocess' or 'multiprocessing'
 
     # how many threads to use for loading external data (don't do too many on slow machines!)
     # also some data sources will complain if you start too many parallel threads to call data!
@@ -114,6 +114,12 @@ class DataConstants(object):
 
     # Quandl settings
     quandl_api_key = "x"
+
+    # Alpha Vantage settings
+    alpha_vantage_api_key = "x"
+
+    # FXCM API (contact FXCM to get this)
+    fxcm_api_key = "x"
 
     # Twitter settings (you need to set these up on Twitter)
     TWITTER_APP_KEY             = "x"

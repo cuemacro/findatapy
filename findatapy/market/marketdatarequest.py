@@ -69,11 +69,9 @@ class MarketDataRequest(object):
                  gran_freq = None, cut = "NYC",
                  fields = ['close'], cache_algo = "internet_load_return",
                  vendor_tickers = None, vendor_fields = None,
-                 environment = "backtest", trade_side = 'trade', expiry_date = None,
+                 environment = "backtest", trade_side = 'trade', expiry_date = None, resample = None, resample_how = 'last',
                  md_request = None, abstract_curve = None, overrides = {}
                  ):
-
-        self.logger = LoggerManager().getLogger(__name__)
 
         # can deep copy MarketDataRequest (use a lock, so can be used with threading when downloading time series)
         if md_request is not None:
@@ -105,6 +103,8 @@ class MarketDataRequest(object):
                 self.environment = copy.deepcopy(md_request.environment)        # backtest environment only supported at present
                 self.trade_side = copy.deepcopy(md_request.trade_side)
                 self.expiry_date = copy.deepcopy(md_request.expiry_date)
+                self.resample = copy.deepcopy(md_request.resample)
+                self.resample_how = copy.deepcopy(md_request.resample_how)
                 # self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
                 self.overrides = copy.deepcopy(md_request.overrides)
 
@@ -131,6 +131,8 @@ class MarketDataRequest(object):
             self.environment = environment          # backtest environment only supported at present
             self.trade_side = trade_side
             self.expiry_date = expiry_date
+            self.resample = resample
+            self.resample_how = resample_how
             self.abstract_curve = abstract_curve
             
             self.overrides = overrides
@@ -180,7 +182,7 @@ class MarketDataRequest(object):
             valid_data_source = ['ats', 'bloomberg', 'dukascopy', 'fred', 'gain', 'google', 'quandl', 'yahoo']
 
             if not data_source in valid_data_source:
-                self.logger.warning(data_source & " is not a defined data source.")
+                LoggerManager().getLogger(__name__).warning(data_source & " is not a defined data source.")
         except: pass
 
         self.__data_source = data_source
@@ -287,7 +289,7 @@ class MarketDataRequest(object):
         valid_freq = ['tick', 'second', 'minute', 'intraday', 'hourly', 'daily', 'weekly', 'monthly', 'quarterly', 'annually']
 
         if not freq in valid_freq:
-            self.logger.warning(freq + " is not a defined frequency")
+            LoggerManager().getLogger(__name__).warning(freq + " is not a defined frequency")
 
         self.__freq = freq
 
@@ -303,7 +305,7 @@ class MarketDataRequest(object):
             valid_gran_freq = ['tick', 'second', 'minute', 'hourly', 'pseudodaily', 'daily', 'weekly', 'monthly', 'quarterly', 'annually']
 
             if not gran_freq in valid_gran_freq:
-                self.logger.warning(gran_freq & " is not a defined frequency")
+                LoggerManager().getLogger(__name__).warning(gran_freq & " is not a defined frequency")
 
             if gran_freq in ['minute', 'hourly']:
                 self.__freq = 'intraday'
@@ -346,6 +348,22 @@ class MarketDataRequest(object):
     @cut.setter
     def cut(self, cut):
         self.__cut = cut
+
+    @property
+    def resample(self):
+        return self.__resample
+
+    @resample.setter
+    def resample(self, resample):
+        self.__resample = resample
+
+    @property
+    def resample_how(self):
+        return self.__resample_how
+
+    @resample_how.setter
+    def resample_how(self, resample_how):
+        self.__resample_how = resample_how
 
     def date_parser(self, date):
         if isinstance(date, str):
@@ -411,7 +429,7 @@ class MarketDataRequest(object):
 
 
         if not cache_algo in valid_cache_algo:
-            self.logger.warning(cache_algo + " is not a defined caching scheme")
+            LoggerManager().getLogger(__name__).warning(cache_algo + " is not a defined caching scheme")
 
         self.__cache_algo = cache_algo
 
@@ -426,7 +444,7 @@ class MarketDataRequest(object):
         valid_environment= ['prod', 'backtest']
 
         if not environment in valid_environment:
-            self.logger.warning(environment + " is not a defined environment.")
+            LoggerManager().getLogger(__name__).warning(environment + " is not a defined environment.")
 
         self.__environment = environment
 
@@ -441,7 +459,7 @@ class MarketDataRequest(object):
         valid_trade_side = ['trade', 'bid', 'ask']
 
         if not trade_side in valid_trade_side:
-            self.logger.warning(trade_side + " is not a defined trade side.")
+            LoggerManager().getLogger(__name__).warning(trade_side + " is not a defined trade side.")
 
         self.__trade_side = trade_side
         

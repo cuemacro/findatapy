@@ -121,11 +121,16 @@ class MarketDataGenerator(object):
             data_vendor = DataVendorKraken()
         elif source == 'bitmex':
             from findatapy.market.datavendorweb import DataVendorBitmex
-            data_vendor = DataVendorBitmex
+            data_vendor = DataVendorBitmex()
+        elif '.csv' in source or '.h5' in source:
+            from findatapy.market.datavendorweb import DataVendorFlatFile
+            data_vendor = DataVendorFlatFile()
+        elif source == 'alphavantage':
+            from findatapy.market.datavendorweb import DataVendorAlphaVantage
+            data_vendor = DataVendorAlphaVantage()
         elif source == 'huobi':
             from findatapy.market.datavendorweb import DataVendorHuobi
             data_vendor = DataVendorHuobi()
-
 
         # TODO add support for other data sources (like Reuters)
 
@@ -143,7 +148,6 @@ class MarketDataGenerator(object):
         -------
         pandas.DataFrame
         """
-
 
         # data_vendor = self.get_data_vendor(market_data_request.data_source)
 
@@ -196,7 +200,20 @@ class MarketDataGenerator(object):
             # pad columns a second time (is this necessary to do here again?)
             # TODO only do this for not daily data?
             try:
-                return self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True).dropna(how = 'all')
+                data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)\
+                    .dropna(how = 'all')
+
+                # resample data using pandas if specified in the MarketDataRequest
+                if market_data_request.resample is not None:
+                    if 'last' in market_data_request.resample_how:
+                        data_frame_agg = data_frame_agg.resample(market_data_request.resample).last()
+                    elif 'first' in market_data_request.resample_how:
+                        data_frame_agg = data_frame_agg.resample(market_data_request.resample).first()
+
+                    if 'dropna' in market_data_request.resample_how:
+                        data_frame_agg = data_frame_agg.dropna(how = 'all')
+
+                return data_frame_agg
             except:
                 if data_frame_agg is not None:
                     return data_frame_agg
