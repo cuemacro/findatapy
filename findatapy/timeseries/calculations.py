@@ -497,7 +497,25 @@ class Calculations(object):
         -------
         DataFrame
         """
-        tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc)
+
+        # for transaction costs which vary by asset name
+
+        # TODO add transaction costs which vary by size
+        if isinstance(tc, dict):
+
+            tc_ind = []
+
+            for k in returns_data_frame.columns:
+                try:
+                    tc_ind.append(tc[k.split('.')[0]])
+                except:
+                    tc_ind.append(tc['default'])
+
+            tc_ind = numpy.array(tc_ind)
+
+            tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc_ind)
+        else:
+            tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc)
 
         return pandas.DataFrame(
             signal_data_frame.shift(period_shift).values * returns_data_frame.values - tc_costs, index = returns_data_frame.index)
@@ -562,6 +580,7 @@ class Calculations(object):
         -------
         DataFrame
         """
+
         df = 100.0 * (1.0 + df_rets).cumprod()
 
         # get the first non-nan values for rets and then start index

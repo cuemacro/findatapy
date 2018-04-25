@@ -27,6 +27,7 @@ class SwimPool(object):
             multiprocessing_library = DataConstants().multiprocessing_library
 
         self._multiprocessing_library = multiprocessing_library
+        self._thread_technique = 'na'
 
         if multiprocessing_library == 'multiprocess':
             try:
@@ -47,12 +48,14 @@ class SwimPool(object):
             except:
                 pass
 
-    def create_pool(self, thread_technique, thread_no, force_new = True):
+    def create_pool(self, thread_technique, thread_no, force_new = True, run_in_parallel = True):
+
+        self._thread_technique = thread_technique
 
         if not(force_new) and self._pool is not None:
             return self._pool
 
-        if thread_technique is "thread":
+        if thread_technique is "thread" or run_in_parallel == False:
             from multiprocessing.dummy import Pool
         elif thread_technique is "multiprocessing":
             # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
@@ -64,9 +67,21 @@ class SwimPool(object):
                 from multiprocess import Pool
             elif self._multiprocessing_library == 'multiprocessing':
                 from multiprocessing import Pool
+            elif self._multiprocessing_library == 'pathos':
+                from pathos.multiprocessing import Pool
+                #from pathos.pools import ProcessPool as Pool
+            elif self._multiprocessing_library == 'billiard':
+                from billiard.pool import Pool
 
-            # from pathos.pools import ProcessPool as Pool
+        if run_in_parallel == False: thread_no = 1
 
         self._pool = Pool(thread_no)
 
         return self._pool
+
+    def close_pool(self, pool, force_process_respawn=False):
+        if pool is not None:
+            if (self._thread_technique != 'multiprocessing' and self._multiprocessing_library != 'pathos') \
+                    or force_process_respawn:
+                pool.close()
+                pool.join()

@@ -84,6 +84,9 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 25 Apr 2018
+    * Added transaction costs by asset
+    * Fixed bug with Redis caching
 * 21 Apr 2018 - New features
     * use CSV/HDF5 files with MarketDataRequest (includes flatfile_example.py)
     * allow resample parameter for MarketDataRequest

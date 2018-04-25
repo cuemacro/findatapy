@@ -252,8 +252,11 @@ class IOEngine(object):
 
             try:
                 r = redis.StrictRedis(host=db_server, port=db_port, db=0, socket_timeout=timeout,
-                 socket_connect_timeout=timeout)
-                r.set(fname, data_frame.to_msgpack(compress='blosc'))
+                    socket_connect_timeout=timeout)
+
+                if isinstance(data_frame, pandas.DataFrame):
+                    r.set(fname, data_frame.to_msgpack(compress='blosc'))
+
                 self.logger.info("Pushed " + fname + " to Redis")
             except Exception as e:
                 self.logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
@@ -742,14 +745,16 @@ class SpeedCache(object):
     def put_dataframe(self, key, obj):
         if self.engine != 'no_cache':
             try:
-                self.io_engine.write_time_series_cache_to_disk(key, obj, engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
+                self.io_engine.write_time_series_cache_to_disk(key.replace('/', '_'), obj,
+                    engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
             except: pass
 
     def get_dataframe(self, key):
         if self.engine == 'no_cache': return None
 
         try:
-            return self.io_engine.read_time_series_cache_from_disk(key, engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
+            return self.io_engine.read_time_series_cache_from_disk(key.replace('/', '_'),
+                    engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
         except: pass
 
     def dump_all_keys(self):
