@@ -30,6 +30,8 @@ crypto,bitfinex,daily,LOC,"open,close,high,low,volume",1-Jan-15
 crypto,gdax,intraday,LOC,"low,high,open,close,volume",1-Jan-15
 crypto,gdax,daily,LOC,"low,high,open,close,volume",1-Jan-15
 crypto,kraken,intraday,LOC,"close,volume,buy-sell,market-limit,miscellaneous",1-Jan-15
+crypto,huobi,tick,LOC,"amount,close,count,high,low,open,volume",1-Jan-15
+crypto,huobi,daily,LOC,"amount,close,count,high,low,open,volume",1-Jan-15
 ,,,,,
 ,,,,,
 ,,,,,

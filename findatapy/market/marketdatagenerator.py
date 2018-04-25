@@ -128,6 +128,9 @@ class MarketDataGenerator(object):
         elif source == 'alphavantage':
             from findatapy.market.datavendorweb import DataVendorAlphaVantage
             data_vendor = DataVendorAlphaVantage()
+        elif source == 'huobi':
+            from findatapy.market.datavendorweb import DataVendorHuobi
+            data_vendor = DataVendorHuobi()
 
         # TODO add support for other data sources (like Reuters)
 
