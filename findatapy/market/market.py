@@ -405,12 +405,12 @@ class FXCrossFactory(object):
                         filter = Filter()
                         cross_vals = filter.filter_time_series_by_holidays(cross_vals, cal = 'WEEKDAY')
                 else:
-                    # flip if not convention
+                    # flip if not convention (eg. JPYUSD)
                     if (correct_cr != cr):
                         cross_vals = 1 / cross_vals
 
                 # cross_vals = self.market_data_generator.harvest_time_series(market_data_request)
-               # cross_vals.columns = [cr + '.close']
+                cross_vals.columns = [cr + '.close']
 
         elif type[0:3] == "tot":
             if freq == 'daily':
