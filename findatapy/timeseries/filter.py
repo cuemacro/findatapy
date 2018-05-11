@@ -86,7 +86,7 @@ class Filter(object):
 
         return [x for x in index if x not in hols]
 
-    def get_holidays(self, start_date, end_date, cal = 'FX'):
+    def get_holidays(self, start_date, end_date, cal = 'FX', holidays_list = []):
         """Gets the holidays for a given calendar
 
         Parameters
@@ -104,7 +104,6 @@ class Filter(object):
         """
 
         # TODO use Pandas CustomBusinessDays to get more calendars
-        holidays_list = []
 
         if cal == 'FX':
             # filter for Christmas & New Year's Day
@@ -130,7 +129,7 @@ class Filter(object):
 
         return pandas.to_datetime(holidays_list)
 
-    def filter_time_series_by_holidays(self, data_frame, cal = 'FX'):
+    def filter_time_series_by_holidays(self, data_frame, cal = 'FX', holidays_list = []):
         """Removes holidays from a given time series
 
         Parameters
@@ -150,7 +149,7 @@ class Filter(object):
             return data_frame.ix[data_frame.index.dayofweek <= 4]
 
         # select only those holidays in the sample
-        holidays_start = self.get_holidays(data_frame.index[0], data_frame.index[-1], cal)
+        holidays_start = self.get_holidays(data_frame.index[0], data_frame.index[-1], cal, holidays_list = holidays_list)
 
         if(holidays_start.size == 0):
             return data_frame
