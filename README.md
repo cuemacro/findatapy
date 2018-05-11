@@ -84,6 +84,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 11 May 2018
+    * Allow filtering of dataframes by user defined holidays
 * 25 Apr 2018
     * Added transaction costs by asset
     * Fixed bug with Redis caching
