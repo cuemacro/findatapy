@@ -84,6 +84,7 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 29 May 2018  - Added port
 * 11 May 2018
     * Allow filtering of dataframes by user defined holidays
 * 25 Apr 2018
