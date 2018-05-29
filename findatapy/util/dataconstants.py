@@ -29,8 +29,8 @@ class DataConstants(object):
 
     ###### FOR FUTURE VERSIONS (which include caching)
     # folders for holding market data
-    folder_historic_CSV = "x"
-    folder_time_series_data = "x"
+    folder_historic_CSV = "x:/"
+    folder_time_series_data = "x:/"
 
     ###### FOR DATABASE
     db_server = '127.0.0.1'
