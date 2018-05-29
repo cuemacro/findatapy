@@ -178,9 +178,11 @@ class IOEngine(object):
             self.logger.info('Load MongoDB library: ' + fname)
 
             if username is not None and password is not None:
-                c = pymongo.MongoClient(db_server, connect=False, username=username, password=password)
+                c = pymongo.MongoClient(
+                    host="mongodb://" + username + ":" + password + "@" + str(db_server) + ":" + str(db_port),
+                    connect=False)  # , username=username, password=password)
             else:
-                c = pymongo.MongoClient(db_server, connect=False)
+                c = pymongo.MongoClient(host="mongodb://" + str(db_server) + ":" + str(db_port), connect=False)
 
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS,
                            connectTimeoutMS=socketTimeoutMS)
@@ -204,7 +206,7 @@ class IOEngine(object):
     ### functions to handle HDF5 on disk
     def write_time_series_cache_to_disk(self, fname, data_frame,
                                         engine = 'hdf5_fixed', append_data = False, db_server = DataConstants().db_server,
-                                        db_port = None, username = None, password = None,
+                                        db_port = DataConstants().db_port, username = None, password = None,
                                         filter_out_matching = None, timeout = 10):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
@@ -271,9 +273,9 @@ class IOEngine(object):
             self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
             if username is not None and password is not None:
-                c = pymongo.MongoClient(db_server, connect=False, username=username, password=password)
+                c = pymongo.MongoClient(host="mongodb://" + username + ":" + password + "@" + str(db_server) + ":" + str(db_port), connect=False)#, username=username, password=password)
             else:
-                c = pymongo.MongoClient(db_server, connect=False)
+                c = pymongo.MongoClient(host="mongodb://" + str(db_server) + ":" + str(db_port), connect=False)
 
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS,
                            connectTimeoutMS=socketTimeoutMS)
@@ -445,7 +447,7 @@ class IOEngine(object):
 
     def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None,
                                          db_server = DataConstants().db_server,
-                                         db_port = None, username = None, password = None):
+                                         db_port = DataConstants().db_port, username = None, password = None):
         """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
@@ -518,9 +520,11 @@ class IOEngine(object):
             self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
             if username is not None and password is not None:
-                c = pymongo.MongoClient(db_server, connect=False, username=username, password=password)
+                c = pymongo.MongoClient(
+                    host="mongodb://" + username + ":" + password + "@" + str(db_server) + ":" + str(db_port),
+                    connect=False)  # , username=username, password=password)
             else:
-                c = pymongo.MongoClient(db_server, connect=False)
+                c = pymongo.MongoClient(host="mongodb://" + str(db_server) + ":" + str(db_port), connect=False)
 
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
 
