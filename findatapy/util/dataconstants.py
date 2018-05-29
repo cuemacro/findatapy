@@ -34,6 +34,7 @@ class DataConstants(object):
 
     ###### FOR DATABASE
     db_server = '127.0.0.1'
+    db_port = '27017'
 
     ###### FOR TEMPORARY IN-MEMRORY CACHE (Redis)
     db_cache_server = '127.0.0.1'
