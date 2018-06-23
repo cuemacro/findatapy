@@ -500,7 +500,7 @@ class Calculations(object):
 
         # for transaction costs which vary by asset name
 
-        # TODO add transaction costs which vary by size
+        # TODO add transaction costs which vary by size (maybe using a market impact model?)
         if isinstance(tc, dict):
 
             tc_ind = []

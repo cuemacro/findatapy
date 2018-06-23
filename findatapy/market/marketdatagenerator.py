@@ -214,7 +214,8 @@ class MarketDataGenerator(object):
                         data_frame_agg = data_frame_agg.dropna(how = 'all')
 
                 return data_frame_agg
-            except:
+            except Exception as e:
+                print(str(e))
                 if data_frame_agg is not None:
                     return data_frame_agg
 

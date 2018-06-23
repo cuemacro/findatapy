@@ -127,7 +127,7 @@ class Filter(object):
 
         holidays_list = [x for x in holidays_list if x >= start and x <= end]
 
-        return pandas.to_datetime(holidays_list)
+        return pandas.to_datetime(holidays_list).tz_localize('UTC')
 
     def filter_time_series_by_holidays(self, data_frame, cal = 'FX', holidays_list = []):
         """Removes holidays from a given time series
@@ -293,6 +293,11 @@ class Filter(object):
         -------
         DataFrame
         """
+
+        if data_frame.index.tz is not None:
+            start_date = start_date.replace(tzinfo=data_frame.index.tz)
+            finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
+
         try:
             data_frame = self.filter_time_series_aux(start_date, finish_date, data_frame, offset)
         except:

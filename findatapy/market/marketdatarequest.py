@@ -13,6 +13,7 @@ __author__ = 'saeedamen'
 #
 
 from findatapy.util.loggermanager import LoggerManager
+
 from datetime import timedelta
 import datetime
 
@@ -416,7 +417,6 @@ class MarketDataRequest(object):
             date1 = pandas.Timestamp(date)
 
         return date1
-
     @property
     def cache_algo(self):
         return self.__cache_algo
