@@ -294,9 +294,13 @@ class Filter(object):
         DataFrame
         """
 
-        if data_frame.index.tz is not None:
-            start_date = start_date.replace(tzinfo=data_frame.index.tz)
-            finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
+        if hasattr(data_frame.index, 'tz'):
+            if data_frame.index.tz is None:
+                start_date = start_date.replace(tzinfo=data_frame.index.tz)
+                finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
+
+        if 'int' in str(data_frame.index.dtype):
+            return data_frame
 
         try:
             data_frame = self.filter_time_series_aux(start_date, finish_date, data_frame, offset)
