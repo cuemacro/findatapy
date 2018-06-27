@@ -28,7 +28,7 @@ Bitcoinchart - DataVendorBitcoincharts
 
 #######################################################################################################################
 
-
+import pandas as pd
 
 # support Quandl 3.x.x
 try:
@@ -48,13 +48,14 @@ class DataVendorQuandl(DataVendor):
 
     def __init__(self):
         super(DataVendorQuandl, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+        
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request Quandl data")
+        logger.info("Request Quandl data")
 
         data_frame = self.download_daily(market_data_request_vendor)
 
@@ -103,11 +104,13 @@ class DataVendorQuandl(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from Quandl for " + str(ticker_combined))
+        logger.info("Completed request from Quandl for " + str(ticker_combined))
 
         return data_frame
 
     def download_daily(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+        
         trials = 0
 
         data_frame = None
@@ -120,10 +123,10 @@ class DataVendorQuandl(DataVendor):
                 break
             except Exception as e:
                 trials = trials + 1
-                self.logger.info("Attempting... " + str(trials) + " request to download from Quandl due to following error: " + str(e))
+                logger.info("Attempting... " + str(trials) + " request to download from Quandl due to following error: " + str(e))
 
         if trials == 5:
-            self.logger.error("Couldn't download from Quandl after several attempts!")
+            logger.error("Couldn't download from Quandl after several attempts!")
 
         return data_frame
 
@@ -147,13 +150,14 @@ class DataVendorALFRED(DataVendor):
 
     def __init__(self):
         super(DataVendorALFRED, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+        
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request ALFRED/FRED data")
+        logger.info("Request ALFRED/FRED data")
 
         data_frame = self.download_daily(market_data_request_vendor)
 
@@ -184,11 +188,13 @@ class DataVendorALFRED(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from ALFRED/FRED for " + str(ticker_combined))
+        logger.info("Completed request from ALFRED/FRED for " + str(ticker_combined))
 
         return data_frame
 
     def download_daily(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+        
         trials = 0
 
         data_frame_list = []
@@ -224,7 +230,7 @@ class DataVendorALFRED(DataVendor):
                                                      observation_start=market_data_request.start_date,
                                                      observation_end=market_data_request.finish_date)
 
-                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame = pd.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.close']
                         data_frame_list.append(data_frame)
 
@@ -233,7 +239,7 @@ class DataVendorALFRED(DataVendor):
                                                                     observation_start=market_data_request.start_date,
                                                                     observation_end=market_data_request.finish_date)
 
-                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame = pd.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.first-revision']
 
                         filter = Filter()
@@ -265,7 +271,7 @@ class DataVendorALFRED(DataVendor):
                                                                    observation_start=market_data_request.start_date,
                                                                    observation_end=market_data_request.finish_date)
 
-                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame = pd.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.actual-release']
 
                         filter = Filter()
@@ -281,7 +287,7 @@ class DataVendorALFRED(DataVendor):
 
                         data_frame = data_frame['realtime_start']
 
-                        data_frame = pandas.DataFrame(data_frame)
+                        data_frame = pd.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.release-date-time-full']
 
                         data_frame.index = data_frame[market_data_request.tickers[i] + '.release-date-time-full']
@@ -295,17 +301,17 @@ class DataVendorALFRED(DataVendor):
                     break
                 except:
                     trials = trials + 1
-                    self.logger.info("Attempting... " + str(trials) + " request to download from ALFRED/FRED")
+                    logger.info("Attempting... " + str(trials) + " request to download from ALFRED/FRED")
 
             if trials == 5:
-                self.logger.error("Couldn't download from ALFRED/FRED after several attempts!")
+                logger.error("Couldn't download from ALFRED/FRED after several attempts!")
 
         calc = Calculations()
 
         data_frame1 = calc.pandas_outer_join(data_frame_list)
         data_frame2 = calc.pandas_outer_join(data_frame_release)
 
-        data_frame = pandas.concat([data_frame1, data_frame2], axis=1)
+        data_frame = pd.concat([data_frame1, data_frame2], axis=1)
 
         return data_frame
 
@@ -316,13 +322,13 @@ class DataVendorONS(DataVendor):
 
     def __init__(self):
         super(DataVendorONS, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request ONS data")
+        logger.info("Request ONS data")
 
         data_frame = self.download_daily(market_data_request_vendor)
 
@@ -353,7 +359,7 @@ class DataVendorONS(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from ONS.")
+        logger.info("Completed request from ONS.")
 
         return data_frame
 
@@ -369,10 +375,10 @@ class DataVendorONS(DataVendor):
                 break
             except:
                 trials = trials + 1
-                self.logger.info("Attempting... " + str(trials) + " request to download from ONS")
+                logger.info("Attempting... " + str(trials) + " request to download from ONS")
 
         if trials == 5:
-            self.logger.error("Couldn't download from ONS after several attempts!")
+            logger.error("Couldn't download from ONS after several attempts!")
 
         return data_frame
 
@@ -382,13 +388,13 @@ class DataVendorBOE(DataVendor):
 
     def __init__(self):
         super(DataVendorBOE, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request BOE data")
+        logger.info("Request BOE data")
 
         data_frame = self.download_daily(market_data_request_vendor)
 
@@ -419,7 +425,7 @@ class DataVendorBOE(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from BOE.")
+        logger.info("Completed request from BOE.")
 
         return data_frame
 
@@ -435,16 +441,27 @@ class DataVendorBOE(DataVendor):
                 break
             except:
                 trials = trials + 1
-                self.logger.info("Attempting... " + str(trials) + " request to download from BOE")
+                logger.info("Attempting... " + str(trials) + " request to download from BOE")
 
         if trials == 5:
-            self.logger.error("Couldn't download from ONS after several attempts!")
+            logger.error("Couldn't download from ONS after several attempts!")
 
         return data_frame
 
 #######################################################################################################################
 
-import pandas_datareader.data as web
+# for pandas 0.23 (necessary for older versions of pandas_datareader
+try:
+    import pandas
+
+    pandas.core.common.is_list_like = pandas.api.types.is_list_like
+except:
+    pass
+
+try:
+    import pandas_datareader.data as web
+except:
+    pass
 
 from findatapy.market.datavendor import DataVendor
 
@@ -461,13 +478,14 @@ class DataVendorPandasWeb(DataVendor):
 
     def __init__(self):
         super(DataVendorPandasWeb, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
+
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request Pandas Web data")
+        logger.info("Request Pandas Web data")
 
         data_frame = self.download_daily(market_data_request_vendor)
 
@@ -505,10 +523,10 @@ class DataVendorPandasWeb(DataVendor):
             data_frame.index.name = 'Date'
 
             # return all the tickers (this might be imcomplete list, but we will pad the list later)
-            # data_frame = pandas.DataFrame(data = data_frame[ticker_requested],
+            # data_frame = pd.DataFrame(data = data_frame[ticker_requested],
             #                               index = data_frame.index, columns = ticker_requested)
 
-        self.logger.info("Completed request from Pandas Web.")
+        logger.info("Completed request from Pandas Web.")
 
         return data_frame
 
@@ -530,14 +548,14 @@ class DataVendorBitcoincharts(DataVendor):
 
     def __init__(self):
         super(DataVendorBitcoincharts, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Bitcoincharts")
-        import pandas as pd
+        logger.info("Request data from Bitcoincharts")
+        
 
         data_website = 'http://api.bitcoincharts.com/v1/csv/' + market_data_request_vendor.tickers[0] + '.csv.gz'
         data_frame = pd.read_csv(data_website, names = ['datetime','close','volume'])
@@ -552,7 +570,7 @@ class DataVendorBitcoincharts(DataVendor):
             print('###############################################################')
 
         data_frame.columns = [market_data_request.tickers[0]+'.close', market_data_request.tickers[0]+'.volume']
-        self.logger.info("Completed request from Bitcoincharts.")
+        logger.info("Completed request from Bitcoincharts.")
 
         return data_frame
 
@@ -569,14 +587,15 @@ class DataVendorPoloniex(DataVendor):
 
     def __init__(self):
         super(DataVendorPoloniex, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         self.logger.info("Request data from Poloniex")
-        import pandas as pd
+        
 
 
         poloniex_url = 'https://poloniex.com/public?command=returnChartData&currencyPair={}&start={}&end={}&period={}'
@@ -610,7 +629,7 @@ class DataVendorPoloniex(DataVendor):
             field_selected.append(0)
             field_selected[-1] = market_data_request.tickers[0]+'.'+market_data_request_vendor.fields[i]
 
-        self.logger.info("Completed request from Poloniex")
+        logger.info("Completed request from Poloniex")
 
         return data_frame[field_selected]
 
@@ -628,15 +647,15 @@ class DataVendorBinance(DataVendor):
 
     def __init__(self):
         super(DataVendorBinance, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Binance")
+        logger.info("Request data from Binance")
 
-        import pandas as pd
         import time
         binance_url = 'https://www.binance.com/api/v1/klines?symbol={}&interval={}&startTime={}&endTime={}'
         if market_data_request_vendor.freq == 'intraday':
@@ -647,6 +666,7 @@ class DataVendorBinance(DataVendor):
         data_frame = pd.DataFrame(columns=[0, 1, 2, 3, 4, 5])
         start_time = int(market_data_request_vendor.start_date.timestamp() * 1000)
         finish_time = int(market_data_request_vendor.finish_date.timestamp() * 1000)
+
         stop_flag = 0
         while stop_flag == 0:
             if stop_flag == 1:
@@ -690,7 +710,7 @@ class DataVendorBinance(DataVendor):
             field_selected.append(0)
             field_selected[-1] = market_data_request.tickers[0] + '.' + market_data_request_vendor.fields[i]
 
-        self.logger.info("Completed request from Binance")
+        logger.info("Completed request from Binance")
 
         return data_frame[field_selected]
 
@@ -707,15 +727,15 @@ class DataVendorBitfinex(DataVendor):
 
     def __init__(self):
         super(DataVendorBitfinex, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Bitfinex.")
+        logger.info("Request data from Bitfinex.")
 
-        import pandas as pd
+        
         import time
         bitfinex_url = 'https://api.bitfinex.com/v2/candles/trade:{}:t{}/hist?start={}&end={}&limit=1000&sort=1'
         if market_data_request_vendor.freq == 'intraday':
@@ -766,7 +786,7 @@ class DataVendorBitfinex(DataVendor):
             field_selected.append(0)
             field_selected[-1] = market_data_request.tickers[0] + '.' + market_data_request_vendor.fields[i]
 
-        self.logger.info("Completed request from Bitfinex.")
+        logger.info("Completed request from Bitfinex.")
 
         return data_frame[field_selected]
 
@@ -786,15 +806,16 @@ class DataVendorGdax(DataVendor):
 
     def __init__(self):
         super(DataVendorGdax, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Gdax.")
+        logger.info("Request data from Gdax.")
 
-        import pandas as pd
+        
         from datetime import datetime
         from datetime import timedelta
         import time
@@ -850,7 +871,7 @@ class DataVendorGdax(DataVendor):
             field_selected.append(0)
             field_selected[-1] = market_data_request.tickers[0] + '.' + market_data_request_vendor.fields[i]
 
-        self.logger.info("Completed request from Gdax.")
+        logger.info("Completed request from Gdax.")
 
         return data_frame[field_selected]
 
@@ -868,15 +889,15 @@ class DataVendorKraken(DataVendor):
 
     def __init__(self):
         super(DataVendorKraken, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Kraken.")
+        logger.info("Request data from Kraken.")
 
-        import pandas as pd
+        
         import json
         import requests
         import time
@@ -954,15 +975,15 @@ class DataVendorBitmex(DataVendor):
 
     def __init__(self):
         super(DataVendorBitmex, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Bitmex.")
+        logger.info("Request data from Bitmex.")
 
-        import pandas as pd
+        
         import time
 
         bitMEX_url = 'https://www.bitmex.com/api/v1/quote?symbol={}&count=500&reverse=false&startTime={}&endTime={}'
@@ -970,6 +991,7 @@ class DataVendorBitmex(DataVendor):
         start_time = market_data_request_vendor.start_date.timestamp()
         finish_time = market_data_request_vendor.finish_date.timestamp()
         symbol = market_data_request_vendor.tickers[0]
+        
         stop_flag = 0
         while stop_flag == 0:
             if stop_flag == 1:
@@ -1004,7 +1026,7 @@ class DataVendorBitmex(DataVendor):
             field_selected.append(0)
             field_selected[-1] = market_data_request.tickers[0] + '.' + market_data_request_vendor.fields[i]
 
-        self.logger.info("Completed request from Bitfinex.")
+        logger.info("Completed request from Bitfinex.")
 
         return data_frame[field_selected]
 
@@ -1016,12 +1038,13 @@ class DataVendorHuobi(DataVendor):
 
     def __init__(self):
         super(DataVendorHuobi, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+        
         import requests
-        import pandas as pd
+        
         import json
         
         def _calc_period_size(freq, start_dt, finish_dt):
@@ -1046,7 +1069,7 @@ class DataVendorHuobi(DataVendor):
 
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Huobi.")
+        logger.info("Request data from Huobi.")
 
         request_size, period = _calc_period_size(
             market_data_request_vendor.freq,
@@ -1084,7 +1107,7 @@ class DataVendorHuobi(DataVendor):
             field_selected.append(0)
             field_selected[-1] = market_data_request.tickers[0] + '.' + market_data_request_vendor.fields[i]
 
-        self.logger.info("Completed request from Huobi.")
+        logger.info("Completed request from Huobi.")
 
         df = df[field_selected]
         return df
@@ -1098,7 +1121,6 @@ class DataVendorHuobi(DataVendor):
 import os
 from datetime import timedelta
 
-import pandas
 import requests
 
 try:
@@ -1131,7 +1153,7 @@ class DataVendorDukasCopy(DataVendor):
 
     def __init__(self):
         super(DataVendor, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
+        # self.logger = LoggerManager.getLogger(__name__)
         import logging
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.config = ConfigManager()
@@ -1153,11 +1175,12 @@ class DataVendorDukasCopy(DataVendor):
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         data_frame = None
-        self.logger.info("Request Dukascopy data")
+        logger = LoggerManager.getLogger(__name__)
+        logger.info("Request Dukascopy data")
 
         # doesn't support non-tick data
         if (market_data_request.freq in ['daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'intraday', 'minute', 'hourly']):
-            self.logger.warning("Dukascopy loader is for tick data only")
+            logger.warning("Dukascopy loader is for tick data only")
 
             return None
 
@@ -1171,7 +1194,7 @@ class DataVendorDukasCopy(DataVendor):
 
             if data_frame is not None: data_frame.tz_localize(pytz.utc)
 
-        self.logger.info("Completed request from Dukascopy")
+        logger.info("Completed request from Dukascopy")
 
         return data_frame
 
@@ -1204,8 +1227,9 @@ class DataVendorDukasCopy(DataVendor):
     def download_tick(self, market_data_request):
 
         symbol = market_data_request.tickers[0]
+        logger = LoggerManager.getLogger(__name__)
 
-        self.logger.info("About to download from Dukascopy... for " + symbol)
+        logger.info("About to download from Dukascopy... for " + symbol)
 
         # single threaded
         # df_list = [self.fetch_file(time, symbol) for time in
@@ -1215,6 +1239,7 @@ class DataVendorDukasCopy(DataVendor):
         from findatapy.util import SwimPool
         time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
 
+        # use threading (not process interface)
         pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['dukascopy'])
         results = [pool.apply_async(self.fetch_file, args=(time, symbol,)) for time in time_list]
         df_list = [p.get() for p in results]
@@ -1222,15 +1247,24 @@ class DataVendorDukasCopy(DataVendor):
         pool.close()
         pool.join()
 
+        # fully single threaded
+
+        # df_list = []
+        #
+        # for time in time_list:
+        #     df_list.append(self.fetch_file(time, symbol))
+
         df_list = [x for x in df_list if x is not None]
 
         try:
-            return pandas.concat(df_list)
+            return pd.concat(df_list)
         except:
             return None
 
     def fetch_file(self, time, symbol):
-        if time.hour % 24 == 0: self.logger.debug("Downloading... " + str(time))
+        logger = LoggerManager.getLogger(__name__)
+        if time.hour % 24 == 0:
+            logger.info("Downloading... " + str(time))
 
         tick_path = self.tick_name.format(
                 symbol = symbol,
@@ -1261,7 +1295,8 @@ class DataVendorDukasCopy(DataVendor):
 
         tick_request_content = None
 
-        self.logger.debug("Loading URL " + tick_url)
+        logger = LoggerManager.getLogger(__name__)
+        logger.debug("Loading URL " + tick_url)
 
         # try up to 5 times to download
         while i < 10:
@@ -1273,13 +1308,14 @@ class DataVendorDukasCopy(DataVendor):
 
                 break
             except Exception as e:
-                self.logger.warning("Problem downloading.. " + str(e))
+                logger.warning("Problem downloading.. " + str(e))
                 i = i + 1
                 import time
                 time.sleep(i * 2)
 
         if (tick_request_content is None):
-            self.logger.warning("Failed to download from " + tick_url)
+            logger.warning("Failed to download from " + tick_url)
+
             return None
 
         return tick_request_content
@@ -1297,7 +1333,7 @@ class DataVendorDukasCopy(DataVendor):
     def retrieve_df(self, data, symbol, epoch):
         date, tuple = self.parse_tick_data(data, epoch)
 
-        df = pandas.DataFrame(data = tuple, columns=['temp', 'ask', 'bid', 'askv', 'bidv'], index = date)
+        df = pd.DataFrame(data = tuple, columns=['temp', 'ask', 'bid', 'askv', 'bidv'], index = date)
         df.drop('temp', axis = 1)
         df.index.name = 'Date'
 
@@ -1474,7 +1510,7 @@ class DataVendorFXCM(DataVendor):
         pool.close()
 
         try:
-            return pandas.concat(df_list)
+            return pd.concat(df_list)
         except:
             return None
 
@@ -1516,7 +1552,7 @@ class DataVendorFXCM(DataVendor):
                     dateparse = lambda x: datetime.datetime(int(x[6:10]), int(x[0:2]), int(x[3:5]),
                                                    int(x[11:13]), int(x[14:16]), int(x[17:19]), int(x[20:23])*1000)
 
-                    data_frame = pandas.read_csv(StringIO(f.read().decode('utf-16')), index_col=0, parse_dates=True,
+                    data_frame = pd.read_csv(StringIO(f.read().decode('utf-16')), index_col=0, parse_dates=True,
                                                  date_parser=dateparse)
 
                     data_frame.columns = ['bid', 'ask']
@@ -1535,7 +1571,7 @@ class DataVendorFXCM(DataVendor):
 
     def week_range(self, start_date, finish_date):
 
-        weeks = pandas.bdate_range(start_date - timedelta(days=7), finish_date+timedelta(days=7), freq='W')
+        weeks = pd.bdate_range(start_date - timedelta(days=7), finish_date+timedelta(days=7), freq='W')
 
         week_year = []
 
@@ -1632,7 +1668,7 @@ class Fred(object):
         """Helper function for parsing FRED date string into datetime
 
         """
-        from pandas import to_datetime
+        from pd import to_datetime
         rv = to_datetime(date_str, format=format)
         if hasattr(rv, 'to_datetime'):
             rv = rv.to_pydatetime()         # to_datetime is depreciated
@@ -1656,7 +1692,7 @@ class Fred(object):
         root = self.__fetch_data(url)
         if root is None:
             raise ValueError('No info exists for series id: ' + series_id)
-        from pandas import Series
+        from pd import Series
         info = Series(root.getchildren()[0].attrib)
         return info
 
@@ -1682,7 +1718,7 @@ class Fred(object):
         url = "%s/series/observations?series_id=%s&api_key=%s" % (self.root_url,
                                                                   series_id,
                                                                   self.api_key)
-        from pandas import to_datetime, Series
+        from pd import to_datetime, Series
 
         if observation_start is not None:
             observation_start = to_datetime(observation_start, errors='raise')
@@ -1786,7 +1822,7 @@ class Fred(object):
         data : Series
             a Series where each index is the observation date and the value is the data for the Fred series
         """
-        from pandas import to_datetime
+        from pd import to_datetime
         as_of_date = to_datetime(as_of_date)
         df = self.get_series_all_releases(series_id)
         data = df[df['realtime_start'] <= as_of_date]
@@ -1819,7 +1855,7 @@ class Fred(object):
                                                                                                     self.earliest_realtime_start,
                                                                                                     self.latest_realtime_end)
 
-        from pandas import to_datetime
+        from pd import to_datetime
 
         if observation_start is not None:
             observation_start = to_datetime(observation_start, errors='raise')
@@ -1848,7 +1884,7 @@ class Fred(object):
                        'date': date,
                        'value': val}
             i += 1
-        from pandas import DataFrame
+        from pd import DataFrame
         data = DataFrame(data).T
         return data
 
@@ -1900,7 +1936,7 @@ class Fred(object):
                 data[series_id][field] = child.get(field)
 
         if num_results_returned > 0:
-            from pandas import DataFrame
+            from pd import DataFrame
             data = DataFrame(data, columns=series_ids).T
             # parse datetime columns
             for field in ["realtime_start", "realtime_end", "observation_start", "observation_end", "last_updated"]:
@@ -2059,7 +2095,7 @@ class DataVendorFlatFile(DataVendor):
         self.logger.info("Request " + market_data_request.data_source + " data")
 
         if ".csv" in market_data_request.data_source:
-            data_frame = pandas.read_csv(market_data_request.data_source, index_col = 0, parse_dates = True,
+            data_frame = pd.read_csv(market_data_request.data_source, index_col = 0, parse_dates = True,
                                          infer_datetime_format = True)
         elif ".h5" in market_data_request.data_source:
             data_frame = IOEngine().read_time_series_cache_from_disk(market_data_request.data_source, engine = 'hdf5')
