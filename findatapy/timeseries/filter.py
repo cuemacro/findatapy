@@ -295,7 +295,7 @@ class Filter(object):
         """
 
         if hasattr(data_frame.index, 'tz'):
-            if data_frame.index.tz is None:
+            if data_frame.index.tz is not None:
                 start_date = start_date.replace(tzinfo=data_frame.index.tz)
                 finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
 
