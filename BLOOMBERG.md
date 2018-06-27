@@ -28,6 +28,11 @@ however I have not tested this.
     [blpapi-3.9.0.zip](https://github.com/cuemacro/findatapy/blob/master/blpapi-3.9.0.zip), which I have
     pre-built using Visual C++ 2015 version 14.0)
     * `python setup.py install` (to install)
-* For Python 3.4 - prebuilt executable can be run, which means we can skip the build steps above
+* Prebuilt binaries are provided for Python 2.7, 3.5 and 3.6 for Windows in both 32 and 64 bits - which means we can skip the build steps above
     * Might need to tweak registry to avoid "Python 3.4 not found in registry error" (blppython.reg example) when using this executable
+    * You can install this prebuilt binary via pip eg.
+        * python -m pip install --index-url=https://bloomberg.bintray.com/pip/simple blpapi
+    * But note that a local installation of the C++ API is required both for importing the blpapi module in Python
+    and for building the module from sources, if needed.
+
 * The library doesn't support the old Bloomberg COM API (since much slower than the new Open API)

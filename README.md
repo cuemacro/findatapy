@@ -84,8 +84,9 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 27 Jun 2018 - Added note about installing blpapi via pip
 * 23 Jun 2018 - Fixed bug filtering dataframes with timezones
-* 29 May 2018  - Added port
+* 29 May 2018 - Added port
 * 11 May 2018
     * Allow filtering of dataframes by user defined holidays
 * 25 Apr 2018
