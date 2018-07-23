@@ -296,8 +296,12 @@ class Filter(object):
 
         if hasattr(data_frame.index, 'tz'):
             if data_frame.index.tz is not None:
-                start_date = start_date.replace(tzinfo=data_frame.index.tz)
-                finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
+
+                if not(isinstance(start_date, str)):
+                    start_date = start_date.replace(tzinfo=data_frame.index.tz)
+
+                if not(isinstance(finish_date, str)):
+                    finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
 
         if 'int' in str(data_frame.index.dtype):
             return data_frame
