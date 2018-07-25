@@ -181,10 +181,16 @@ class Filter(object):
         #
         # data_frame_filtered = data_frame.ix[indices_to_keep]
 
+        if data_frame.index.tz is None:
+            holidays_start = holidays_start.tz_localize(None)
+            holidays_end = holidays_end.tz_localize(None)
+
         data_frame_left = data_frame
         data_frame_filtered = []
 
         for i in range(0, len(holidays_start)):
+
+
             data_frame_temp = data_frame_left.ix[data_frame_left.index < holidays_start[i]]
             data_frame_left = data_frame_left.ix[data_frame_left.index >= holidays_end[i]]
 
