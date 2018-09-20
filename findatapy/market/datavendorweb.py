@@ -299,9 +299,9 @@ class DataVendorALFRED(DataVendor):
                                                                        market_data_request.finish_date, data_frame))
 
                     break
-                except:
+                except Exception as e:
                     trials = trials + 1
-                    logger.info("Attempting... " + str(trials) + " request to download from ALFRED/FRED")
+                    logger.info("Attempting... " + str(trials) + " request to download from ALFRED/FRED" + str(e))
 
             if trials == 5:
                 logger.error("Couldn't download from ALFRED/FRED after several attempts!")
@@ -2207,7 +2207,9 @@ class DataVendorAlphaVantage(DataVendor):
 
 ########################################################################################################################
 
-import fxcmpy
+try:
+    import fxcmpy
+except: pass
 
 class DataVendorFXCMPY(DataVendor):
     """Reads in data from FXCM data using fxcmpy into findatapy library. Can be used for minute or daily data. For
