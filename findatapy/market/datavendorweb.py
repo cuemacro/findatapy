@@ -28,8 +28,6 @@ Bitcoinchart - DataVendorBitcoincharts
 
 #######################################################################################################################
 
-import pandas as pd
-
 # support Quandl 3.x.x
 try:
     import quandl as Quandl
@@ -40,6 +38,8 @@ except:
 from findatapy.market.datavendor import DataVendor
 
 from findatapy.market import IOEngine
+
+import pandas
 
 class DataVendorQuandl(DataVendor):
     """Reads in data from Quandl into findatapy library
@@ -230,7 +230,7 @@ class DataVendorALFRED(DataVendor):
                                                      observation_start=market_data_request.start_date,
                                                      observation_end=market_data_request.finish_date)
 
-                        data_frame = pd.DataFrame(data_frame)
+                        data_frame = pandas.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.close']
                         data_frame_list.append(data_frame)
 
@@ -239,7 +239,7 @@ class DataVendorALFRED(DataVendor):
                                                                     observation_start=market_data_request.start_date,
                                                                     observation_end=market_data_request.finish_date)
 
-                        data_frame = pd.DataFrame(data_frame)
+                        data_frame = pandas.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.first-revision']
 
                         filter = Filter()
@@ -271,7 +271,7 @@ class DataVendorALFRED(DataVendor):
                                                                    observation_start=market_data_request.start_date,
                                                                    observation_end=market_data_request.finish_date)
 
-                        data_frame = pd.DataFrame(data_frame)
+                        data_frame = pandas.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.actual-release']
 
                         filter = Filter()
@@ -287,7 +287,7 @@ class DataVendorALFRED(DataVendor):
 
                         data_frame = data_frame['realtime_start']
 
-                        data_frame = pd.DataFrame(data_frame)
+                        data_frame = pandas.DataFrame(data_frame)
                         data_frame.columns = [market_data_request.tickers[i] + '.release-date-time-full']
 
                         data_frame.index = data_frame[market_data_request.tickers[i] + '.release-date-time-full']
@@ -311,7 +311,7 @@ class DataVendorALFRED(DataVendor):
         data_frame1 = calc.pandas_outer_join(data_frame_list)
         data_frame2 = calc.pandas_outer_join(data_frame_release)
 
-        data_frame = pd.concat([data_frame1, data_frame2], axis=1)
+        data_frame = pandas.concat([data_frame1, data_frame2], axis=1)
 
         return data_frame
 
@@ -523,7 +523,7 @@ class DataVendorPandasWeb(DataVendor):
             data_frame.index.name = 'Date'
 
             # return all the tickers (this might be imcomplete list, but we will pad the list later)
-            # data_frame = pd.DataFrame(data = data_frame[ticker_requested],
+            # data_frame = pandas.DataFrame(data = data_frame[ticker_requested],
             #                               index = data_frame.index, columns = ticker_requested)
 
         logger.info("Completed request from Pandas Web.")
@@ -558,9 +558,9 @@ class DataVendorBitcoincharts(DataVendor):
         
 
         data_website = 'http://api.bitcoincharts.com/v1/csv/' + market_data_request_vendor.tickers[0] + '.csv.gz'
-        data_frame = pd.read_csv(data_website, names = ['datetime','close','volume'])
+        data_frame = pandas.read_csv(data_website, names = ['datetime','close','volume'])
         data_frame = data_frame.set_index('datetime')
-        data_frame.index = pd.to_datetime(data_frame.index, unit='s')
+        data_frame.index = pandas.to_datetime(data_frame.index, unit='s')
         data_frame.index.name = 'Date'
         data_frame = data_frame[(data_frame.index >= market_data_request_vendor.start_date) & (data_frame.index <= market_data_request_vendor.finish_date)]
 #        data_frame = df[~df.index.duplicated(keep='last')]
@@ -607,7 +607,7 @@ class DataVendorPoloniex(DataVendor):
         json_url = poloniex_url.format(market_data_request_vendor.tickers[0],
                                        int(market_data_request_vendor.start_date.timestamp()),
                                        int(market_data_request_vendor.finish_date.timestamp()), period)
-        data_frame = pd.read_json(json_url)
+        data_frame = pandas.read_json(json_url)
         data_frame = data_frame.set_index('date')
         data_frame.index.name = 'Date'
 
@@ -663,7 +663,7 @@ class DataVendorBinance(DataVendor):
         if market_data_request_vendor.freq == 'daily':
             period = '1d'
 
-        data_frame = pd.DataFrame(columns=[0, 1, 2, 3, 4, 5])
+        data_frame = pandas.DataFrame(columns=[0, 1, 2, 3, 4, 5])
         start_time = int(market_data_request_vendor.start_date.timestamp() * 1000)
         finish_time = int(market_data_request_vendor.finish_date.timestamp() * 1000)
 
@@ -672,7 +672,7 @@ class DataVendorBinance(DataVendor):
             if stop_flag == 1:
                 break
             json_url = binance_url.format(market_data_request_vendor.tickers[0],period,start_time,finish_time)
-            data_read = pd.read_json(json_url)
+            data_read = pandas.read_json(json_url)
             if (len(data_read) < 500):
                 if ((len(data_read)== 0) & (len(data_frame)==0)):
                     print('###############################################################')
@@ -694,7 +694,7 @@ class DataVendorBinance(DataVendor):
         data_frame = data_frame.set_index('open-time')
         data_frame = data_frame.drop(['close-time','ignore'], axis=1)
         data_frame.index.name = 'Date'
-        data_frame.index = pd.to_datetime(data_frame.index, unit='s')
+        data_frame.index = pandas.to_datetime(data_frame.index, unit='s')
         data_frame.columns = [market_data_request.tickers[0] + '.open',
                               market_data_request.tickers[0] + '.high',
                               market_data_request.tickers[0] + '.low',
@@ -743,7 +743,7 @@ class DataVendorBitfinex(DataVendor):
         if market_data_request_vendor.freq == 'daily':
             period = '1D'
 
-        data_frame = pd.DataFrame(columns=[0, 1, 2, 3, 4, 5])
+        data_frame = pandas.DataFrame(columns=[0, 1, 2, 3, 4, 5])
         start_time = int(market_data_request_vendor.start_date.timestamp() * 1000)
         finish_time = int(market_data_request_vendor.finish_date.timestamp() * 1000)
         stop_flag = 0
@@ -751,7 +751,7 @@ class DataVendorBitfinex(DataVendor):
             if stop_flag == 1:
                 break
             json_url = bitfinex_url.format(period, market_data_request_vendor.tickers[0], start_time, finish_time)
-            data_read = pd.read_json(json_url)
+            data_read = pandas.read_json(json_url)
             if (len(data_read) < 1000):
                 if ((len(data_read)== 0) & (len(data_frame)==0)):
                     break
@@ -773,7 +773,7 @@ class DataVendorBitfinex(DataVendor):
         data_frame = data_frame[~data_frame.index.duplicated(keep='first')]
 
         data_frame.index.name = 'Date'
-        data_frame.index = pd.to_datetime(data_frame.index, unit='ms')
+        data_frame.index = pandas.to_datetime(data_frame.index, unit='ms')
         data_frame.columns = [market_data_request.tickers[0] + '.open',
                               market_data_request.tickers[0] + '.close',
                               market_data_request.tickers[0] + '.high',
@@ -831,7 +831,7 @@ class DataVendorGdax(DataVendor):
             dt = timedelta(days=1)
         limit = 350
 
-        data_frame = pd.DataFrame(columns=[0, 1, 2, 3, 4, 5])
+        data_frame = pandas.DataFrame(columns=[0, 1, 2, 3, 4, 5])
         stop_flag = 0
         while stop_flag == 0:
             if stop_flag == 1:
@@ -841,12 +841,12 @@ class DataVendorGdax(DataVendor):
                 data_end_time = end_time
                 stop_flag = 1
             json_url = gdax_url.format(market_data_request_vendor.tickers[0], start_time.isoformat(), data_end_time.isoformat(), period)
-            data_read = pd.read_json(json_url)
+            data_read = pandas.read_json(json_url)
             data_frame = data_frame.append(data_read)
             if (len(data_read)==0):
                 start_time = data_end_time
             else:
-                start_time = pd.to_datetime(int(data_read[0].head(1)), unit='s')
+                start_time = pandas.to_datetime(int(data_read[0].head(1)), unit='s')
             time.sleep(2)
 
         if (len(data_frame) == 0):
@@ -856,7 +856,7 @@ class DataVendorGdax(DataVendor):
 
         data_frame.columns = ['time', 'low', 'high', 'open', 'close', 'volume']
         data_frame = data_frame.set_index('time')
-        data_frame.index = pd.to_datetime(data_frame.index, unit='s')
+        data_frame.index = pandas.to_datetime(data_frame.index, unit='s')
         data_frame.index.name = 'Date'
         data_frame = data_frame[~data_frame.index.duplicated(keep='first')]
         data_frame = data_frame.sort_index(ascending=True)
@@ -913,7 +913,7 @@ class DataVendorKraken(DataVendor):
         end_time = int(market_data_request_vendor.finish_date.timestamp() * 1e9)
 
         kraken_url = 'https://api.kraken.com/0/public/Trades?pair={}&since={}'
-        data_frame = pd.DataFrame(columns=['close', 'volume', 'time', 'buy-sell', 'market-limit', 'miscellaneous'])
+        data_frame = pandas.DataFrame(columns=['close', 'volume', 'time', 'buy-sell', 'market-limit', 'miscellaneous'])
         stop_flag = 0
 
         while stop_flag == 0:
@@ -928,7 +928,7 @@ class DataVendorKraken(DataVendor):
 
             data_list = list(data_read['result'])[0]
             data_read = data_read['result'][data_list]
-            df = pd.DataFrame(data_read,
+            df = pandas.DataFrame(data_read,
                               columns=['close', 'volume', 'time', 'buy-sell', 'market-limit', 'miscellaneous'])
             start_time = int(df['time'].tail(1) * 1e9)
             if (start_time > end_time):
@@ -939,7 +939,7 @@ class DataVendorKraken(DataVendor):
             time.sleep(5)
 
         data_frame = data_frame.set_index('time')
-        data_frame.index = pd.to_datetime(data_frame.index, unit='s')
+        data_frame.index = pandas.to_datetime(data_frame.index, unit='s')
         data_frame.index.name = 'Date'
         data_frame = data_frame.drop(['miscellaneous'], axis=1)
         data_frame.replace(['b', 's', 'm', 'l'], [1, -1, 1, -1], inplace=True)
@@ -987,7 +987,7 @@ class DataVendorBitmex(DataVendor):
         import time
 
         bitMEX_url = 'https://www.bitmex.com/api/v1/quote?symbol={}&count=500&reverse=false&startTime={}&endTime={}'
-        data_frame = pd.DataFrame(columns=['askPrice', 'askSize', 'bidPrice', 'bidSize', 'symbol', 'timestamp'])
+        data_frame = pandas.DataFrame(columns=['askPrice', 'askSize', 'bidPrice', 'bidSize', 'symbol', 'timestamp'])
         start_time = market_data_request_vendor.start_date.timestamp()
         finish_time = market_data_request_vendor.finish_date.timestamp()
         symbol = market_data_request_vendor.tickers[0]
@@ -997,7 +997,7 @@ class DataVendorBitmex(DataVendor):
             if stop_flag == 1:
                 break
             json_url = bitMEX_url.format(symbol, start_time.isoformat(), finish_time.isoformat())
-            data_read = pd.read_json(json_url)
+            data_read = pandas.read_json(json_url)
             if (len(data_read) < 500):
                     stop_flag = 1
             data_frame = data_frame.append(data_read)
@@ -1013,7 +1013,7 @@ class DataVendorBitmex(DataVendor):
         col = ['ask-price', 'ask-size', 'bid-price', 'bid-size', 'timestamp']
         data_frame.columns = col
         data_frame = data_frame.set_index('timestamp')
-        data_frame.index = pd.to_datetime(data_frame.index, unit='ms')
+        data_frame.index = pandas.to_datetime(data_frame.index, unit='ms')
         data_frame = data_frame[~data_frame.index.duplicated(keep='first')]
         data_frame.columns = [market_data_request.tickers[0] + '.ask-price',
                               market_data_request.tickers[0] + '.ask-size',
@@ -1087,8 +1087,8 @@ class DataVendorHuobi(DataVendor):
 
         response = requests.get(url, headers=header)
         raw_data = json.loads(response.text)
-        df = pd.DataFrame(raw_data["data"])
-        df["timestamp"] = pd.to_datetime(df["id"], unit="s")
+        df = pandas.DataFrame(raw_data["data"])
+        df["timestamp"] = pandas.to_datetime(df["id"], unit="s")
 
         df = df.set_index("timestamp").sort_index(ascending=True)
         df = df[~df.index.duplicated(keep='first')]
@@ -1257,7 +1257,7 @@ class DataVendorDukasCopy(DataVendor):
         df_list = [x for x in df_list if x is not None]
 
         try:
-            return pd.concat(df_list)
+            return pandas.concat(df_list)
         except:
             return None
 
@@ -1333,7 +1333,7 @@ class DataVendorDukasCopy(DataVendor):
     def retrieve_df(self, data, symbol, epoch):
         date, tuple = self.parse_tick_data(data, epoch)
 
-        df = pd.DataFrame(data = tuple, columns=['temp', 'ask', 'bid', 'askv', 'bidv'], index = date)
+        df = pandas.DataFrame(data = tuple, columns=['temp', 'ask', 'bid', 'askv', 'bidv'], index = date)
         df.drop('temp', axis = 1)
         df.index.name = 'Date'
 
@@ -1510,7 +1510,7 @@ class DataVendorFXCM(DataVendor):
         pool.close()
 
         try:
-            return pd.concat(df_list)
+            return pandas.concat(df_list)
         except:
             return None
 
@@ -1552,7 +1552,7 @@ class DataVendorFXCM(DataVendor):
                     dateparse = lambda x: datetime.datetime(int(x[6:10]), int(x[0:2]), int(x[3:5]),
                                                    int(x[11:13]), int(x[14:16]), int(x[17:19]), int(x[20:23])*1000)
 
-                    data_frame = pd.read_csv(StringIO(f.read().decode('utf-16')), index_col=0, parse_dates=True,
+                    data_frame = pandas.read_csv(StringIO(f.read().decode('utf-16')), index_col=0, parse_dates=True,
                                                  date_parser=dateparse)
 
                     data_frame.columns = ['bid', 'ask']
@@ -1571,7 +1571,7 @@ class DataVendorFXCM(DataVendor):
 
     def week_range(self, start_date, finish_date):
 
-        weeks = pd.bdate_range(start_date - timedelta(days=7), finish_date+timedelta(days=7), freq='W')
+        weeks = pandas.bdate_range(start_date - timedelta(days=7), finish_date+timedelta(days=7), freq='W')
 
         week_year = []
 
@@ -1668,7 +1668,7 @@ class Fred(object):
         """Helper function for parsing FRED date string into datetime
 
         """
-        from pd import to_datetime
+        from pandas import to_datetime
         rv = to_datetime(date_str, format=format)
         if hasattr(rv, 'to_datetime'):
             rv = rv.to_pydatetime()         # to_datetime is depreciated
@@ -1692,7 +1692,7 @@ class Fred(object):
         root = self.__fetch_data(url)
         if root is None:
             raise ValueError('No info exists for series id: ' + series_id)
-        from pd import Series
+        from pandas import Series
         info = Series(root.getchildren()[0].attrib)
         return info
 
@@ -1718,7 +1718,7 @@ class Fred(object):
         url = "%s/series/observations?series_id=%s&api_key=%s" % (self.root_url,
                                                                   series_id,
                                                                   self.api_key)
-        from pd import to_datetime, Series
+        from pandas import to_datetime, Series
 
         if observation_start is not None:
             observation_start = to_datetime(observation_start, errors='raise')
@@ -1822,7 +1822,7 @@ class Fred(object):
         data : Series
             a Series where each index is the observation date and the value is the data for the Fred series
         """
-        from pd import to_datetime
+        from pandas import to_datetime
         as_of_date = to_datetime(as_of_date)
         df = self.get_series_all_releases(series_id)
         data = df[df['realtime_start'] <= as_of_date]
@@ -1855,7 +1855,7 @@ class Fred(object):
                                                                                                     self.earliest_realtime_start,
                                                                                                     self.latest_realtime_end)
 
-        from pd import to_datetime
+        from pandas import to_datetime
 
         if observation_start is not None:
             observation_start = to_datetime(observation_start, errors='raise')
@@ -1884,7 +1884,7 @@ class Fred(object):
                        'date': date,
                        'value': val}
             i += 1
-        from pd import DataFrame
+        from pandas import DataFrame
         data = DataFrame(data).T
         return data
 
@@ -1936,7 +1936,7 @@ class Fred(object):
                 data[series_id][field] = child.get(field)
 
         if num_results_returned > 0:
-            from pd import DataFrame
+            from pandas import DataFrame
             data = DataFrame(data, columns=series_ids).T
             # parse datetime columns
             for field in ["realtime_start", "realtime_end", "observation_start", "observation_end", "last_updated"]:
@@ -2095,7 +2095,7 @@ class DataVendorFlatFile(DataVendor):
         self.logger.info("Request " + market_data_request.data_source + " data")
 
         if ".csv" in market_data_request.data_source:
-            data_frame = pd.read_csv(market_data_request.data_source, index_col = 0, parse_dates = True,
+            data_frame = pandas.read_csv(market_data_request.data_source, index_col = 0, parse_dates = True,
                                          infer_datetime_format = True)
         elif ".h5" in market_data_request.data_source:
             data_frame = IOEngine().read_time_series_cache_from_disk(market_data_request.data_source, engine = 'hdf5')
