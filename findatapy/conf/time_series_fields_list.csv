@@ -87,5 +87,12 @@ huobi,high,high
 huobi,low,low
 huobi,open,open
 huobi,volume,vol
-,,
-,,
+bloomberg,contract-value,CONTRACT_VALUE
+bloomberg,last-tradeable-day,LAST_TRADEABLE_DT
+bloomberg,current-futures-ticker,FUT_CUR_GEN_TICKER
+bloomberg,futures-chain-tickers,FUT_CHAIN
+bloomberg,futures-chain-last-trade-dates,FUT_CHAIN_LAST_TRADE_DATES
+bloomberg,open-interest,OPEN_INT
+bloomberg,first-notice-date,FUT_NOTICE_FIRST
+bloomberg,first-tradeable-day,FUT_FIRST_TRADE_DT
+bloomberg,cal-non-settle-dates,CALENDAR_NON_SETTLEMENT_DATES
