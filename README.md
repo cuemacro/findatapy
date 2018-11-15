@@ -84,7 +84,9 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
-* 15 Nov 2018 - Fixed aggregation by hour/day etc. with pandas > 0.23
+* 15 Nov 2018
+    * Fixed aggregation by hour/day etc. with pandas > 0.23
+    * Filter data frame columns by multiple keywords
 * 20 Sep 2018 - Fixed bug in ALFRED
 * 25 Jul 2018 - Better timezone handling when filtering by holidays
 * 23 Jul 2018 - Fixed additional bug in filter

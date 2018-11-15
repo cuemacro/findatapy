@@ -556,7 +556,16 @@ class Filter(object):
         -------
         DataFrame
         """
-        columns = [elem for elem in data_frame.columns if keyword not in elem]
+
+        if not(isinstance(keyword, list)):
+            keyword = [keyword]
+
+        columns = []
+
+        for k in keyword:
+            columns.append([elem for elem in data_frame.columns if k not in elem])
+
+        columns = self.flatten_list_of_lists(columns)
 
         return self.filter_time_series_by_columns(columns, data_frame)
 
@@ -574,9 +583,43 @@ class Filter(object):
         -------
         DataFrame
         """
-        columns = [elem for elem in data_frame.columns if keyword in elem]
+
+        if not(isinstance(keyword, list)):
+            keyword = [keyword]
+
+        columns = []
+
+        for k in keyword:
+            columns.append([elem for elem in data_frame.columns if k in elem])
+
+        columns = self.flatten_list_of_lists(columns)
 
         return self.filter_time_series_by_columns(columns, data_frame)
+
+    def flatten_list_of_lists(self, list_of_lists):
+        """Flattens lists of obj, into a single list of strings (rather than characters, which is default behavior).
+
+        Parameters
+        ----------
+        list_of_lists : obj (list)
+            List to be flattened
+
+        Returns
+        -------
+        str (list)
+        """
+
+        if isinstance(list_of_lists, list):
+            rt = []
+            for i in list_of_lists:
+                if isinstance(i, list):
+                    rt.extend(self.flatten_list_of_lists(i))
+                else:
+                    rt.append(i)
+
+            return rt
+
+        return list_of_lists
 
     def filter_time_series_by_minute_freq(self, freq, data_frame):
         """Filter time series where minutes correspond to certain minute filter
