@@ -22,6 +22,9 @@ class FXConv(object):
     # TODO
     g10 = ['EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
     order = ['XBT', 'XET', 'XLC', 'XRP', 'XAU', 'XPT', 'XAG', 'EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
+    ndf = ['CNY', 'IDR', 'INR', 'KRW', 'MYR', 'PHP', 'TWD', 'VND',
+           'BRL', 'ARS', 'BRL', 'CLP', 'GTQ', 'PEN', 'UVU', 'VEF'
+           'EGP', 'KZT', 'NGN']
 
     def __init__(self):
         self.logger = LoggerManager().getLogger(__name__)
@@ -72,6 +75,24 @@ class FXConv(object):
             return True
 
         return False
+
+    def is_NDF_cross(self, cross):
+        base = cross[0:3]
+        terms = cross[3:6]
+
+        if base in self.ndf or terms in self.ndf:
+            return True
+
+        return False
+
+    def decompose_pair_into_USD_crosses(self, cross):
+        base = cross[0:3]
+        terms = cross[3:6]
+
+        if base == 'USD' or terms == 'USD':
+            return cross, 'USDUSD'
+
+        return base + 'USD', 'USD' + terms
 
     def correct_notation(self, cross):
         base = cross[0:3]
