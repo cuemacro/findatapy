@@ -24,7 +24,6 @@ class DataVendor(object):
     """
     def __init__(self):
         self.config = ConfigManager().get_instance()
-        self.logger = LoggerManager().getLogger(__name__)
         # self.config = None
         return
 
@@ -103,7 +102,8 @@ class DataVendor(object):
             try:
                 f = self.config.convert_library_to_vendor_field(source, field)
             except:
-                self.logger.warn("Couldn't find field conversion, did you type it correctly: " + field)
+                logger = LoggerManager().getLogger(__name__)
+                logger.warn("Couldn't find field conversion, did you type it correctly: " + field)
 
                 return
 
@@ -145,7 +145,8 @@ class DataVendor(object):
             try:
                 t = self.config.convert_library_to_vendor_ticker(category, source, freq, cut, ticker)
             except:
-                self.logger.error("Couldn't find ticker conversion, did you type it correctly: " + ticker)
+                logger = LoggerManager().getLogger(__name__)
+                logger.error("Couldn't find ticker conversion, did you type it correctly: " + ticker)
 
                 return
 
@@ -192,7 +193,8 @@ class DataVendor(object):
                 try:
                     v = self.config.convert_vendor_to_library_field(data_source, vendor_field)
                 except:
-                    self.logger.error("Couldn't find field conversion, did you type it correctly: " + vendor_field + ", using 'close' as default.")
+                    logger = LoggerManager().getLogger(__name__)
+                    logger.error("Couldn't find field conversion, did you type it correctly: " + vendor_field + ", using 'close' as default.")
 
                     v = 'close'
 
@@ -239,7 +241,8 @@ class DataVendor(object):
             try:
                 v = self.config.convert_vendor_to_library_ticker(data_source, vendor_ticker)
             except:
-                self.logger.error("Couldn't find ticker conversion, did you type it correctly: " + vendor_ticker)
+                logger = LoggerManager().getLogger(__name__)
+                logger.error("Couldn't find ticker conversion, did you type it correctly: " + vendor_ticker)
 
                 return
 
