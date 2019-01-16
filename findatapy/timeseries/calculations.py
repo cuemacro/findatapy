@@ -33,6 +33,9 @@ from findatapy.timeseries.filter import Calendar
 
 from pandas import compat
 
+import copy
+from datetime import timedelta
+
 class Calculations(object):
     """Calculations on time series, such as calculating strategy returns and various wrappers on pandas for rolling sums etc.
 
@@ -1298,7 +1301,6 @@ class Calculations(object):
 
         return series
 
-
     def insert_sparse_time_series(self, df_sparse_time_series, pre_window_size, post_window_size, unit):
         """  Given a sparse time series dataframe, return inserted dataframe with given unit/window
         e.g   for a given sparse time series df, df[30] = 4.0
@@ -1381,6 +1383,29 @@ class Calculations(object):
             # now df should become [0 0 0 x x x x x x 0 0 0]
 
         return df
+
+    def floor_tick_of_date(self, date, add_day=False):
+        """For a particular date, floor the time to 0
+
+        Parameters
+        ----------
+        date : datetime
+            Date to be amended
+
+        Returns
+        -------
+        datetime
+        """
+        date = copy.copy(date)
+        date = date.replace(hour=0)
+        date = date.replace(minute=0)
+        date = date.replace(second=0)
+        date = date.replace(microsecond=0)
+
+        if add_day:
+            date = date + timedelta(days=1)
+
+        return date
 
 
 if __name__ == '__main__':
