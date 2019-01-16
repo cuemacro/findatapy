@@ -106,7 +106,7 @@ class MarketDataRequest(object):
                 self.expiry_date = copy.deepcopy(md_request.expiry_date)
                 self.resample = copy.deepcopy(md_request.resample)
                 self.resample_how = copy.deepcopy(md_request.resample_how)
-                # self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
+                self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
                 self.overrides = copy.deepcopy(md_request.overrides)
 
                 self.tickers = copy.deepcopy(md_request.tickers)    # need this after category in case have wildcard
