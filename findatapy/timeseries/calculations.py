@@ -990,6 +990,49 @@ class Calculations(object):
 
         return df_list[i].join(df_list[i + 1], how="outer")
 
+    def concat_dataframe_list(self, df_list, sort=True):
+        """Concatenates a list of DataFrames into a single DataFrame and sorts them. Removes any empty or None elements
+        from the list and optionally sorts them)
+
+        Parameters
+        ----------
+        df_list : DataFrame (list)
+            DataFrames to be concatenated
+
+        sort : bool (default: True)
+            Sorts final concatenated DataFrame by index
+
+        Returns
+        -------
+        DataFrame
+        """
+        if df_list is not None:
+
+            # remove and empty dataframes from the list
+            if isinstance(df_list, list):
+                df_list = [x for x in df_list if x is not None]
+                df_list = [x for x in df_list if not x.empty]
+            else:
+                return df_list
+
+            # only concatenate if any non-empty dataframes are left
+            if len(df_list) > 0:
+                # careful: concatenating DataFrames can change the order, so insist on arranging by old cols
+                old_cols = df_list[0].columns
+
+                if len(df_list) == 1:
+                    df_list = df_list[0]
+
+                    if sort:
+                        df_list = df_list.sort_index()
+
+                else:
+                    df_list = pandas.concat(df_list, sort=sort)
+
+                return df_list[old_cols]
+
+        return None
+
     def linear_regression(self, df_y, df_x):
         return pandas.stats.api.ols(y = df_y, x = df_x)
 

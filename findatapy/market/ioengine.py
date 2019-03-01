@@ -1,4 +1,4 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = 'saeedamen'  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
@@ -14,13 +14,15 @@ __author__ = 'saeedamen' # Saeed Amen
 
 import pandas
 import codecs
+import glob
 import datetime
 from dateutil.parser import parse
 import shutil
 
 try:
     import bcolz
-except: pass
+except:
+    pass
 
 from openpyxl import load_workbook
 import os.path
@@ -50,6 +52,7 @@ _invalid_chars = ['&',
                   '=',
                   ' ']
 
+
 class IOEngine(object):
     """Write and reads time series data to disk in various formats, CSV, HDF5 (fixed and table formats) and MongoDB/Arctic.
 
@@ -78,7 +81,7 @@ class IOEngine(object):
             to create a new Excel file
         """
 
-        if(create_new):
+        if (create_new):
             writer = pandas.ExcelWriter(fname, engine='xlsxwriter')
         else:
             if os.path.isfile(fname):
@@ -108,8 +111,8 @@ class IOEngine(object):
         """
         data_frame.to_excel(writer, sheet, engine='xlsxwriter')
 
-    def read_excel_data_frame(self, f_name, excel_sheet, freq, cutoff = None, dateparse = None,
-                            postfix = '.close', intraday_tz = 'UTC'):
+    def read_excel_data_frame(self, f_name, excel_sheet, freq, cutoff=None, dateparse=None,
+                              postfix='.close', intraday_tz='UTC'):
         """Reads Excel from disk into DataFrame
 
         Parameters
@@ -132,11 +135,12 @@ class IOEngine(object):
         DataFrame
         """
 
-        return self.read_csv_data_frame(f_name, freq, cutoff = cutoff, dateparse = dateparse,
-                            postfix = postfix, intraday_tz = intraday_tz, excel_sheet = excel_sheet)
+        return self.read_csv_data_frame(f_name, freq, cutoff=cutoff, dateparse=dateparse,
+                                        postfix=postfix, intraday_tz=intraday_tz, excel_sheet=excel_sheet)
 
-    def remove_time_series_cache_on_disk(self, fname, engine = 'hdf5_fixed', db_server = '127.0.0.1', db_port='6379', timeout = 10, username = None,
-                                         password = None):
+    def remove_time_series_cache_on_disk(self, fname, engine='hdf5_fixed', db_server='127.0.0.1', db_port='6379',
+                                         timeout=10, username=None,
+                                         password=None):
 
         if 'hdf5' in engine:
             engine = 'hdf5'
@@ -151,9 +155,9 @@ class IOEngine(object):
 
             try:
                 r = redis.StrictRedis(host=db_server, port=db_port, db=0, socket_timeout=timeout,
-                 socket_connect_timeout=timeout)
+                                      socket_connect_timeout=timeout)
 
-                if(fname == 'flush_all_keys'):
+                if (fname == 'flush_all_keys'):
                     r.flushall()
                 else:
                     # allow deletion of keys by pattern matching
@@ -172,7 +176,7 @@ class IOEngine(object):
             from arctic import Arctic
             import pymongo
 
-            socketTimeoutMS = 10 * 1000
+            socketTimeoutMS = 30 * 1000
             fname = os.path.basename(fname).replace('.', '_')
 
             self.logger.info('Load MongoDB library: ' + fname)
@@ -202,12 +206,11 @@ class IOEngine(object):
             except:
                 pass
 
-
     ### functions to handle HDF5 on disk
     def write_time_series_cache_to_disk(self, fname, data_frame,
-                                        engine = 'hdf5_fixed', append_data = False, db_server = DataConstants().db_server,
-                                        db_port = DataConstants().db_port, username = None, password = None,
-                                        filter_out_matching = None, timeout = 10):
+                                        engine='hdf5_fixed', append_data=False, db_server=DataConstants().db_server,
+                                        db_port=DataConstants().db_port, username=None, password=None,
+                                        filter_out_matching=None, timeout=10):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
@@ -219,6 +222,7 @@ class IOEngine(object):
         engine : str
             'hdf5_fixed' - use HDF5 fixed format, very quick, but cannot append to this
             'hdf5_table' - use HDF5 table format, slower but can append to
+            'parquet' - use Parquet
             'arctic' - use Arctic/MongoDB database
             'redis' - use Redis
         append_data : bool
@@ -254,7 +258,7 @@ class IOEngine(object):
 
             try:
                 r = redis.StrictRedis(host=db_server, port=db_port, db=0, socket_timeout=timeout,
-                    socket_connect_timeout=timeout)
+                                      socket_connect_timeout=timeout)
 
                 if isinstance(data_frame, pandas.DataFrame):
                     r.set(fname, data_frame.to_msgpack(compress='blosc'))
@@ -273,7 +277,9 @@ class IOEngine(object):
             self.logger.info('Load Arctic/MongoDB library: ' + fname)
 
             if username is not None and password is not None:
-                c = pymongo.MongoClient(host="mongodb://" + username + ":" + password + "@" + str(db_server) + ":" + str(db_port), connect=False)#, username=username, password=password)
+                c = pymongo.MongoClient(
+                    host="mongodb://" + username + ":" + password + "@" + str(db_server) + ":" + str(db_port),
+                    connect=False)  # , username=username, password=password)
             else:
                 c = pymongo.MongoClient(host="mongodb://" + str(db_server) + ":" + str(db_port), connect=False)
 
@@ -338,7 +344,7 @@ class IOEngine(object):
 
                 i = nrows - 1
 
-                while(i > 0):
+                while (i > 0):
                     read_index = store.select('data', start=i, stop=nrows).index[0]
 
                     if (read_index <= last_point): break
@@ -355,7 +361,8 @@ class IOEngine(object):
                 # delete the old copy
                 try:
                     os.remove(h5_filename_temp)
-                except: pass
+                except:
+                    pass
 
                 store = pandas.HDFStore(h5_filename_temp, format=hdf5_format, complib="blosc", complevel=9)
 
@@ -368,10 +375,21 @@ class IOEngine(object):
                 # delete the old copy
                 try:
                     os.remove(h5_filename)
-                except: pass
+                except:
+                    pass
 
                 # once written to disk rename
                 os.rename(h5_filename_temp, h5_filename)
+
+            self.logger.info("Written HDF5: " + fname)
+
+        elif (engine == 'parquet'):
+            if fname[-5:] != '.gzip':
+                fname = fname + '.gzip'
+
+            df.to_parquet(fname, compression='gzip')
+
+            self.logger.info("Written Parquet: " + fname)
 
     def get_h5_filename(self, fname):
         """Strips h5 off filename returning first portion of filename
@@ -407,7 +425,7 @@ class IOEngine(object):
 
         return fname + ".bcolz"
 
-    def write_r_compatible_hdf_dataframe(self, data_frame, fname, fields = None):
+    def write_r_compatible_hdf_dataframe(self, data_frame, fname, fields=None):
         """Write a DataFrame to disk in as an R compatible HDF5 file.
 
         Parameters
@@ -445,14 +463,14 @@ class IOEngine(object):
         store_export.put('df_for_r', data_frame32, data_columns=cols)
         store_export.close()
 
-    def read_time_series_cache_from_disk(self, fname, engine = 'hdf5', start_date = None, finish_date = None,
-                                         db_server = DataConstants().db_server,
-                                         db_port = DataConstants().db_port, username = None, password = None):
+    def read_time_series_cache_from_disk(self, fname, engine='hdf5', start_date=None, finish_date=None,
+                                         db_server=DataConstants().db_server,
+                                         db_port=DataConstants().db_port, username=None, password=None):
         """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
         ----------
-        fname : str
+        fname : str (or list)
             file to be read from
         engine : str (optional)
             'hd5' - reads HDF5 files (default)
@@ -470,104 +488,117 @@ class IOEngine(object):
         DataFrame
         """
 
-        if (engine == 'bcolz'):
-            try:
-                name = self.get_bcolz_filename(fname)
-                zlens = bcolz.open(rootdir=name)
-                data_frame = zlens.todataframe()
+        data_frame_list = []
 
-                data_frame.index = pandas.DatetimeIndex(data_frame['DTS_'])
-                data_frame.index.name = 'Date'
-                del data_frame['DTS_']
-
-                # convert invalid characters (which Bcolz can't deal with) to more readable characters for pandas
-                data_frame.columns = self.find_replace_chars(data_frame.columns, _replace_chars, _invalid_chars)
-                data_frame.columns = [x[2:] for x in data_frame.columns]
-
-                return data_frame
-            except:
-                return None
-        elif(engine == 'redis'):
-            import redis
-
-            fname = os.path.basename(fname).replace('.', '_')
-
-            msg = None
-
-            try:
-                r = redis.StrictRedis(host=db_server, port=db_port, db=0)
-                msg = r.get(fname)
-
-            except:
-                self.logger.info("Cache not existent for " + fname + " in Redis")
-
-            if msg is None: return None
-
-            self.logger.info('Load Redis cache: ' + fname)
-
-            data_frame = pandas.read_msgpack(msg)
-
-            return data_frame
-
-        elif(engine == 'arctic'):
-            socketTimeoutMS = 2 * 1000
-
-            import pymongo
-            from arctic import Arctic
-
-            fname = os.path.basename(fname).replace('.', '_')
-
-            self.logger.info('Load Arctic/MongoDB library: ' + fname)
-
-            if username is not None and password is not None:
-                c = pymongo.MongoClient(
-                    host="mongodb://" + username + ":" + password + "@" + str(db_server) + ":" + str(db_port),
-                    connect=False)  # , username=username, password=password)
+        if not(isinstance(fname, list)):
+            if '*' in fname:
+                fname = glob.glob(fname)
             else:
-                c = pymongo.MongoClient(host="mongodb://" + str(db_server) + ":" + str(db_port), connect=False)
+                fname = [fname]
 
-            store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
+        for fname_single in fname:
+            if (engine == 'bcolz'):
+                try:
+                    name = self.get_bcolz_filename(fname_single)
+                    zlens = bcolz.open(rootdir=name)
+                    data_frame = zlens.todataframe()
 
-            # Access the library
-            try:
-                library = store[fname]
+                    data_frame.index = pandas.DatetimeIndex(data_frame['DTS_'])
+                    data_frame.index.name = 'Date'
+                    del data_frame['DTS_']
 
-                if start_date is None and finish_date is None:
-                    item = library.read(fname)
+                    # convert invalid characters (which Bcolz can't deal with) to more readable characters for pandas
+                    data_frame.columns = self.find_replace_chars(data_frame.columns, _replace_chars, _invalid_chars)
+                    data_frame.columns = [x[2:] for x in data_frame.columns]
+                except:
+                    data_frame = None
+
+            elif (engine == 'redis'):
+                import redis
+
+                fname_single = os.path.basename(fname_single).replace('.', '_')
+
+                msg = None
+
+                try:
+                    r = redis.StrictRedis(host=db_server, port=db_port, db=0)
+                    msg = r.get(fname_single)
+
+                except:
+                    self.logger.info("Cache not existent for " + fname_single + " in Redis")
+
+                if msg is None:
+                    data_frame = None
                 else:
-                    from arctic.date import DateRange
-                    item = library.read(fname, date_range=DateRange(start_date, finish_date))
 
-                c.close()
+                    self.logger.info('Load Redis cache: ' + fname_single)
 
-                self.logger.info('Read ' + fname)
+                    data_frame = pandas.read_msgpack(msg)
 
-                return item.data
+            elif (engine == 'arctic'):
+                socketTimeoutMS = 2 * 1000
 
-            except Exception as e:
-                self.logger.warning('Library does not exist: ' + fname + ' & message is ' + str (e))
+                import pymongo
+                from arctic import Arctic
 
-                return None
+                fname_single = os.path.basename(fname_single).replace('.', '_')
 
-        elif os.path.isfile(self.get_h5_filename(fname)):
-            store = pandas.HDFStore(self.get_h5_filename(fname))
-            data_frame = store.select("data")
+                self.logger.info('Load Arctic/MongoDB library: ' + fname_single)
 
-            if ('intraday' in fname):
-                data_frame = data_frame.astype('float32')
+                if username is not None and password is not None:
+                    c = pymongo.MongoClient(
+                        host="mongodb://" + username + ":" + password + "@" + str(db_server) + ":" + str(db_port),
+                        connect=False)  # , username=username, password=password)
+                else:
+                    c = pymongo.MongoClient(host="mongodb://" + str(db_server) + ":" + str(db_port), connect=False)
 
-            store.close()
+                store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
 
-            return data_frame
+                # Access the library
+                try:
+                    library = store[fname_single]
 
-        return None
+                    if start_date is None and finish_date is None:
+                        item = library.read(fname_single)
+                    else:
+                        from arctic.date import DateRange
+                        item = library.read(fname_single, date_range=DateRange(start_date, finish_date))
+
+                    c.close()
+
+                    self.logger.info('Read ' + fname_single)
+
+                    data_frame = item.data
+
+                except Exception as e:
+                    self.logger.warning('Library does not exist: ' + fname_single + ' & message is ' + str(e))
+                    data_frame = None
+
+            elif os.path.isfile(self.get_h5_filename(fname_single)):
+                store = pandas.HDFStore(self.get_h5_filename(fname_single))
+                data_frame = store.select("data")
+
+                if ('intraday' in fname_single):
+                    data_frame = data_frame.astype('float32')
+
+                store.close()
+
+            elif os.path.isfile(fname_single):
+                data_frame = pandas.read_parquet(fname_single)
+
+            data_frame_list.append(data_frame)
+
+        if len(data_frame_list) == 1:
+            return data_frame_list[0]
+
+        return data_frame_list
 
     ### functions for CSV reading and writing
     def write_time_series_to_csv(self, csv_path, data_frame):
         data_frame.to_csv(csv_path)
 
-    def read_csv_data_frame(self, f_name, freq, cutoff = None, dateparse = None,
-                            postfix = '.close', intraday_tz = 'UTC', excel_sheet = None):
+    def read_csv_data_frame(self, f_name, freq, cutoff=None, dateparse=None,
+                            postfix='.close', intraday_tz='UTC', excel_sheet=None):
         """Reads CSV/Excel from disk into DataFrame
 
         Parameters
@@ -592,14 +623,14 @@ class IOEngine(object):
         DataFrame
         """
 
-        if(freq == 'intraday'):
+        if (freq == 'intraday'):
 
             if dateparse is None:
                 dateparse = lambda x: datetime.datetime(*map(int, [x[6:10], x[3:5], x[0:2],
-                                                   x[11:13], x[14:16], x[17:19]]))
+                                                                   x[11:13], x[14:16], x[17:19]]))
             elif dateparse is 'dukascopy':
                 dateparse = lambda x: datetime.datetime(*map(int, [x[0:4], x[5:7], x[8:10],
-                                                   x[11:13], x[14:16], x[17:19]]))
+                                                                   x[11:13], x[14:16], x[17:19]]))
             elif dateparse is 'c':
                 # use C library for parsing dates, several hundred times quicker
                 # requires compilation of library to install
@@ -607,9 +638,9 @@ class IOEngine(object):
                 dateparse = lambda x: ciso8601.parse_datetime(x)
 
             if excel_sheet is None:
-                data_frame = pandas.read_csv(f_name, index_col = 0, parse_dates = True, date_parser = dateparse)
+                data_frame = pandas.read_csv(f_name, index_col=0, parse_dates=True, date_parser=dateparse)
             else:
-                data_frame = pandas.read_excel(f_name, excel_sheet, index_col = 0, na_values=['NA'])
+                data_frame = pandas.read_excel(f_name, excel_sheet, index_col=0, na_values=['NA'])
 
             data_frame = data_frame.astype('float32')
             data_frame.index.names = ['Date']
@@ -629,16 +660,16 @@ class IOEngine(object):
                 data_frame = pandas.read_csv(f_name)
 
                 # very slow conversion
-                data_frame = data_frame.convert_objects(convert_dates = 'coerce')
+                data_frame = data_frame.convert_objects(convert_dates='coerce')
 
             else:
                 if excel_sheet is None:
                     try:
-                        data_frame = pandas.read_csv(f_name, index_col=0, parse_dates =["DATE"], date_parser = dateparse)
+                        data_frame = pandas.read_csv(f_name, index_col=0, parse_dates=["DATE"], date_parser=dateparse)
                     except:
-                        data_frame = pandas.read_csv(f_name, index_col=0, parse_dates =["Date"], date_parser = dateparse)
+                        data_frame = pandas.read_csv(f_name, index_col=0, parse_dates=["Date"], date_parser=dateparse)
                 else:
-                    data_frame = pandas.read_excel(f_name, excel_sheet, index_col = 0, na_values=['NA'])
+                    data_frame = pandas.read_excel(f_name, excel_sheet, index_col=0, na_values=['NA'])
 
         # convert Date to Python datetime
         # datetime data_frame['Date1'] = data_frame.index
@@ -652,7 +683,7 @@ class IOEngine(object):
 
         # slower method: data_frame.index = pandas.to_datetime(data_frame.index)
 
-        if(freq == 'intraday'):
+        if (freq == 'intraday'):
             # assume time series are already in UTC and assign this (can specify other time zones)
             data_frame = data_frame.tz_localize(intraday_tz)
 
@@ -706,11 +737,11 @@ class IOEngine(object):
             CSV file to be cleaned
         """
 
-        with codecs.open (f_name, 'rb', 'utf-8') as myfile:
+        with codecs.open(f_name, 'rb', 'utf-8') as myfile:
             data = myfile.read()
 
             # clean file first if dirty
-            if data.count( '\x00' ):
+            if data.count('\x00'):
                 self.logger.info('Cleaning CSV...')
 
                 with codecs.open(f_name + '.tmp', 'w', 'utf-8') as of:
@@ -721,10 +752,11 @@ class IOEngine(object):
     def create_cache_file_name(self, filename):
         return DataConstants().folder_time_series_data + "/" + filename
 
-# TODO refactor IOEngine so that each database is implemented in a subclass of DBEngine
+    # TODO refactor IOEngine so that each database is implemented in a subclass of DBEngine
 
-    def get_engine(self, engine = 'hdf5_fixed'):
+    def get_engine(self, engine='hdf5_fixed'):
         pass
+
 
 #######################################################################################################################
 
@@ -734,10 +766,10 @@ class SpeedCache(object):
     repopulate each time we restart Python. Also can let us share cache easily across threads, without replicating.
 
     """
-    def __init__(self, db_cache_server = None, db_cache_port = None, engine = 'redis'):
+
+    def __init__(self, db_cache_server=None, db_cache_port=None, engine='redis'):
         from findatapy.util import DataConstants
         if db_cache_server is None:
-
             self.db_cache_server = DataConstants().db_cache_server
 
         if db_cache_port is None:
@@ -750,16 +782,20 @@ class SpeedCache(object):
         if self.engine != 'no_cache':
             try:
                 self.io_engine.write_time_series_cache_to_disk(key.replace('/', '_'), obj,
-                    engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
-            except: pass
+                                                               engine=self.engine, db_server=self.db_cache_server,
+                                                               db_port=self.db_cache_port)
+            except:
+                pass
 
     def get_dataframe(self, key):
         if self.engine == 'no_cache': return None
 
         try:
             return self.io_engine.read_time_series_cache_from_disk(key.replace('/', '_'),
-                    engine=self.engine, db_server = self.db_cache_server, db_port = self.db_cache_port)
-        except: pass
+                                                                   engine=self.engine, db_server=self.db_cache_server,
+                                                                   db_port=self.db_cache_port)
+        except:
+            pass
 
     def dump_all_keys(self):
         self.dump_key('flush_all_keys')
@@ -774,7 +810,7 @@ class SpeedCache(object):
         except:
             pass
 
-    def generate_key(self, obj, key_drop = []):
+    def generate_key(self, obj, key_drop=[]):
         """Create a unique hash key for object from its attributes (excluding those attributes in key drop), which can be
         used as a hashkey in the Redis hashtable
 
@@ -797,7 +833,7 @@ class SpeedCache(object):
 
         for k in obj.__dict__:
             # provided the key is not in one of the dropped keys
-            if not(any(a == k for a in key_drop)):
+            if not (any(a == k for a in key_drop)):
                 add = obj.__dict__[k]
 
                 if add is not None:
@@ -810,16 +846,19 @@ class SpeedCache(object):
 
         return type(obj).__name__ + "_" + str(len(str(key))) + "_" + str(key)
 
+
 # TODO refactor code to use DBEngine
 class DBEngine(object):
     pass
 
+
 class DBEngineArctic(DBEngine):
     pass
+
 
 class DBEngineHDF5(DBEngine):
     pass
 
+
 class DBRedis(DBEngine):
     pass
-

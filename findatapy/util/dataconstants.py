@@ -89,7 +89,7 @@ class DataConstants(object):
                                      'bloomberg'   : 4,
                                      'yahoo'       : 8,
                                      'other'       : 4,
-                                     'dukascopy'   : 4,
+                                     'dukascopy'   : 8,
                                      'fxcm'        : 4}
 
     # we can override the thread count and drop back to single thread for certain market data downloads, as can have issues with

@@ -84,6 +84,9 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 01 Mar 2019
+    * Added read/write Parquet
+    * Added concat dataframes
 * 15 Nov 2018
     * Fixed aggregation by hour/day etc. with pandas > 0.23
     * Filter data frame columns by multiple keywords
