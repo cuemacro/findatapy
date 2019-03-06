@@ -387,7 +387,7 @@ class IOEngine(object):
             if fname[-5:] != '.gzip':
                 fname = fname + '.gzip'
 
-            df.to_parquet(fname, compression='gzip')
+            data_frame.to_parquet(fname, compression='gzip')
 
             self.logger.info("Written Parquet: " + fname)
 
@@ -488,6 +488,8 @@ class IOEngine(object):
         DataFrame
         """
 
+        logger = LoggerManager.getLogger(__name__)
+
         data_frame_list = []
 
         if not(isinstance(fname, list)):
@@ -497,6 +499,8 @@ class IOEngine(object):
                 fname = [fname]
 
         for fname_single in fname:
+            logger.debug("Reading " + fname_single + "..")
+
             if (engine == 'bcolz'):
                 try:
                     name = self.get_bcolz_filename(fname_single)
