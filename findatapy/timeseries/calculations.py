@@ -1,4 +1,4 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = 'saeedamen'  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
@@ -10,7 +10,7 @@ __author__ = 'saeedamen' # Saeed Amen
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
 # See the License for the specific language governing permissions and limitations under the License.
-#the License for the specific language governing permissions and limitations under the License.
+# the License for the specific language governing permissions and limitations under the License.
 #
 
 import datetime
@@ -36,6 +36,7 @@ from pandas import compat
 import copy
 from datetime import timedelta
 
+
 class Calculations(object):
     """Calculations on time series, such as calculating strategy returns and various wrappers on pandas for rolling sums etc.
 
@@ -43,7 +44,7 @@ class Calculations(object):
 
     ##### calculate
 
-    def calculate_signal_tc(self, signal_data_frame, tc, period_shift = 1):
+    def calculate_signal_tc(self, signal_data_frame, tc, period_shift=1):
         """Calculates the transaction costs for a particular signal
 
         Parameters
@@ -61,7 +62,7 @@ class Calculations(object):
         """
         return (signal_data_frame.shift(period_shift) - signal_data_frame).abs().multiply(tc)
 
-    def calculate_entry_tc(self, entry_data_frame, tc, period_shift = 1):
+    def calculate_entry_tc(self, entry_data_frame, tc, period_shift=1):
         """Calculates the transaction costs for defined trading points
 
         Parameters
@@ -79,7 +80,7 @@ class Calculations(object):
         """
         return entry_data_frame.abs().multiply(tc)
 
-    def calculate_signal_returns(self, signal_data_frame, returns_data_frame, period_shift = 1):
+    def calculate_signal_returns(self, signal_data_frame, returns_data_frame, period_shift=1):
         """Calculates the trading startegy returns for given signal and asset
 
         Parameters
@@ -99,12 +100,11 @@ class Calculations(object):
         # can cause issues, if the names of the columns are not identical
         return signal_data_frame.shift(period_shift) * returns_data_frame
 
-    def calculate_signal_returns_as_matrix(self, signal_data_frame, returns_data_frame, period_shift = 1):
+    def calculate_signal_returns_as_matrix(self, signal_data_frame, returns_data_frame, period_shift=1):
 
         return pandas.DataFrame(
             signal_data_frame.shift(period_shift).values * returns_data_frame.values, index=returns_data_frame.index,
             columns=returns_data_frame.columns)
-
 
     def calculate_individual_trade_gains(self, signal_data_frame, strategy_returns_data_frame):
         """Calculates profits on every trade (experimental code)
@@ -145,8 +145,8 @@ class Calculations(object):
 
             # TODO experiment with quicker ways of writing below?
             # for val in col.index:
-                # trade_returns.set_value(val, col_name, col[val])
-                # trade_returns.ix[val, col_name] = col[val]
+            # trade_returns.set_value(val, col_name, col[val])
+            # trade_returns.ix[val, col_name] = col[val]
 
             date_indices = trade_returns.index.searchsorted(col.index)
             trade_returns.ix[date_indices, col_name] = col
@@ -307,8 +307,8 @@ class Calculations(object):
         DataFrame containing amended signals that take into account stops and take profits
 
         """
-        
-        signal_data_frame_pushed = signal_data_frame # signal_data_frame.shift(1)
+
+        signal_data_frame_pushed = signal_data_frame  # signal_data_frame.shift(1)
         reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
 
         ind = (cum_rets_trades > take_profit) | (cum_rets_trades < stop_loss)
@@ -375,10 +375,12 @@ class Calculations(object):
         asset_df_copy = asset_df_copy.ffill()
 
         # take profit for buys
-        ind1 = (asset_data_frame.values > (asset_df_copy.values + take_profit_df.values)) & (signal_data_frame.values > 0)
+        ind1 = (asset_data_frame.values > (asset_df_copy.values + take_profit_df.values)) & (
+                    signal_data_frame.values > 0)
 
         # take profit for sells
-        ind2 = (asset_data_frame.values < (asset_df_copy.values - take_profit_df.values)) & (signal_data_frame.values < 0)
+        ind2 = (asset_data_frame.values < (asset_df_copy.values - take_profit_df.values)) & (
+                    signal_data_frame.values < 0)
 
         # stop loss for buys
         ind3 = (asset_data_frame.values < (asset_df_copy.values + stop_loss_df.values)) & (signal_data_frame.values > 0)
@@ -389,7 +391,7 @@ class Calculations(object):
         # when has there been a stop loss or take profit? assign those as being flat points
         ind = ind1 | ind2 | ind3 | ind4
 
-        ind = pandas.DataFrame(data= ind, columns = signal_data_frame.columns, index = signal_data_frame.index)
+        ind = pandas.DataFrame(data=ind, columns=signal_data_frame.columns, index=signal_data_frame.index)
 
         # for debugging
         # sum_ind = (ind == True).sum(); print(sum_ind)
@@ -424,7 +426,7 @@ class Calculations(object):
 
         """
 
-        signal_data_frame_pushed = signal_data_frame # signal_data_frame.shift(1)
+        signal_data_frame_pushed = signal_data_frame  # signal_data_frame.shift(1)
         reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
 
         stops_data_frame = stops_data_frame.abs()
@@ -440,7 +442,7 @@ class Calculations(object):
 
         return signal_data_frame
 
-    def calculate_signal_returns_matrix(self, signal_data_frame, returns_data_frame, period_shift = 1):
+    def calculate_signal_returns_matrix(self, signal_data_frame, returns_data_frame, period_shift=1):
         """Calculates the trading strategy returns for given signal and asset
         as a matrix multiplication
 
@@ -458,9 +460,9 @@ class Calculations(object):
         DataFrame
         """
         return pandas.DataFrame(
-            signal_data_frame.shift(period_shift).values * returns_data_frame.values, index = returns_data_frame.index)
+            signal_data_frame.shift(period_shift).values * returns_data_frame.values, index=returns_data_frame.index)
 
-    def calculate_signal_returns_with_tc(self, signal_data_frame, returns_data_frame, tc, period_shift = 1):
+    def calculate_signal_returns_with_tc(self, signal_data_frame, returns_data_frame, tc, period_shift=1):
         """Calculates the trading startegy returns for given signal and asset including
         transaction costs
 
@@ -479,10 +481,12 @@ class Calculations(object):
         -------
         DataFrame
         """
+
         tc_costs = self.calculate_signal_tc(signal_data_frame, tc, period_shift)
+
         return signal_data_frame.shift(period_shift) * returns_data_frame - tc_costs
 
-    def calculate_signal_returns_with_tc_matrix(self, signal_data_frame, returns_data_frame, tc, period_shift = 1):
+    def calculate_signal_returns_with_tc_matrix(self, signal_data_frame, returns_data_frame, tc, period_shift=1):
         """Calculates the trading startegy returns for given signal and asset with transaction costs with matrix multiplication
 
         Parameters
@@ -517,13 +521,38 @@ class Calculations(object):
             tc_ind = numpy.array(tc_ind)
 
             tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc_ind)
+        elif isinstance(tc, pandas.DataFrame):
+            tc_ind = []
+
+            # get indices related to the returns
+            for k in returns_data_frame.columns:
+                try:
+                    tc_ind.append(k.split('.')[0] + ".spread")
+                except:
+                    tc_ind.append('default.spread')
+
+            # don't include transaction costs at a portfolio level (TODO - weight it according to the assets)
+            tc['Portfolio.spread'] = 0
+
+            # get associated transaction costs time series
+            tc_costs = tc[tc_ind]
+
+            # make sure transaction costs are aligned to the signals
+            signal_data_frame, tc_costs = signal_data_frame.align(tc_costs, join='left', axis='index')
+
+            tc_costs = tc_costs.fillna(method='ffill')
+
+            # calculate the transaction costs by multiplying by trades
+            tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc_costs.values)
+
         else:
             tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc)
 
         return pandas.DataFrame(
-            signal_data_frame.shift(period_shift).values * returns_data_frame.values - tc_costs, index = returns_data_frame.index)
+            signal_data_frame.shift(period_shift).values * returns_data_frame.values - tc_costs,
+            index=returns_data_frame.index)
 
-    def calculate_returns(self, data_frame, period_shift = 1):
+    def calculate_returns(self, data_frame, period_shift=1):
         """Calculates the simple returns for an asset
 
         Parameters
@@ -539,7 +568,7 @@ class Calculations(object):
         """
         return data_frame / data_frame.shift(period_shift) - 1
 
-    def calculate_diff_returns(self, data_frame, period_shift = 1):
+    def calculate_diff_returns(self, data_frame, period_shift=1):
         """Calculates the differences for an asset
 
         Parameters
@@ -555,7 +584,7 @@ class Calculations(object):
         """
         return data_frame - data_frame.shift(period_shift)
 
-    def calculate_log_returns(self, data_frame, period_shift = 1):
+    def calculate_log_returns(self, data_frame, period_shift=1):
         """Calculates the log returns for an asset
 
         Parameters
@@ -638,9 +667,10 @@ class Calculations(object):
         -------
         DataFrame
         """
-        return (data_frame - data_frame.rolling(center=False, window = periods).mean()) / data_frame.rolling(center=False, window = periods).std()
+        return (data_frame - data_frame.rolling(center=False, window=periods).mean()) / data_frame.rolling(center=False,
+                                                                                                           window=periods).std()
 
-    def rolling_volatility(self, data_frame, periods, obs_in_year = 252):
+    def rolling_volatility(self, data_frame, periods, obs_in_year=252):
         """
         rolling_volatility - Calculates the annualised rolling volatility
 
@@ -657,7 +687,7 @@ class Calculations(object):
         """
 
         # return pandas.rolling_std(data_frame, periods) * math.sqrt(obs_in_year)
-        return data_frame.rolling(window=periods,center=False).std() * math.sqrt(obs_in_year)
+        return data_frame.rolling(window=periods, center=False).std() * math.sqrt(obs_in_year)
 
     def rolling_mean(self, data_frame, periods):
         return self.rolling_average(data_frame, periods)
@@ -701,7 +731,7 @@ class Calculations(object):
         # rolling_sum = pandas.rolling_apply(data_frame, periods, foo, min_periods=1)
         # rolling_non_nans = pandas.stats.moments.rolling_count(data_frame, periods, freq=None, center=False, how=None) \
         rolling_sum = data_frame.rolling(center=False, window=periods, min_periods=1).apply(func=foo)
-        rolling_non_nans = data_frame.rolling(window=periods,center=False).count()
+        rolling_non_nans = data_frame.rolling(window=periods, center=False).count()
 
         # For pandas 0.18 onwards (TODO)
         # rolling_non_nans = data_frame.rolling(span=periods, freq=None, center=False, how=None).count()
@@ -798,7 +828,7 @@ class Calculations(object):
         return pandas.ewma(data_frame, span=periods)
 
     ##### correlation methods
-    def rolling_corr(self, data_frame1, periods, data_frame2 = None, pairwise = False, flatten_labels = True):
+    def rolling_corr(self, data_frame1, periods, data_frame2=None, pairwise=False, flatten_labels=True):
         """Calculates rolling correlation wrapping around pandas functions
 
         Parameters
@@ -880,12 +910,12 @@ class Calculations(object):
 
     def calculate_column_matrix_signal_override(self, override_df, signal_df):
         length_cols = len(signal_df.columns)
-        override_matrix = numpy.repeat(override_df.values.flatten()[numpy.newaxis,:], length_cols, 0)
+        override_matrix = numpy.repeat(override_df.values.flatten()[numpy.newaxis, :], length_cols, 0)
 
         # final portfolio signals (including signal & override matrix)
         return pandas.DataFrame(
-            data = numpy.multiply(numpy.transpose(override_matrix), signal_df.values),
-            index = signal_df.index, columns = signal_df.columns)
+            data=numpy.multiply(numpy.transpose(override_matrix), signal_df.values),
+            index=signal_df.index, columns=signal_df.columns)
 
     # several types of outer join (TODO finalise which one should appear!)
     def pandas_outer_join(self, df_list):
@@ -955,9 +985,9 @@ class Calculations(object):
 
         return df_list[0]
 
-    def iterative_outer_join(self, df_list, pool = None):
+    def iterative_outer_join(self, df_list, pool=None):
 
-        if not(isinstance(df_list, list)):
+        if not (isinstance(df_list, list)):
             return df_list
 
         if pool is None:
@@ -967,7 +997,7 @@ class Calculations(object):
         if (len(df_list) < 3):
             return self.pandas_outer_join(df_list)
 
-        while(True):
+        while (True):
             # split into two
             length = len(df_list)
 
@@ -978,7 +1008,6 @@ class Calculations(object):
 
         pool.close()
         pool.join()
-
 
         return df_list[0]
 
@@ -1034,9 +1063,9 @@ class Calculations(object):
         return None
 
     def linear_regression(self, df_y, df_x):
-        return pandas.stats.api.ols(y = df_y, x = df_x)
+        return pandas.stats.api.ols(y=df_y, x=df_x)
 
-    def linear_regression_single_vars(self, df_y, df_x, y_vars, x_vars, use_stats_models = True):
+    def linear_regression_single_vars(self, df_y, df_x, y_vars, x_vars, use_stats_models=True):
         """Do a linear regression of a number of y and x variable pairs in different dataframes, report back the coefficients.
 
         Parameters
@@ -1065,8 +1094,8 @@ class Calculations(object):
             x = df_x[x_vars[i]]
 
             try:
-                if pandas.__version__ < '0.17' or not(use_stats_models):
-                    out = pandas.stats.api.ols(y = y, x = x)
+                if pandas.__version__ < '0.17' or not (use_stats_models):
+                    out = pandas.stats.api.ols(y=y, x=x)
                 else:
                     # pandas.stats.api is now being depreciated, recommended replacement package
                     # http://www.statsmodels.org/stable/regression.html
@@ -1092,10 +1121,10 @@ class Calculations(object):
     def strip_linear_regression_output(self, indices, ols_list, var):
 
         # TODO deal with output from statsmodel as opposed to pandas.stats.ols
-        if not(isinstance(var, list)):
+        if not (isinstance(var, list)):
             var = [var]
 
-        df = pandas.DataFrame(index = indices, columns=var)
+        df = pandas.DataFrame(index=indices, columns=var)
 
         for v in var:
             list_o = []
@@ -1125,15 +1154,15 @@ class Calculations(object):
 
     ##### various methods for averaging time series by hours, mins and days (or specific columns) to create summary time series
     def average_by_columns_list(self, data_frame, columns):
-        return data_frame.\
+        return data_frame. \
             groupby(columns).mean()
 
     def average_by_hour_min_of_day(self, data_frame):
-        return data_frame.\
+        return data_frame. \
             groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute')]).mean()
 
     def average_by_hour_min_of_day_pretty_output(self, data_frame):
-        data_frame = data_frame.\
+        data_frame = data_frame. \
             groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute')]).mean()
 
         data_frame.index = data_frame.index.map(lambda t: datetime.time(*t))
@@ -1162,8 +1191,9 @@ class Calculations(object):
         #     time_of_day.append(temp.groupby(temp.index.time).mean())
         #
         # data_frame = pandas.concat(time_of_day, axis=1, keys = years)
-        data_frame = data_frame.\
-            groupby([data_frame.index.year.rename('year'), data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute')]).mean()
+        data_frame = data_frame. \
+            groupby([data_frame.index.year.rename('year'), data_frame.index.hour.rename('hour'),
+                     data_frame.index.minute.rename('minute')]).mean()
 
         data_frame = data_frame.unstack(0)
 
@@ -1171,79 +1201,79 @@ class Calculations(object):
 
         return data_frame
 
-    def average_by_annualised_year(self, data_frame, obs_in_year = 252):
-        data_frame = data_frame.\
-            groupby([data_frame.index.year]).mean() * obs_in_year
+    def average_by_annualised_year(self, data_frame, obs_in_year=252):
+        data_frame = data_frame. \
+                         groupby([data_frame.index.year]).mean() * obs_in_year
 
         return data_frame
 
     def average_by_month(self, data_frame):
-        data_frame = data_frame.\
+        data_frame = data_frame. \
             groupby([data_frame.index.month]).mean()
 
         return data_frame
 
-    def average_by_bus_day(self, data_frame, cal = "FX"):
+    def average_by_bus_day(self, data_frame, cal="FX"):
         date_index = data_frame.index
 
-        return data_frame.\
+        return data_frame. \
             groupby([Calendar().get_bus_day_of_month(date_index, cal)]).mean()
 
     def average_by_cal_day(self, data_frame):
 
-        return data_frame.\
+        return data_frame. \
             groupby(data_frame.index.day).mean()
 
-    def average_by_month_day_hour_min_by_bus_day(self, data_frame, cal = "FX"):
+    def average_by_month_day_hour_min_by_bus_day(self, data_frame, cal="FX"):
         date_index = data_frame.index
 
-        return data_frame.\
+        return data_frame. \
             groupby([date_index.month.rename('month'),
                      Calendar().get_bus_day_of_month(date_index, cal).rename('day'),
                      date_index.hour.rename('hour'), date_index.minute.rename('minute')]).mean()
 
-    def average_by_month_day_by_bus_day(self, data_frame, cal = "FX"):
+    def average_by_month_day_by_bus_day(self, data_frame, cal="FX"):
         date_index = data_frame.index
 
-        return data_frame.\
+        return data_frame. \
             groupby([date_index.month.rename('month'),
                      Calendar().get_bus_day_of_month(date_index, cal).rename('day')]).mean()
 
     def average_by_month_day_by_day(self, data_frame):
         date_index = data_frame.index
 
-        return data_frame.\
+        return data_frame. \
             groupby([date_index.month, date_index.day]).mean()
 
     def group_by_year(self, data_frame):
         date_index = data_frame.index
 
-        return data_frame.\
+        return data_frame. \
             groupby([date_index.year])
 
     def average_by_day_hour_min_by_bus_day(self, data_frame):
         date_index = data_frame.index
 
-        return data_frame.\
+        return data_frame. \
             groupby([Calendar().get_bus_day_of_month(date_index).rename('day'),
                      date_index.hour.rename('hour'), date_index.minute.rename('minute')]).mean()
 
     def remove_NaN_rows(self, data_frame):
         return data_frame.dropna()
 
-    def get_top_valued_sorted(self, df, order_column, n = 20):
+    def get_top_valued_sorted(self, df, order_column, n=20):
         df_sorted = df.sort(columns=order_column)
         df_sorted = df_sorted.tail(n=n)
 
         return df_sorted
 
-    def get_bottom_valued_sorted(self, df, order_column, n = 20):
+    def get_bottom_valued_sorted(self, df, order_column, n=20):
         df_sorted = df.sort(columns=order_column)
         df_sorted = df_sorted.head(n=n)
 
         return df_sorted
 
-    def convert_month_day_to_date_time(self, df, year = 1970):
+    def convert_month_day_to_date_time(self, df, year=1970):
         new_index = []
 
         # TODO use map?
@@ -1402,7 +1432,6 @@ class Calculations(object):
             # we give a value at the backward_fill_bound (which is one unit before the pre window)
             df[i].at[backward_fill_bound] = 4
 
-
             # now df should become [0 0 4 3 0 0 x 0 0 0 2 0 0]
 
             df[i].replace(to_replace=0, method='ffill', inplace=True)
@@ -1452,7 +1481,6 @@ class Calculations(object):
 
 
 if __name__ == '__main__':
-
     # test functions
     calc = Calculations()
     tsf = Filter()
@@ -1462,5 +1490,5 @@ if __name__ == '__main__':
 
     print(calc.get_bus_day_of_month(date_range))
 
-    foo = pandas.DataFrame(numpy.arange(0.0,13.0))
+    foo = pandas.DataFrame(numpy.arange(0.0, 13.0))
     print(calc.rolling_ewma(foo, span=3))

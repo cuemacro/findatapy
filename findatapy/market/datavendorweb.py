@@ -1239,20 +1239,46 @@ class DataVendorDukasCopy(DataVendor):
         from findatapy.util import SwimPool
         time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
 
-        # use threading (not process interface)
-        pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['dukascopy'])
-        results = [pool.apply_async(self.fetch_file, args=(time, symbol,)) for time in time_list]
-        df_list = [p.get() for p in results]
+        do_retrieve_df = True  # convert inside loop?
+        multi_threaded = False # multithreading (can sometimes get errors but it's fine when retried)
 
-        pool.close()
-        pool.join()
+        if multi_threaded:
+            # use threading (not process interface)
+            pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['dukascopy'])
+            results = [pool.apply_async(self.fetch_file, args=(time, symbol, do_retrieve_df,)) for time in time_list]
+            tick_list = [p.get() for p in results]
 
-        # fully single threaded
+            pool.close()
+            pool.join()
 
-        # df_list = []
-        #
-        # for time in time_list:
-        #     df_list.append(self.fetch_file(time, symbol))
+        else:
+            # fully single threaded
+
+            tick_list = []
+
+            for time in time_list:
+                tick_list.append(self.fetch_file(time, symbol, do_retrieve_df=do_retrieve_df))
+
+        if do_retrieve_df:
+            df_list = tick_list
+        else:
+            df_list = []
+
+            i = 0
+
+            time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
+
+            for time in time_list:
+                try:
+                    temp_df = self.retrieve_df(lzma.decompress(tick_list[i]), symbol, time)
+                except Exception as e:
+                    print(str(time) + ' ' + str(e))
+                    # print(str(e))
+                    temp_df = None
+
+                df_list.append(temp_df)
+
+                i = i + 1
 
         df_list = [x for x in df_list if x is not None]
 
@@ -1261,7 +1287,7 @@ class DataVendorDukasCopy(DataVendor):
         except:
             return None
 
-    def fetch_file(self, time, symbol):
+    def fetch_file(self, time, symbol, do_retrieve_df):
         logger = LoggerManager.getLogger(__name__)
         if time.hour % 24 == 0:
             logger.info("Downloading... " + str(time))
@@ -1276,6 +1302,7 @@ class DataVendorDukasCopy(DataVendor):
 
         tick = self.fetch_tick(DataConstants().dukascopy_base_url + tick_path)
 
+        #print(tick_path)
         if DataConstants().dukascopy_write_temp_tick_disk:
             out_path = DataConstants().temp_folder + "/dkticks/" + tick_path
 
@@ -1285,10 +1312,15 @@ class DataVendorDukasCopy(DataVendor):
 
             self.write_tick(tick, out_path)
 
-        try:
-            return self.retrieve_df(lzma.decompress(tick), symbol, time)
-        except Exception as e:
-            return None
+        if do_retrieve_df:
+            try:
+                return self.retrieve_df(lzma.decompress(tick), symbol, time)
+            except Exception as e:
+                #print(tick_path + ' ' + str(e))
+                #print(str(e))
+                return None
+
+        return tick
 
     def fetch_tick(self, tick_url):
         i = 0
@@ -1299,14 +1331,16 @@ class DataVendorDukasCopy(DataVendor):
         logger.debug("Loading URL " + tick_url)
 
         # try up to 5 times to download
-        while i < 10:
+        while i < 20:
             try:
                 tick_request = requests.get(tick_url, timeout = 10)
 
                 tick_request_content = tick_request.content
                 tick_request.close()
 
-                break
+                # can sometimes get back an error HTML page, in which case retry
+                if 'error' not in str(tick_request_content):
+                    break
             except Exception as e:
                 logger.warning("Problem downloading.. " + str(e))
                 i = i + 1
@@ -1373,6 +1407,7 @@ class DataVendorDukasCopy(DataVendor):
         # note: Numba can speed up for loops
         for row in chunks_list:
             d = struct.unpack(">LLLff", row)
+            #d = struct.unpack('>3i2f', row)
             date.append((epoch + timedelta(0,0,0, d[0])))
 
             # SLOW: no point using named tuples!

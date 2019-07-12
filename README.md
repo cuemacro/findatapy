@@ -84,6 +84,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 12 Jul 2019
+    * Fixed issues with DukasCopy downloading when using multi-threading
 * 01 Mar 2019
     * Added read/write Parquet
     * Added concat dataframes
