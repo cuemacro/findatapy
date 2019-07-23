@@ -706,7 +706,7 @@ class Calculations(object):
         -------
         DataFrame
         """
-        return pandas.rolling_mean(data_frame, periods)
+        return data_frame.rolling(periods).mean()
 
     def rolling_sparse_average(self, data_frame, periods):
         """Calculates the rolling moving average of a sparse time series
@@ -776,7 +776,7 @@ class Calculations(object):
         -------
         DataFrame
         """
-        return pandas.rolling_median(data_frame, periods)
+        return data_frame.rolling(periods).median()
 
     def rolling_sum(self, data_frame, periods):
         """Calculates the rolling sum
@@ -792,7 +792,7 @@ class Calculations(object):
         -------
         DataFrame
         """
-        return pandas.rolling_sum(data_frame, periods)
+        return data_frame.rolling(periods).sum()
 
     def cum_sum(self, data_frame):
         """Calculates the cumulative sum

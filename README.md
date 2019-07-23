@@ -84,6 +84,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 23 Jul 2019
+    * Changed some rolling calculations in Calculation class to work with newer pandas
 * 12 Jul 2019
     * Fixed issues with DukasCopy downloading when using multi-threading
 * 01 Mar 2019
