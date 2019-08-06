@@ -12,12 +12,16 @@ __author__ = 'saeedamen'
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
+from findatapy.util.dataconstants import DataConstants
 from findatapy.util.loggermanager import LoggerManager
 
 from datetime import timedelta
 import datetime
 
 import copy
+
+data_constants = DataConstants()
+
 
 class MarketDataRequest(object):
     """Provides parameters for requesting market data.
@@ -56,22 +60,27 @@ class MarketDataRequest(object):
         """
         from findatapy.market.ioengine import SpeedCache
 
-        if self.freq == 'daily': ticker = None
-        else: ticker = self.tickers[0]
+        if self.freq == 'daily':
+            ticker = None
+        else:
+            ticker = self.tickers[0]
 
         self.__category_key = self.create_category_key(self, ticker=ticker)
 
-        return SpeedCache().generate_key(self, ['logger', '_MarketDataRequest__abstract_curve', '_MarketDataRequest__cache_algo',
+        return SpeedCache().generate_key(self, ['logger', '_MarketDataRequest__abstract_curve',
+                                                '_MarketDataRequest__cache_algo',
                                                 '_MarketDataRequest__overrides'])
 
-    def __init__(self, data_source = None,
-                 start_date ='year', finish_date = datetime.datetime.utcnow(),
-                 tickers = None, category = None, freq_mult = 1, freq = "daily",
-                 gran_freq = None, cut = "NYC",
-                 fields = ['close'], cache_algo = "internet_load_return",
-                 vendor_tickers = None, vendor_fields = None,
-                 environment = "backtest", trade_side = 'trade', expiry_date = None, resample = None, resample_how = 'last',
-                 md_request = None, abstract_curve = None, overrides = {}
+    def __init__(self, data_source=None,
+                 start_date='year', finish_date=datetime.datetime.utcnow(),
+                 tickers=None, category=None, freq_mult=1, freq="daily",
+                 gran_freq=None, cut="NYC",
+                 fields=['close'], cache_algo="internet_load_return",
+                 vendor_tickers=None, vendor_fields=None,
+                 environment="backtest", trade_side='trade', expiry_date=None, resample=None, resample_how='last',
+                 md_request=None, abstract_curve=None, quandl_api_key=data_constants.quandl_api_key,
+                 fred_api_key=data_constants.fred_api_key, alpha_vantage_api_key=data_constants.alpha_vantage_api_key, 
+                 overrides={}
                  ):
 
         # can deep copy MarketDataRequest (use a lock, so can be used with threading when downloading time series)
@@ -96,20 +105,25 @@ class MarketDataRequest(object):
 
                 self.category = copy.deepcopy(md_request.category)  # special predefined categories
 
-                self.cut = copy.deepcopy(md_request.cut)                        # closing time of the data (eg. NYC, LDN, TOK etc)
-                self.fields = copy.deepcopy(md_request.fields)                  # fields, eg. close, high, low, open
-                self.cache_algo = copy.deepcopy(md_request.cache_algo)          # internet_load_return (cache_algo_return is for future use)
+                self.cut = copy.deepcopy(md_request.cut)  # closing time of the data (eg. NYC, LDN, TOK etc)
+                self.fields = copy.deepcopy(md_request.fields)  # fields, eg. close, high, low, open
+                self.cache_algo = copy.deepcopy(
+                    md_request.cache_algo)  # internet_load_return (cache_algo_return is for future use)
                 self.vendor_tickers = copy.deepcopy(md_request.vendor_tickers)  # define vendor tickers
-                self.vendor_fields = copy.deepcopy(md_request.vendor_fields)    # define vendor fields
-                self.environment = copy.deepcopy(md_request.environment)        # backtest environment only supported at present
+                self.vendor_fields = copy.deepcopy(md_request.vendor_fields)  # define vendor fields
+                self.environment = copy.deepcopy(
+                    md_request.environment)  # backtest environment only supported at present
                 self.trade_side = copy.deepcopy(md_request.trade_side)
                 self.expiry_date = copy.deepcopy(md_request.expiry_date)
                 self.resample = copy.deepcopy(md_request.resample)
                 self.resample_how = copy.deepcopy(md_request.resample_how)
                 self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
+                self.quandl_api_key = copy.deepcopy(md_request.quandl_api_key)
+                self.fred_api_key = copy.deepcopy(md_request.fred_api_key)
+                self.alpha_vantage_api_key = copy.deepcopy(md_request.alpha_vantage_api_key)
                 self.overrides = copy.deepcopy(md_request.overrides)
 
-                self.tickers = copy.deepcopy(md_request.tickers)    # need this after category in case have wildcard
+                self.tickers = copy.deepcopy(md_request.tickers)  # need this after category in case have wildcard
         else:
             self.freq_mult = freq_mult
 
@@ -122,20 +136,24 @@ class MarketDataRequest(object):
             self.data_source = data_source
             self.start_date = start_date
             self.finish_date = finish_date
-            self.category = category                # special predefined categories
+            self.category = category  # special predefined categories
 
-            self.cut = cut                          # closing time of the data (eg. NYC, LDN, TOK etc)
-            self.fields = fields                    # fields, eg. close, high, low, open
-            self.cache_algo = cache_algo            # internet_load_return (cache_algo_return is for future use)
-            self.vendor_tickers = vendor_tickers    # define vendor tickers
-            self.vendor_fields = vendor_fields      # define vendor fields
-            self.environment = environment          # backtest environment only supported at present
+            self.cut = cut  # closing time of the data (eg. NYC, LDN, TOK etc)
+            self.fields = fields  # fields, eg. close, high, low, open
+            self.cache_algo = cache_algo  # internet_load_return (cache_algo_return is for future use)
+            self.vendor_tickers = vendor_tickers  # define vendor tickers
+            self.vendor_fields = vendor_fields  # define vendor fields
+            self.environment = environment  # backtest environment only supported at present
             self.trade_side = trade_side
             self.expiry_date = expiry_date
             self.resample = resample
             self.resample_how = resample_how
             self.abstract_curve = abstract_curve
             
+            self.quandl_api_key = quandl_api_key
+            self.fred_api_key = fred_api_key
+            self.alpha_vantage_api_key = alpha_vantage_api_key
+
             self.overrides = overrides
 
             self.tickers = tickers
@@ -184,7 +202,8 @@ class MarketDataRequest(object):
 
             if not data_source in valid_data_source:
                 LoggerManager().getLogger(__name__).warning(data_source & " is not a defined data source.")
-        except: pass
+        except:
+            pass
 
         self.__data_source = data_source
 
@@ -218,7 +237,7 @@ class MarketDataRequest(object):
                     if tick[-1] == "*" and tick[0] != "*":
                         start = "^"
 
-                    tick = start + "(" + tick.replace('*','') + ")"
+                    tick = start + "(" + tick.replace('*', '') + ")"
 
                     if config is None:
                         from findatapy.util import ConfigManager
@@ -287,7 +306,8 @@ class MarketDataRequest(object):
     def freq(self, freq):
         freq = freq.lower()
 
-        valid_freq = ['tick', 'second', 'minute', 'intraday', 'hourly', 'daily', 'weekly', 'monthly', 'quarterly', 'annually']
+        valid_freq = ['tick', 'second', 'minute', 'intraday', 'hourly', 'daily', 'weekly', 'monthly', 'quarterly',
+                      'annually']
 
         if not freq in valid_freq:
             LoggerManager().getLogger(__name__).warning(freq + " is not a defined frequency")
@@ -303,7 +323,8 @@ class MarketDataRequest(object):
         try:
             gran_freq = gran_freq.lower()
 
-            valid_gran_freq = ['tick', 'second', 'minute', 'hourly', 'pseudodaily', 'daily', 'weekly', 'monthly', 'quarterly', 'annually']
+            valid_gran_freq = ['tick', 'second', 'minute', 'hourly', 'pseudodaily', 'daily', 'weekly', 'monthly',
+                               'quarterly', 'annually']
 
             if not gran_freq in valid_gran_freq:
                 LoggerManager().getLogger(__name__).warning(gran_freq & " is not a defined frequency")
@@ -314,7 +335,8 @@ class MarketDataRequest(object):
                 self.__freq = 'tick'
             else:
                 self.__freq = 'daily'
-        except: pass
+        except:
+            pass
 
         self.__gran_freq = gran_freq
 
@@ -417,6 +439,7 @@ class MarketDataRequest(object):
             date1 = pandas.Timestamp(date)
 
         return date1
+
     @property
     def cache_algo(self):
         return self.__cache_algo
@@ -426,7 +449,6 @@ class MarketDataRequest(object):
         cache_algo = cache_algo.lower()
 
         valid_cache_algo = ['internet_load', 'internet_load_return', 'cache_algo', 'cache_algo_return']
-
 
         if not cache_algo in valid_cache_algo:
             LoggerManager().getLogger(__name__).warning(cache_algo + " is not a defined caching scheme")
@@ -441,7 +463,7 @@ class MarketDataRequest(object):
     def environment(self, environment):
         environment = environment.lower()
 
-        valid_environment= ['prod', 'backtest']
+        valid_environment = ['prod', 'backtest']
 
         if not environment in valid_environment:
             LoggerManager().getLogger(__name__).warning(environment + " is not a defined environment.")
@@ -462,7 +484,7 @@ class MarketDataRequest(object):
             LoggerManager().getLogger(__name__).warning(trade_side + " is not a defined trade side.")
 
         self.__trade_side = trade_side
-        
+
     @property
     def expiry_date(self):
         return self.__expiry_date
@@ -484,6 +506,30 @@ class MarketDataRequest(object):
 
         self.__abstract_curve = abstract_curve
         
+    @property
+    def quandl_api_key(self):
+        return self.__quandl_api_key
+
+    @quandl_api_key.setter
+    def quandl_api_key(self, quandl_api_key):
+        self.__quandl_api_key = quandl_api_key
+
+    @property
+    def fred_api_key(self):
+        return self.__fred_api_key
+
+    @fred_api_key.setter
+    def fred_api_key(self, fred_api_key):
+        self.__fred_api_key = fred_api_key
+        
+    @property
+    def alpha_vantage_api_key(self):
+        return self.__alpha_vantage_api_key
+
+    @alpha_vantage_api_key.setter
+    def alpha_vantage_api_key(self, alpha_vantage_api_key):
+        self.__alpha_vantage_api_key = alpha_vantage_api_key
+
     @property
     def overrides(self):
         return self.__overrides

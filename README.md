@@ -84,6 +84,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 06 Aug 2019
+    * Adding parameters to MarketDataRequest for user specified API keys (Quandl, FRED & Alphavantage)
 * 23 Jul 2019
     * Changed some rolling calculations in Calculation class to work with newer pandas
 * 12 Jul 2019

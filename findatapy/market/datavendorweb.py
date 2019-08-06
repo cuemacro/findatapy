@@ -117,7 +117,7 @@ class DataVendorQuandl(DataVendor):
 
         while(trials < 5):
             try:
-                data_frame = Quandl.get(market_data_request.tickers, authtoken=DataConstants().quandl_api_key, trim_start=market_data_request.start_date,
+                data_frame = Quandl.get(market_data_request.tickers, authtoken=market_data_request.quandl_api_key, trim_start=market_data_request.start_date,
                                         trim_end=market_data_request.finish_date)
 
                 break
@@ -204,7 +204,7 @@ class DataVendorALFRED(DataVendor):
         for i in range(0, len(market_data_request.tickers)):
             while (trials < 5):
                 try:
-                    fred = Fred(api_key=DataConstants().fred_api_key)
+                    fred = Fred(api_key=market_data_request.fred_api_key)
 
                     # acceptable fields: close, actual-release, release-date-time-full
                     if 'close' in market_data_request.fields and 'release-date-time-full' in market_data_request.fields:
@@ -1240,7 +1240,7 @@ class DataVendorDukasCopy(DataVendor):
         time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
 
         do_retrieve_df = True  # convert inside loop?
-        multi_threaded = False # multithreading (can sometimes get errors but it's fine when retried)
+        multi_threaded = True # multithreading (can sometimes get errors but it's fine when retried)
 
         if multi_threaded:
             # use threading (not process interface)
@@ -2219,7 +2219,7 @@ class DataVendorAlphaVantage(DataVendor):
     def download(self, market_data_request):
         trials = 0
 
-        ts = TimeSeries(key=DataConstants().alpha_vantage_api_key, output_format='pandas', indexing_type='date')
+        ts = TimeSeries(key=market_data_request.alpha_vantage_api_key, output_format='pandas', indexing_type='date')
 
         data_frame = None
 
