@@ -26,7 +26,13 @@ try:
 except:
     # temporary fix to get compilation, need to rewrite regression code to get this to work
     # later versions of pandas no longer support OLS
-    from statsmodels.formula.api import ols
+    #
+    # fails with SciPy 1.3.0 unless we have the very latest version of StatsModels pip install statsmodels==0.10.0rc2 --pre
+    #
+    try:
+        from statsmodels.formula.api import ols
+    except:
+        pass
 
 from findatapy.timeseries.filter import Filter
 from findatapy.timeseries.filter import Calendar

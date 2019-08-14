@@ -84,8 +84,11 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 14 Aug 2019
+    * Bloomberg downloaders now works with Pandas 0.25
+    * Fixed Yahoo downloader to work with yfinance (replacing pandas_datareader for Yahoo)
 * 06 Aug 2019
-    * Adding parameters to MarketDataRequest for user specified API keys (Quandl, FRED & Alphavantage)
+    * Adding parameters to MarketDataRequest for user specified API keys (Quandl, FRED & Alpha Vantage)
 * 23 Jul 2019
     * Changed some rolling calculations in Calculation class to work with newer pandas
 * 12 Jul 2019

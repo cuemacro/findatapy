@@ -97,7 +97,11 @@ class MarketDataGenerator(object):
             from findatapy.market.datavendorweb  import DataVendorALFRED
             data_vendor = DataVendorALFRED()
 
-        elif source in ['yahoo', 'google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
+        elif source == 'yahoo':
+            from findatapy.market.datavendorweb  import DataVendorYahoo
+            data_vendor = DataVendorYahoo()
+
+        elif source in ['google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
             from findatapy.market.datavendorweb  import DataVendorPandasWeb
             data_vendor = DataVendorPandasWeb()
 
@@ -364,7 +368,7 @@ class MarketDataGenerator(object):
 
                 # use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
                 # if the expiry is before the start date of our download don't bother downloading this ticker
-                if  expiry_date < start_date:
+                if expiry_date < start_date:
                     tickers[i] = None
 
                 # special case for futures-contracts which are intraday

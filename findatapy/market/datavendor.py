@@ -179,11 +179,11 @@ class DataVendor(object):
         # if we haven't set the configuration files for automatic configuration
         if market_data_request.vendor_fields is not None:
 
-            dictionary = dict(zip(market_data_request.vendor_fields, market_data_request.fields))
+            dictionary = dict(zip(self.get_lower_case_list(market_data_request.vendor_fields), market_data_request.fields))
 
             for vendor_field in vendor_fields_list:
                 try:
-                    fields_converted.append(dictionary[vendor_field])
+                    fields_converted.append(dictionary[vendor_field.lower()])
                 except:
                     fields_converted.append(vendor_field)
 
@@ -218,12 +218,12 @@ class DataVendor(object):
 
         if market_data_request.vendor_tickers is not None:
 
-            dictionary = dict(zip(market_data_request.vendor_tickers, market_data_request.tickers))
+            dictionary = dict(zip(self.get_lower_case_list(market_data_request.vendor_tickers), market_data_request.tickers))
 
             tickers_stuff = []
 
             for vendor_ticker in vendor_tickers_list:
-                tickers_stuff.append(dictionary[vendor_ticker])
+                tickers_stuff.append(dictionary[vendor_ticker.lower()])
 
             return tickers_stuff # [item for sublist in tickers_stuff for item in sublist]
 
@@ -249,3 +249,8 @@ class DataVendor(object):
             tickers_converted.append(v)
 
         return tickers_converted
+
+    def get_lower_case_list(self, lst):
+        return [k.lower() for k in lst]
+
+

@@ -153,6 +153,7 @@ if __name__ == '__main__':
 
     if run_example == 6 or run_example == 0:
         ####### FXCM (and compare with DukasCopy) examples
+
         # let's download data for end of 2016/start 2017 for EUR/USD - the raw data has bid/ask, if we specify close, we calculate
         # it as the average
 

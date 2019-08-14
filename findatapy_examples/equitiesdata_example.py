@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     print(df.tail(n=10))
 
-    # NOTE: Yahoo API no longer works
+    # NOTE: uses yfinance for Yahoo API
 
     # download equities data from Yahoo
     md_request = MarketDataRequest(

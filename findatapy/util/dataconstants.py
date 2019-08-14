@@ -87,7 +87,7 @@ class DataConstants(object):
     # for some data providers might get better performance from 1 thread only!
     market_thread_no = {             'quandl'      : 4,
                                      'bloomberg'   : 4,
-                                     'yahoo'       : 8,
+                                     'yahoo'       : 1, # yfinance already threads requests, so don't do it twice!
                                      'other'       : 4,
                                      'dukascopy'   : 8,
                                      'fxcm'        : 4}

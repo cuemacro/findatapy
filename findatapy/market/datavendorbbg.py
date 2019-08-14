@@ -247,8 +247,12 @@ class DataVendorBBG(DataVendor):
 
             data_frame.columns = ticker_combined
 
-            # TODO coerce will be deprecated from pandas
-            data_frame = data_frame.convert_objects(convert_dates = 'coerce', convert_numeric= 'coerce')
+            # need to convert numerical and datetime columns separately post pandas 0.23
+            data_frame = data_frame.apply(pandas.to_numeric, errors='ignore')
+            data_frame = data_frame.apply(pandas.to_datetime, errors='ignore')
+
+            # TODO coerce will be deprecated from pandas 0.23.0 onwards) so remove!
+            # data_frame = data_frame.convert_objects(convert_dates = 'coerce', convert_numeric= 'coerce')
 
         return data_frame
 

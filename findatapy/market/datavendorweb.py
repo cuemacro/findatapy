@@ -364,6 +364,7 @@ class DataVendorONS(DataVendor):
         return data_frame
 
     def download_daily(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         trials = 0
 
         data_frame = None
@@ -430,6 +431,7 @@ class DataVendorBOE(DataVendor):
         return data_frame
 
     def download_daily(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
         trials = 0
 
         data_frame = None
@@ -445,6 +447,96 @@ class DataVendorBOE(DataVendor):
 
         if trials == 5:
             logger.error("Couldn't download from ONS after several attempts!")
+
+        return data_frame
+
+#######################################################################################################################
+
+try:
+    import yfinance as yf
+except:
+    pass
+
+class DataVendorYahoo(DataVendor):
+
+    def __init__(self):
+        super(DataVendorYahoo, self).__init__()
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+        market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
+        logger.info("Request Yahoo data")
+
+        data_frame = self.download_daily(market_data_request_vendor)
+
+        if data_frame is None or data_frame.index is []: return None
+
+        # convert from vendor to findatapy tickers/fields
+        if data_frame is not None:
+            try:
+                data_frame.columns = ['/'.join(col) for col in data_frame.columns.values]
+            except:
+                pass
+
+            returned_tickers = data_frame.columns
+
+        if data_frame is not None:
+            # tidy up tickers into a format that is more easily translatable
+            # we can often get multiple fields returned (even if we don't ask for them!)
+            # convert to lower case
+            #returned_fields = [(x.split(' - ')[1]).lower().replace(' ', '-') for x in returned_tickers]
+            #returned_fields = [x.replace('value', 'close') for x in returned_fields]  # special case for close
+
+
+            returned_fields = [x.split('/')[0].lower() for x in returned_tickers]
+
+            #returned_tickers = [x.replace('.', '/') for x in returned_tickers]
+            returned_tickers = [x.split('/')[1] for x in returned_tickers]
+
+            fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+            tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
+
+            ticker_combined = []
+
+            for i in range(0, len(fields)):
+                ticker_combined.append(tickers[i] + "." + fields[i])
+
+            data_frame.columns = ticker_combined
+            data_frame.index.name = 'Date'
+
+        logger.info("Completed request from Yahoo.")
+
+        return data_frame
+
+    def download_daily(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
+        trials = 0
+
+        data_frame = None
+
+        ticker_list = ' '.join(market_data_request.tickers)
+        data_frame = yf.download(ticker_list, start=market_data_request.start_date, end=market_data_request.finish_date)
+
+        while (trials < 5):
+
+
+            try:
+                data_frame = yf.download(ticker_list, start=market_data_request.start_date, end=market_data_request.finish_date)
+
+                break
+            except Exception as e:
+                print(str(e))
+                trials = trials + 1
+                logger.info("Attempting... " + str(trials) + " request to download from Yahoo")
+
+        if trials == 5:
+            logger.error("Couldn't download from ONS after several attempts!")
+
+        if len(market_data_request.tickers) == 1:
+            data_frame.columns = [x + '/' + market_data_request.tickers[0] for x in data_frame.columns]
 
         return data_frame
 
@@ -594,9 +686,7 @@ class DataVendorPoloniex(DataVendor):
 
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request data from Poloniex")
-        
-
+        logger.info("Request data from Poloniex")
 
         poloniex_url = 'https://poloniex.com/public?command=returnChartData&currencyPair={}&start={}&end={}&period={}'
         if market_data_request_vendor.freq == 'intraday':

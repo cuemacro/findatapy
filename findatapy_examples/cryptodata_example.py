@@ -23,9 +23,9 @@ if __name__ == '__main__':
 
     market = Market(market_data_generator=MarketDataGenerator())
 
-    # choose run_example   ( 0 = all examples)
+    # choose run_example   (0 = all examples)
     # example 1: bitcoincharts
-    # example 2: poloniex
+    # example 2: poloniex (needs to be fixed)
     # example 3: binance
     # example 4: bitfinex
     # example 5: gdax
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # Note we use XBT instead of BTC.  Same for XET (ETH) and XLC (LTC).
 
 
-    run_example = 3
+    run_example = 0
 
     if run_example == 1 or run_example == 0:
         ### download data from bitcoincharts ###
