@@ -34,5 +34,8 @@ however I have not tested this.
         * python -m pip install --index-url=https://bloomberg.bintray.com/pip/simple blpapi
     * But note that a local installation of the C++ API is required both for importing the blpapi module in Python
     and for building the module from sources, if needed.
+* conda installation for Anaconda
+    * It is also possible to install `blpapi` using `conda` (note: I haven't tested this though)
+    * `conda install -c conda-forge blpapi`
 
 * The library doesn't support the old Bloomberg COM API (since much slower than the new Open API)
