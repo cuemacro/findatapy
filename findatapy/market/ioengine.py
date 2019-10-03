@@ -263,7 +263,7 @@ class IOEngine(object):
                 if isinstance(data_frame, pandas.DataFrame):
                     r.set(fname, data_frame.to_msgpack(compress='blosc'))
 
-                self.logger.info("Pushed " + fname + " to Redis")
+                self.logger.debug("Pushed " + fname + " to Redis")
             except Exception as e:
                 self.logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
 
@@ -315,6 +315,9 @@ class IOEngine(object):
                         new_cols.append(col)
 
                 data_frame = data_frame[new_cols]
+
+            # problems with Arctic when writing timezone to disk sometimes, so strip
+            data_frame = data_frame.copy().tz_localize(None)
 
             # can duplicate values if we have existing dates
             if append_data:
@@ -564,9 +567,10 @@ class IOEngine(object):
 
                     if start_date is None and finish_date is None:
                         item = library.read(fname_single)
+
                     else:
                         from arctic.date import DateRange
-                        item = library.read(fname_single, date_range=DateRange(start_date, finish_date))
+                        item = library.read(fname_single, date_range=DateRange(start_date.replace(tzinfo=None), finish_date.replace(tzinfo=None)))
 
                     c.close()
 
@@ -575,7 +579,7 @@ class IOEngine(object):
                     data_frame = item.data
 
                 except Exception as e:
-                    self.logger.warning('Library does not exist: ' + fname_single + ' & message is ' + str(e))
+                    self.logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
                     data_frame = None
 
             elif os.path.isfile(self.get_h5_filename(fname_single)):
@@ -832,18 +836,19 @@ class SpeedCache(object):
 
         # never want to include Logger object!
         key_drop.append('logger')
-
         key = []
 
         for k in obj.__dict__:
-            # provided the key is not in one of the dropped keys
-            if not (any(a == k for a in key_drop)):
-                add = obj.__dict__[k]
 
-                if add is not None:
-                    if isinstance(add, list): add = '_'.join(str(e) for e in add)
+            if 'api_key' not in k:
+                # provided the key is not in one of the dropped keys
+                if not (any(a == k for a in key_drop)):
+                    add = obj.__dict__[k]
 
-                key.append(str(k) + '-' + str(add))
+                    if add is not None:
+                        if isinstance(add, list): add = '_'.join(str(e) for e in add)
+
+                    key.append(str(k) + '-' + str(add))
 
         key.sort()
         key = '_'.join(str(e) for e in key).replace(type(obj).__name__, '').replace('___', '_')

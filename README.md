@@ -84,6 +84,9 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 03 Oct 2019
+    * Remove API key from cache
+    * Remove timezone when storing in Arctic (can cause issues with later versions of Pandas)
 * 14 Aug 2019
     * Bloomberg downloaders now works with Pandas 0.25
     * Fixed Yahoo downloader to work with yfinance (replacing pandas_datareader for Yahoo)
