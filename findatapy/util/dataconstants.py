@@ -20,6 +20,16 @@ Has various constants required for the findatapy project. These have been define
 """
 
 import os
+import keyring
+
+def key_store(service_name):
+    key = keyring.get_password(service_name, os.getlogin())
+
+    if key is None:
+        key = input("Please enter the %s API key: " % service_name)
+
+    return key
+
 
 class DataConstants(object):
 
@@ -114,22 +124,22 @@ class DataConstants(object):
     fxcm_write_temp_tick_disk = False
 
     # Quandl settings
-    quandl_api_key = "x"
+    quandl_api_key = key_store("Quandl")
 
     # Alpha Vantage settings
-    alpha_vantage_api_key = "x"
+    alpha_vantage_api_key = key_store("AlphaVantage")
 
     # FXCM API (contact FXCM to get this)
     fxcm_api_key = "x"
 
     # Twitter settings (you need to set these up on Twitter)
-    TWITTER_APP_KEY             = "x"
-    TWITTER_APP_SECRET          = "x"
-    TWITTER_OAUTH_TOKEN	     = "x"
-    TWITTER_OAUTH_TOKEN_SECRET	 = "x"
+    TWITTER_APP_KEY             = key_store("Twitter App Key")
+    TWITTER_APP_SECRET          = key_store("Twitter App Secret")
+    TWITTER_OAUTH_TOKEN	        = key_store("Twitter OAUTH token")
+    TWITTER_OAUTH_TOKEN_SECRET	= key_store("Twitter OAUTH token Secret")
 
     # FRED (Federal Reserve of St Louis data) settings
-    fred_api_key = "x"
+    fred_api_key = key_store("FRED")
 
     # overwrite field variables with those listed in DataCred
     def __init__(self):
@@ -142,3 +152,7 @@ class DataConstants(object):
                     setattr(DataConstants, k, getattr(DataCred, k))
         except:
             pass
+
+    @staticmethod
+    def reset_api_key(service_name, api_key):
+        keyring.set_password(service_name, os.getlogin(), api_key)
