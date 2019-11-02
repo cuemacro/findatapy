@@ -114,10 +114,10 @@ class DataConstants(object):
     fxcm_write_temp_tick_disk = False
 
     # Quandl settings
-    quandl_api_key = "x"
+    quandl_api_key = "vR36V_PPbudmaNm-3cHL"
 
     # Alpha Vantage settings
-    alpha_vantage_api_key = "x"
+    alpha_vantage_api_key = "D09704U7CWEVKWXK"
 
     # FXCM API (contact FXCM to get this)
     fxcm_api_key = "x"
@@ -129,7 +129,7 @@ class DataConstants(object):
     TWITTER_OAUTH_TOKEN_SECRET	 = "x"
 
     # FRED (Federal Reserve of St Louis data) settings
-    fred_api_key = "x"
+    fred_api_key = "8cdccb976fa0ed8d83e0f715840e203e"
 
     # overwrite field variables with those listed in DataCred
     def __init__(self):
