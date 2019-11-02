@@ -117,7 +117,8 @@ class DataVendorQuandl(DataVendor):
 
         while(trials < 5):
             try:
-                data_frame = Quandl.get(market_data_request.tickers, authtoken=market_data_request.quandl_api_key, trim_start=market_data_request.start_date,
+                data_frame = Quandl.get(market_data_request.tickers,
+                                        authtoken=market_data_request.quandl_api_key, trim_start=market_data_request.start_date,
                                         trim_end=market_data_request.finish_date)
 
                 break
