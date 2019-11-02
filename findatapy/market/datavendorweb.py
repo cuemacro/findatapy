@@ -121,6 +121,9 @@ class DataVendorQuandl(DataVendor):
                                         trim_end=market_data_request.finish_date)
 
                 break
+            except SyntaxError:
+                logger.error("The tickers %s do not exist on Quandl." % market_data_request.tickers)
+                break
             except Exception as e:
                 trials = trials + 1
                 logger.info("Attempting... " + str(trials) + " request to download from Quandl due to following error: " + str(e))
@@ -385,6 +388,8 @@ class DataVendorONS(DataVendor):
 
 #######################################################################################################################
 
+import pandas as pd
+
 class DataVendorBOE(DataVendor):
 
     def __init__(self):
@@ -397,33 +402,21 @@ class DataVendorBOE(DataVendor):
 
         logger.info("Request BOE data")
 
+
         data_frame = self.download_daily(market_data_request_vendor)
 
-        if data_frame is None or data_frame.index is []: return None
+        if data_frame is None or data_frame.index is []:
+            return None
 
         # convert from vendor to findatapy tickers/fields
         if data_frame is not None:
-            returned_tickers = data_frame.columns
-
-        if data_frame is not None:
-            # tidy up tickers into a format that is more easily translatable
-            # we can often get multiple fields returned (even if we don't ask for them!)
-            # convert to lower case
-            returned_fields = [(x.split(' - ')[1]).lower().replace(' ', '-') for x in returned_tickers]
-            returned_fields = [x.replace('value', 'close') for x in returned_fields]  # special case for close
-
-            returned_tickers = [x.replace('.', '/') for x in returned_tickers]
-            returned_tickers = [x.split(' - ')[0] for x in returned_tickers]
-
-            fields = self.translate_from_vendor_field(returned_fields, market_data_request)
-            tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
-
-            ticker_combined = []
-
-            for i in range(0, len(fields)):
-                ticker_combined.append(tickers[i] + "." + fields[i])
-
-            data_frame.columns = ticker_combined
+            if len(market_data_request.fields) == 1:
+                data_frame.columns = data_frame.columns.str.cat(
+                    market_data_request.fields * len(data_frame.columns), sep='.')
+            else:
+                logger.warning("Inconsistent number of fields and tickers.")
+                data_frame.columns = data_frame.columns.str.cat(
+                    market_data_request.fields, sep='.')
             data_frame.index.name = 'Date'
 
         logger.info("Completed request from BOE.")
@@ -436,17 +429,26 @@ class DataVendorBOE(DataVendor):
 
         data_frame = None
 
+        boe_url = ("http://www.bankofengland.co.uk/boeapps/iadb/fromshowcolumns.asp"
+                   "?csv.x=yes&Datefrom={start_date}&Dateto={end_date}"
+                   "&SeriesCodes={tickers}"
+                   "&CSVF=TN&UsingCodes=Y&VPD=Y&VFD=N")
+        start_time = market_data_request.start_date.strftime("%d/%b/%Y")
+        end_time = market_data_request.finish_date.strftime("%d/%b/%Y")
+
         while (trials < 5):
             try:
-                # TODO
-
+                data_frame = pd.read_csv(boe_url.format(start_date=start_time, end_date=end_time,
+                                                        tickers=','.join(market_data_request.tickers)),
+                                         index_col='DATE')
                 break
             except:
                 trials = trials + 1
                 logger.info("Attempting... " + str(trials) + " request to download from BOE")
 
         if trials == 5:
-            logger.error("Couldn't download from ONS after several attempts!")
+            logger.error("Couldn't download from BoE after several attempts!")
+
 
         return data_frame
 
@@ -471,17 +473,18 @@ class DataVendorYahoo(DataVendor):
 
         data_frame = self.download_daily(market_data_request_vendor)
 
-        if data_frame is None or data_frame.index is []: return None
+        if data_frame is None or data_frame.index is []:
+            return None
 
         # convert from vendor to findatapy tickers/fields
         if data_frame is not None:
             try:
-                data_frame.columns = ['/'.join(col) for col in data_frame.columns.values]
+                if len(market_data_request.tickers) > 1:
+                    data_frame.columns = ['/'.join(col) for col in data_frame.columns.values]
             except:
                 pass
 
             returned_tickers = data_frame.columns
-
         if data_frame is not None:
             # tidy up tickers into a format that is more easily translatable
             # we can often get multiple fields returned (even if we don't ask for them!)

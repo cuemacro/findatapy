@@ -198,7 +198,8 @@ class MarketDataRequest(object):
     @data_source.setter
     def data_source(self, data_source):
         try:
-            valid_data_source = ['ats', 'bloomberg', 'dukascopy', 'fred', 'gain', 'google', 'quandl', 'yahoo']
+            valid_data_source = ['ats', 'bloomberg', 'dukascopy', 'fred', 'gain', 'google', 'quandl', 'yahoo',
+                                 'boe']
 
             if not data_source in valid_data_source:
                 LoggerManager().getLogger(__name__).warning(data_source & " is not a defined data source.")
