@@ -168,13 +168,13 @@ class IOEngine(object):
                     r.flushall()
                 else:
                     # allow deletion of keys by pattern matching
-                    if "*" in fname:
-                        x = r.keys(fname)
 
-                        if len(x) > 0:
-                            r.delete(x)
+                    x = r.keys('*' + fname)
 
-                    r.delete(fname)
+                    if len(x) > 0:
+                        r.delete(x)
+
+                    # r.delete(fname)
 
             except Exception as e:
                 self.logger.warning("Cannot delete non-existent key " + fname + " in Redis: " + str(e))
@@ -217,7 +217,8 @@ class IOEngine(object):
     def write_time_series_cache_to_disk(self, fname, data_frame,
                                         engine='hdf5_fixed', append_data=False, db_server=DataConstants().db_server,
                                         db_port=DataConstants().db_port, username=None, password=None,
-                                        filter_out_matching=None, timeout=10):
+                                        filter_out_matching=None, timeout=10,
+                                        use_cache_compression=DataConstants().use_cache_compression):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
@@ -274,7 +275,15 @@ class IOEngine(object):
                     # now uses pyarrow
                     context = pa.default_serialization_context()
 
-                    r.set(fname, context.serialize(data_frame).to_buffer().to_pybytes())
+                    ser = context.serialize(data_frame).to_buffer()
+
+                    if use_cache_compression:
+                        comp = pa.compress(ser, codec='lz4', asbytes=True)
+                        siz = len(ser)  # siz = 3912
+
+                        r.set('comp_' + str(siz) + '_' + fname, comp)
+                    else:
+                        r.set(fname, ser.to_pybytes())
 
                 self.logger.info("Pushed " + fname + " to Redis")
             except Exception as e:
@@ -540,17 +549,31 @@ class IOEngine(object):
 
                 msg = None
 
-                try:
+                # for pyarrow
+                context = pa.default_serialization_context()
+
+                if True:
                     r = redis.StrictRedis(host=db_server, port=db_port, db=0)
 
-                    # msg = r.get(fname_single)
 
-                    # for pyarrow
-                    context = pa.default_serialization_context()
+                    # is there a compressed key?
+                    k = r.keys('comp_*_' + fname_single)
 
-                    msg = context.deserialize(r.get(fname_single))
+                    # if so, then it means that we have stored it as a compressed object
+                    if (len(k) == 1):
+                        k = k[0].decode('utf-8')
 
-                except:
+                        comp = r.get(k)
+
+                        siz = int(k.split('_')[1])
+                        dec = pa.decompress(comp, codec='lz4', decompressed_size=siz)
+
+                        msg = context.deserialize(dec)
+                    else:
+                        msg = context.deserialize(r.get(fname_single))
+                            #self.logger.warning("Key " + fname_single + " not in Redis cache?")
+
+                else:
                     self.logger.info("Cache not existent for " + fname_single + " in Redis")
 
                 if msg is None:

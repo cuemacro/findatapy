@@ -19,15 +19,19 @@ def test_redis_caching():
 
     io = IOEngine()
 
-    # Write DataFrame to Redis (using pyarrow format)
-    io.write_time_series_cache_to_disk('test_key', df, engine='redis', db_server=redis_server, db_port=redis_port)
+    use_cache_compression = [True, False]
 
-    # Read back DataFrame from Redis (using pyarrow format)
-    df_out = io.read_time_series_cache_from_disk('test_key', engine='redis', db_server=redis_server, db_port=redis_port)
+    for u in use_cache_compression:
+        # Write DataFrame to Redis (using pyarrow format)
+        io.write_time_series_cache_to_disk('test_key', df, engine='redis', db_server=redis_server, db_port=redis_port,
+                                           use_cache_compression=u)
 
-    pd.testing.assert_frame_equal(df, df_out)
+        # Read back DataFrame from Redis (using pyarrow format)
+        df_out = io.read_time_series_cache_from_disk('test_key', engine='redis', db_server=redis_server, db_port=redis_port)
+
+        pd.testing.assert_frame_equal(df, df_out)
 
 if __name__ == '__main__':
-    pytest.main()
+    # pytest.main()
 
-    # test_redis_caching()
+    test_redis_caching()

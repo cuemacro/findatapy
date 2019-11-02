@@ -28,6 +28,8 @@ def key_store(service_name):
     if key is None:
         key = input("Please enter the %s API key: " % service_name)
 
+        keyring.set_password(service_name, os.getlogin(), key)
+
     return key
 
 
@@ -50,6 +52,8 @@ class DataConstants(object):
     db_cache_server = '127.0.0.1'
     db_cache_port = '6379'
     write_cache_engine = 'redis'  # 'redis' or 'no_cache' means we don't use cache
+
+    use_cache_compression = True
 
     ###### FOR ALIAS TICKERS
     # config file for time series categories
