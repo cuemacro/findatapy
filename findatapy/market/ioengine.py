@@ -24,6 +24,13 @@ try:
 except:
     pass
 
+try:
+    import pyarrow as pa
+except:
+    pass
+
+import pyarrow as pa
+
 from openpyxl import load_workbook
 import os.path
 
@@ -261,9 +268,15 @@ class IOEngine(object):
                                       socket_connect_timeout=timeout)
 
                 if isinstance(data_frame, pandas.DataFrame):
-                    r.set(fname, data_frame.to_msgpack(compress='blosc'))
+                    # msgpack/blosc is deprecated
+                    # r.set(fname, data_frame.to_msgpack(compress='blosc'))
 
-                self.logger.debug("Pushed " + fname + " to Redis")
+                    # now uses pyarrow
+                    context = pa.default_serialization_context()
+
+                    r.set(fname, context.serialize(data_frame).to_buffer().to_pybytes())
+
+                self.logger.info("Pushed " + fname + " to Redis")
             except Exception as e:
                 self.logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
 
@@ -335,7 +348,7 @@ class IOEngine(object):
             # append data only works for HDF5 stored as tables (but this is much slower than fixed format)
             # removes duplicated entries at the end
             if append_data:
-                store = pandas.HDFStore(h5_filename, format=hdf5_format, complib="blosc", complevel=9)
+                store = pandas.HDFStore(h5_filename, format=hdf5_format, complib="zlib", complevel=9)
 
                 if ('intraday' in fname):
                     data_frame = data_frame.astype('float32')
@@ -367,7 +380,7 @@ class IOEngine(object):
                 except:
                     pass
 
-                store = pandas.HDFStore(h5_filename_temp, format=hdf5_format, complib="blosc", complevel=9)
+                store = pandas.HDFStore(h5_filename_temp, format=hdf5_format, complib="zlib", complevel=9)
 
                 if ('intraday' in fname):
                     data_frame = data_frame.astype('float32')
@@ -529,7 +542,13 @@ class IOEngine(object):
 
                 try:
                     r = redis.StrictRedis(host=db_server, port=db_port, db=0)
-                    msg = r.get(fname_single)
+
+                    # msg = r.get(fname_single)
+
+                    # for pyarrow
+                    context = pa.default_serialization_context()
+
+                    msg = context.deserialize(r.get(fname_single))
 
                 except:
                     self.logger.info("Cache not existent for " + fname_single + " in Redis")
@@ -537,10 +556,9 @@ class IOEngine(object):
                 if msg is None:
                     data_frame = None
                 else:
-
                     self.logger.info('Load Redis cache: ' + fname_single)
 
-                    data_frame = pandas.read_msgpack(msg)
+                    data_frame = msg # pandas.read_msgpack(msg)
 
             elif (engine == 'arctic'):
                 socketTimeoutMS = 2 * 1000

@@ -84,6 +84,11 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 02 Nov 2019
+    * Added BoE as a data source
+    * Removed blosc/msgpack (msgpack deprecated in pandas) and replaced with pyarrow for caching 
+    * Uses keyring library for API keys (unless specified in DataCred)
+    * Began to add tests for IO
 * 03 Oct 2019
     * Remove API key from cache
     * Remove timezone when storing in Arctic (can cause issues with later versions of Pandas)
