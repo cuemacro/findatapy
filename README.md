@@ -44,7 +44,7 @@ documented
 # Contributors
 
 Contributors are always welcome for finmarketpy, findatapy and chartpy. If you'd like to contribute, have a look at
-[Planned Features](PLANNED_FEATURES.md] for areas we're looking for help on. Or if you have any ideas for improvements
+[Planned Features](PLANNED_FEATURES.md) for areas we're looking for help on. Or if you have any ideas for improvements
 to the libriares please let us know too!
 
 # Gallery
@@ -54,7 +54,7 @@ To appear
 # Requirements
 
 Major requirements
-* Required: Python 3.4, 3.5
+* Required: Python 3.6
 * Required: pandas, numpy etc.
 * Recommended: blpapi - Bloomberg Python Open API
 * Recommended: chartpy - for funky interactive plots ([https://github.com/cuemacro/chartpy](https://github.com/cuemacro/chartpy)) and
@@ -68,7 +68,9 @@ For detailed installation instructions for chartpy, findatapy & finmarketpy and 
 [https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md](https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md). The tutorial includes details on how to setup your entire Python environment.
 
 You can install the library using the below. After installation:
-* Make sure you edit the DataConstants class for the correct Quandl API and Twitter API keys etc
+* Make sure you edit the dataconstants class for the correct Quandl API and Twitter API keys etc.
+* Or you can run set_api_keys.py script to set the API keys via storing in your keyring
+* Or you can create a datacred.py file which overwrites these keys
 
 ```
 pip install git+https://github.com/cuemacro/findatapy.git
@@ -84,11 +86,13 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 03 Nov 2019
+    * Added script to set API keys with keyring
 * 02 Nov 2019
     * Added BoE as a data source
     * Removed blosc/msgpack (msgpack deprecated in pandas) and replaced with pyarrow for caching 
     * Uses keyring library for API keys (unless specified in DataCred)
-    * Began to add tests for IO
+    * Began to add tests for IO and market data download
 * 03 Oct 2019
     * Remove API key from cache
     * Remove timezone when storing in Arctic (can cause issues with later versions of Pandas)

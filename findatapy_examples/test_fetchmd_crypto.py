@@ -4,11 +4,10 @@
 from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
 import datetime as dt
 
-
 def test_bitcoincharts():
 
     market = Market(market_data_generator=MarketDataGenerator())
-    md_request = MarketDataRequest(start_date='11 Nov 2015', finish_date='02 Feb 2018', cut='LOC',
+    md_request = MarketDataRequest(start_date='20 Dec 2017', finish_date='02 Feb 2018', cut='LOC',
                                    freq='tick', data_source='bitcoincharts', category='crypto',
                                    fields=['close', 'volume'], tickers=['XBTUSD_itbit'])
 
