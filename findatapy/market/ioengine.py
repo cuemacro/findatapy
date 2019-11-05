@@ -267,24 +267,28 @@ class IOEngine(object):
                 r = redis.StrictRedis(host=db_server, port=db_port, db=0, socket_timeout=timeout,
                                       socket_connect_timeout=timeout)
 
-                if isinstance(data_frame, pandas.DataFrame):
-                    # msgpack/blosc is deprecated
-                    # r.set(fname, data_frame.to_msgpack(compress='blosc'))
+                if data_frame is not None:
+                    if isinstance(data_frame, pandas.DataFrame):
+                        # msgpack/blosc is deprecated
+                        # r.set(fname, data_frame.to_msgpack(compress='blosc'))
 
-                    # now uses pyarrow
-                    context = pa.default_serialization_context()
+                        # now uses pyarrow
+                        context = pa.default_serialization_context()
 
-                    ser = context.serialize(data_frame).to_buffer()
+                        ser = context.serialize(data_frame).to_buffer()
 
-                    if use_cache_compression:
-                        comp = pa.compress(ser, codec='lz4', asbytes=True)
-                        siz = len(ser)  # siz = 3912
+                        if use_cache_compression:
+                            comp = pa.compress(ser, codec='lz4', asbytes=True)
+                            siz = len(ser)  # siz = 3912
 
-                        r.set('comp_' + str(siz) + '_' + fname, comp)
-                    else:
-                        r.set(fname, ser.to_pybytes())
+                            r.set('comp_' + str(siz) + '_' + fname, comp)
+                        else:
+                            r.set(fname, ser.to_pybytes())
 
-                self.logger.info("Pushed " + fname + " to Redis")
+                    self.logger.info("Pushed " + fname + " to Redis")
+                else:
+                    self.logger.info("Object " + fname + " is empty, not pushed to Redis.")
+
             except Exception as e:
                 self.logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
 
@@ -554,7 +558,6 @@ class IOEngine(object):
                 if True:
                     r = redis.StrictRedis(host=db_server, port=db_port, db=0)
 
-
                     # is there a compressed key?
                     k = r.keys('comp_*_' + fname_single)
 
@@ -569,7 +572,11 @@ class IOEngine(object):
 
                         msg = context.deserialize(dec)
                     else:
-                        msg = context.deserialize(r.get(fname_single))
+                        msg = r.get(fname_single)
+
+                        print(fname_single)
+                        if msg is not None:
+                            msg = context.deserialize(msg)
                             #self.logger.warning("Key " + fname_single + " not in Redis cache?")
 
                 else:
