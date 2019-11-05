@@ -24,12 +24,11 @@ try:
 except:
     pass
 
+# pyarrow necessary for caching
 try:
     import pyarrow as pa
 except:
     pass
-
-import pyarrow as pa
 
 from openpyxl import load_workbook
 import os.path
