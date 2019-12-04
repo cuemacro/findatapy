@@ -23,7 +23,13 @@ import os
 import keyring
 
 def key_store(service_name):
-    key = keyring.get_password(service_name, os.getlogin())
+    key = None
+
+    # this will fail on some cloud notebook platforms so put in try/except loop
+    try:
+        key = keyring.get_password(service_name, os.getlogin())
+    except:
+        pass
 
     # set the keys by running set_api_keys.py file!
 
