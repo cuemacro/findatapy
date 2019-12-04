@@ -87,7 +87,7 @@ In findatapy/examples you will find several demos
 # Coding log
 
 * 04 Dec 2019
-    * Allow usage on Azure Notebooks, by removing keyring dependency
+    * Allow usage on Azure Notebooks, by making keyring dependency optional
 * 03 Nov 2019
     * Added script to set API keys with keyring
 * 02 Nov 2019
