@@ -555,7 +555,7 @@ class IOEngine(object):
                 # for pyarrow
                 context = pa.default_serialization_context()
 
-                if True:
+                try:
                     r = redis.StrictRedis(host=db_server, port=db_port, db=0)
 
                     # is there a compressed key?
@@ -579,7 +579,7 @@ class IOEngine(object):
                             msg = context.deserialize(msg)
                             #self.logger.warning("Key " + fname_single + " not in Redis cache?")
 
-                else:
+                except:
                     self.logger.info("Cache not existent for " + fname_single + " in Redis")
 
                 if msg is None:

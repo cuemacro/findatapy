@@ -86,6 +86,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 16 Dec 2019
+    * Fix problem with missing Redis dependency when reading from market
 * 04 Dec 2019
     * Allow usage on Azure Notebooks, by making keyring dependency optional
 * 03 Nov 2019
