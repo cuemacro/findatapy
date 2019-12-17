@@ -86,6 +86,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 17 Dec 2019
+    * Fix issue with Redis cache if two similar elements cached (takes the last now)
 * 16 Dec 2019
     * Fix problem with missing Redis dependency when reading from market
 * 04 Dec 2019

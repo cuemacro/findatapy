@@ -562,8 +562,9 @@ class IOEngine(object):
                     k = r.keys('comp_*_' + fname_single)
 
                     # if so, then it means that we have stored it as a compressed object
-                    if (len(k) == 1):
-                        k = k[0].decode('utf-8')
+                    # if have more than 1 element, take the last (which will be the latest to be added)
+                    if (len(k) >= 1):
+                        k = k[-1].decode('utf-8')
 
                         comp = r.get(k)
 
