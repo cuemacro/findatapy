@@ -76,6 +76,29 @@ You can install the library using the below. After installation:
 pip install git+https://github.com/cuemacro/findatapy.git
 ```
 
+# Couldn't push MarketDataRequest message
+
+You might often get an error like the below, when you are downloading market data with
+findatapy, and you don't have Redis installed.
+
+```
+Couldn't push MarketDataRequest
+```
+
+findatapy includes an in-memory caching mechanism, which uses Redis
+a key/value in-memory store. The idea is that if we do exactly the same data download
+call with the same parameters of a MarketDataRequest it will check this volatile cache
+first, before going out to our external data provider (eg. Quandl).
+
+Note, that Redis is usually set up as volatile cache, so once your computer is turned off, this cache
+will be lost.
+
+If Redis is not installed, this caching will fail and you'll
+get this error. However, all other functionality aside from the caching will be fine. All
+findatapy will do is to always go externally to download market data. Redis is available for Linux.
+There is also an unsupported (older) Windows version available, which I've found works fine, 
+although it lacks some functionality of later Redis versions.
+
 # findatapy examples
 
 In findatapy/examples you will find several demos
@@ -86,6 +109,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 30 Dec 2019
+    * Added message about lack of Redis
 * 17 Dec 2019
     * Fix issue with Redis cache if two similar elements cached (takes the last now)
 * 16 Dec 2019
