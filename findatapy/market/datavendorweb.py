@@ -1334,10 +1334,10 @@ class DataVendorDukasCopy(DataVendor):
         time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
 
         do_retrieve_df = True  # convert inside loop?
-        multi_threaded = True # multithreading (can sometimes get errors but it's fine when retried)
+        multi_threaded = True  # multithreading (can sometimes get errors but it's fine when retried, avoid using
 
         if multi_threaded:
-            # use threading (not process interface)
+            # use threading (not multiprocess interface, which has issues with dukascopy download)
             pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['dukascopy'])
             results = [pool.apply_async(self.fetch_file, args=(time, symbol, do_retrieve_df,)) for time in time_list]
             tick_list = [p.get() for p in results]
@@ -1347,9 +1347,9 @@ class DataVendorDukasCopy(DataVendor):
 
         else:
             # fully single threaded
-
             tick_list = []
 
+            time_list_list = list(time_list)
             for time in time_list:
                 tick_list.append(self.fetch_file(time, symbol, do_retrieve_df=do_retrieve_df))
 
@@ -1424,6 +1424,8 @@ class DataVendorDukasCopy(DataVendor):
         logger = LoggerManager.getLogger(__name__)
         logger.debug("Loading URL " + tick_url)
 
+        import time
+
         # try up to 5 times to download
         while i < 20:
             try:
@@ -1438,8 +1440,7 @@ class DataVendorDukasCopy(DataVendor):
             except Exception as e:
                 logger.warning("Problem downloading.. " + str(e))
                 i = i + 1
-                import time
-                time.sleep(i * 2)
+                time.sleep(i * 3)
 
         if (tick_request_content is None):
             logger.warning("Failed to download from " + tick_url)
@@ -1482,12 +1483,19 @@ class DataVendorDukasCopy(DataVendor):
         return df
 
     def hour_range(self, start_date, end_date):
-          delta_t = end_date - start_date
+        delta_t = end_date - start_date
 
-          delta_hours = (delta_t.days *  24.0) + (delta_t.seconds / 3600.0)
+        delta_hours = (delta_t.days *  24.0) + (delta_t.seconds / 3600.0)
 
-          for n in range(int (delta_hours)):
-              yield start_date + timedelta(0, 0, 0, 0, 0, n) # Hours
+        out_times = []
+
+        for n in range(int(delta_hours)):
+            out_times.append(start_date + timedelta(0, 0, 0, 0, 0, n)) # Hours
+
+        if out_times == []:
+            out_times.append(start_date)
+
+        return out_times
 
     def parse_tick_data(self, data, epoch):
         import struct

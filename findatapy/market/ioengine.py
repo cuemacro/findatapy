@@ -30,6 +30,11 @@ try:
 except:
     pass
 
+try:
+    import redis
+except:
+    pass
+
 from openpyxl import load_workbook
 import os.path
 
@@ -155,7 +160,6 @@ class IOEngine(object):
             # convert invalid characters to substitutes (which Bcolz can't deal with)
             pass
         elif (engine == 'redis'):
-            import redis
 
             fname = os.path.basename(fname).replace('.', '_')
 
@@ -259,7 +263,6 @@ class IOEngine(object):
             shutil.rmtree(bcolzpath, ignore_errors=True)
             zlens = bcolz.ctable.fromdataframe(data_frame, rootdir=bcolzpath)
         elif (engine == 'redis'):
-            import redis
 
             fname = os.path.basename(fname).replace('.', '_')
 
@@ -546,19 +549,17 @@ class IOEngine(object):
                     data_frame = None
 
             elif (engine == 'redis'):
-                import redis
-
                 fname_single = os.path.basename(fname_single).replace('.', '_')
 
                 msg = None
 
-                # for pyarrow
-                context = pa.default_serialization_context()
-
                 try:
+                    # for pyarrow
+                    context = pa.default_serialization_context()
+
                     r = redis.StrictRedis(host=db_server, port=db_port, db=0)
 
-                    # is there a compressed key?
+                    # is there a compressed key stored?)
                     k = r.keys('comp_*_' + fname_single)
 
                     # if so, then it means that we have stored it as a compressed object
@@ -575,13 +576,13 @@ class IOEngine(object):
                     else:
                         msg = r.get(fname_single)
 
-                        print(fname_single)
+                        # print(fname_single)
                         if msg is not None:
                             msg = context.deserialize(msg)
-                            #self.logger.warning("Key " + fname_single + " not in Redis cache?")
+                            # self.logger.warning("Key " + fname_single + " not in Redis cache?")
 
-                except:
-                    self.logger.info("Cache not existent for " + fname_single + " in Redis")
+                except Exception as e:
+                    self.logger.info("Cache not existent for " + fname_single + " in Redis: " + str(e))
 
                 if msg is None:
                     data_frame = None

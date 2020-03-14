@@ -238,23 +238,27 @@ class FXCrossFactory(object):
 
                 cross_vals = market_data_generator.fetch_market_data(market_data_request)
 
-                # if user only wants 'close' calculate that from the bid/ask fields
-                if fields == ['close']:
-                    cross_vals = cross_vals[[cr + '.bid', cr + '.ask']].mean(axis=1)
-                    cross_vals.columns = [cr + '.close']
-                else:
-                    filter = Filter()
+                if cross_vals is not None:
 
-                    filter_columns = [cr + '.' + f for f in fields]
-                    cross_vals = filter.filter_time_series_by_columns(filter_columns, cross_vals)
+                    # if user only wants 'close' calculate that from the bid/ask fields
+                    if fields == ['close']:
+                        cross_vals = cross_vals[[cr + '.bid', cr + '.ask']].mean(axis=1)
+                        cross_vals.columns = [cr + '.close']
+                    else:
+                        filter = Filter()
+
+                        filter_columns = [cr + '.' + f for f in fields]
+                        cross_vals = filter.filter_time_series_by_columns(filter_columns, cross_vals)
 
             if data_frame_agg is None:
                 data_frame_agg = cross_vals
             else:
                 data_frame_agg = data_frame_agg.join(cross_vals, how='outer')
 
-        # strip the nan elements
-        data_frame_agg = data_frame_agg.dropna()
+        if data_frame_agg is not None:
+            # strip the nan elements
+            data_frame_agg = data_frame_agg.dropna()
+
         return data_frame_agg
 
 

@@ -109,6 +109,10 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 14 Mar 2020
+    * Fixed bug with downloading short intervals of Dukascopy tick data
+* 20 Feb 2020
+    * Made Redis optional dependency
 * 30 Dec 2019
     * Added message about lack of Redis
 * 17 Dec 2019

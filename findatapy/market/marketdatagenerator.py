@@ -204,18 +204,21 @@ class MarketDataGenerator(object):
             # pad columns a second time (is this necessary to do here again?)
             # TODO only do this for not daily data?
             try:
-                data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)\
-                    .dropna(how = 'all')
+                if data_frame_agg is not None:
+                    data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)\
+                        .dropna(how = 'all')
 
-                # resample data using pandas if specified in the MarketDataRequest
-                if market_data_request.resample is not None:
-                    if 'last' in market_data_request.resample_how:
-                        data_frame_agg = data_frame_agg.resample(market_data_request.resample).last()
-                    elif 'first' in market_data_request.resample_how:
-                        data_frame_agg = data_frame_agg.resample(market_data_request.resample).first()
+                    # resample data using pandas if specified in the MarketDataRequest
+                    if market_data_request.resample is not None:
+                        if 'last' in market_data_request.resample_how:
+                            data_frame_agg = data_frame_agg.resample(market_data_request.resample).last()
+                        elif 'first' in market_data_request.resample_how:
+                            data_frame_agg = data_frame_agg.resample(market_data_request.resample).first()
 
-                    if 'dropna' in market_data_request.resample_how:
-                        data_frame_agg = data_frame_agg.dropna(how = 'all')
+                        if 'dropna' in market_data_request.resample_how:
+                            data_frame_agg = data_frame_agg.dropna(how = 'all')
+                else:
+                    self.logger.warn("No data returned for " + str(market_data_request.tickers))
 
                 return data_frame_agg
             except Exception as e:

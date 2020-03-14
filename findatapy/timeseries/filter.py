@@ -503,7 +503,10 @@ class Filter(object):
         -------
         DataFrame
         """
-        return data_frame[columns]
+        if data_frame is not None and columns is not None:
+            return data_frame[columns]
+
+        return None
 
     def pad_time_series_columns(self, columns, data_frame):
         """Selects time series from a dataframe and if necessary creates empty columns

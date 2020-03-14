@@ -32,6 +32,6 @@ def test_redis_caching():
         pd.testing.assert_frame_equal(df, df_out)
 
 if __name__ == '__main__':
-    pytest.main()
+    # pytest.main()
 
-    # test_redis_caching()
+    test_redis_caching()
