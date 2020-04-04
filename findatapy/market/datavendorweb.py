@@ -1234,6 +1234,8 @@ from findatapy.market.datavendor import DataVendor
 # for logging and constants
 from findatapy.util import ConfigManager, DataConstants, LoggerManager
 
+constants = DataConstants()
+
 class DataVendorDukasCopy(DataVendor):
     """Class for downloading tick data from DukasCopy (note: past month of data is not available). Selecting very large
     histories is not recommended as you will likely run out memory given the amount of data requested.
@@ -1334,16 +1336,29 @@ class DataVendorDukasCopy(DataVendor):
         time_list = self.hour_range(market_data_request.start_date, market_data_request.finish_date)
 
         do_retrieve_df = True  # convert inside loop?
-        multi_threaded = True  # multithreading (can sometimes get errors but it's fine when retried, avoid using
+        multi_threaded = constants.dukascopy_multithreading # multithreading (can sometimes get errors but it's fine when retried, avoid using)
 
         if multi_threaded:
-            # use threading (not multiprocess interface, which has issues with dukascopy download)
-            pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['dukascopy'])
-            results = [pool.apply_async(self.fetch_file, args=(time, symbol, do_retrieve_df,)) for time in time_list]
-            tick_list = [p.get() for p in results]
 
-            pool.close()
-            pool.join()
+            completed = False
+
+            for i in range(0, 5):
+                # Use threading (not multiprocess interface, which has issues with dukascopy download)
+                pool = SwimPool().create_pool('thread', constants.market_thread_no['dukascopy'])
+                results = [pool.apply_async(self.fetch_file, args=(time, symbol, do_retrieve_df,)) for time in time_list]
+
+                logger.debug("Attempting Dukascopy download " + str(i) + "... ")
+                tick_list = [p.get(timeout=constants.timeout_downloader['dukascopy']) for p in results]
+
+                pool.close()
+                pool.join()
+
+                completed = True
+
+                break
+
+            if not(completed):
+                logger.warning("Failed to download from Dukascopy after several attempts")
 
         else:
             # fully single threaded
@@ -1394,11 +1409,11 @@ class DataVendorDukasCopy(DataVendor):
                 hour = str(time.hour).rjust(2, '0')
             )
 
-        tick = self.fetch_tick(DataConstants().dukascopy_base_url + tick_path)
+        tick = self.fetch_tick(constants.dukascopy_base_url + tick_path)
 
         #print(tick_path)
-        if DataConstants().dukascopy_write_temp_tick_disk:
-            out_path = DataConstants().temp_folder + "/dkticks/" + tick_path
+        if constants.dukascopy_write_temp_tick_disk:
+            out_path = constants.temp_folder + "/dkticks/" + tick_path
 
             if not os.path.exists(out_path):
                 if not os.path.exists(os.path.dirname(out_path)):
@@ -1641,7 +1656,7 @@ class DataVendorFXCM(DataVendor):
         week_list = self.week_range(market_data_request.start_date, market_data_request.finish_date)
         from findatapy.util import SwimPool
 
-        pool = SwimPool().create_pool('thread', DataConstants().market_thread_no['fxcm'])
+        pool = SwimPool().create_pool('thread', constants.market_thread_no['fxcm'])
         results = [pool.apply_async(self.fetch_file, args=(week, symbol)) for week in week_list]
         df_list = [p.get() for p in results]
         pool.close()
@@ -1659,7 +1674,7 @@ class DataVendorFXCM(DataVendor):
 
         tick_path = symbol + '/' + str(year) + '/' + str(week) + self.url_suffix
 
-        return self.retrieve_df(DataConstants().fxcm_base_url + tick_path)
+        return self.retrieve_df(constants.fxcm_base_url + tick_path)
 
     def parse_datetime(self):
         pass
@@ -2407,7 +2422,7 @@ class DataVendorFXCMPY(DataVendor):
     def download(self, market_data_request):
         trials = 0
 
-        con = fxcmpy.fxcmpy(access_token=DataConstants().fxcm_API, log_level='error')
+        con = fxcmpy.fxcmpy(access_token=constants.fxcm_API, log_level='error')
 
         data_frame = None
 

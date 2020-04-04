@@ -114,6 +114,11 @@ class DataConstants(object):
                                      'dukascopy'   : 8,
                                      'fxcm'        : 4}
 
+    # seconds for timeout
+    timeout_downloader = {'dukascopy' : 20}
+
+    dukascopy_multithreading = True
+
     # we can override the thread count and drop back to single thread for certain market data downloads, as can have issues with
     # quite large daily datasets from Bloomberg (and other data vendors) when doing multi-threading, so can override and use
     # single threading on these (and also split into several chunks)

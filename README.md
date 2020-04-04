@@ -109,6 +109,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 04 Apr 2020
+    * Added timeout for Dukascopy download
 * 14 Mar 2020
     * Fixed bug with downloading short intervals of Dukascopy tick data
 * 20 Feb 2020
