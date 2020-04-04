@@ -22,7 +22,6 @@ import copy
 
 data_constants = DataConstants()
 
-
 class MarketDataRequest(object):
     """Provides parameters for requesting market data.
 
@@ -79,7 +78,8 @@ class MarketDataRequest(object):
                  vendor_tickers=None, vendor_fields=None,
                  environment="backtest", trade_side='trade', expiry_date=None, resample=None, resample_how='last',
                  md_request=None, abstract_curve=None, quandl_api_key=data_constants.quandl_api_key,
-                 fred_api_key=data_constants.fred_api_key, alpha_vantage_api_key=data_constants.alpha_vantage_api_key, 
+                 fred_api_key=data_constants.fred_api_key, alpha_vantage_api_key=data_constants.alpha_vantage_api_key,
+                 push_to_cache=True,
                  overrides={}
                  ):
 
@@ -122,6 +122,7 @@ class MarketDataRequest(object):
                 self.fred_api_key = copy.deepcopy(md_request.fred_api_key)
                 self.alpha_vantage_api_key = copy.deepcopy(md_request.alpha_vantage_api_key)
                 self.overrides = copy.deepcopy(md_request.overrides)
+                self.push_to_cache = copy.deepcopy(md_request.push_to_cache)
 
                 self.tickers = copy.deepcopy(md_request.tickers)  # need this after category in case have wildcard
         else:
@@ -155,6 +156,7 @@ class MarketDataRequest(object):
             self.alpha_vantage_api_key = alpha_vantage_api_key
 
             self.overrides = overrides
+            self.push_to_cache = push_to_cache
 
             self.tickers = tickers
 
@@ -538,6 +540,14 @@ class MarketDataRequest(object):
     @overrides.setter
     def overrides(self, overrides):
         self.__overrides = overrides
+        
+    @property
+    def push_to_cache(self):
+        return self.__push_to_cache
+
+    @push_to_cache.setter
+    def push_to_cache(self, push_to_cache):
+        self.__push_to_cache = push_to_cache
 
     def _flatten_list(self, list_of_lists):
         """Flattens list, particularly useful for combining baskets

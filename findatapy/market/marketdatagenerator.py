@@ -21,6 +21,8 @@ from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Filter, Calculations
 from findatapy.util import DataConstants, LoggerManager, ConfigManager, SwimPool
 
+constants = DataConstants()
+
 class MarketDataGenerator(object):
     """Returns market data time series by directly calling market data sources.
 
@@ -272,7 +274,7 @@ class MarketDataGenerator(object):
 
         # single threaded version
         # handle intraday ticker calls separately one by one
-        if len(market_data_request.tickers) == 1 or DataConstants().market_thread_no['other'] == 1:
+        if len(market_data_request.tickers) == 1 or constants.market_thread_no['other'] == 1:
             for ticker in market_data_request.tickers:
                 market_data_request_single = copy.copy(market_data_request)
                 market_data_request_single.tickers = ticker
@@ -417,13 +419,13 @@ class MarketDataGenerator(object):
 
         data_frame_agg = None
 
-        thread_no = DataConstants().market_thread_no['other']
+        thread_no = constants.market_thread_no['other']
 
-        if market_data_request_list[0].data_source in DataConstants().market_thread_no:
-            thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
+        if market_data_request_list[0].data_source in constants.market_thread_no:
+            thread_no = constants.market_thread_no[market_data_request_list[0].data_source]
 
         if thread_no > 0:
-            pool = SwimPool().create_pool(thread_technique = DataConstants().market_thread_technique, thread_no=thread_no)
+            pool = SwimPool().create_pool(thread_technique = constants.market_thread_technique, thread_no=thread_no)
 
             # open the market data downloads in their own threads and return the results
             result = pool.map_async(self.fetch_single_time_series, market_data_request_list)
@@ -471,16 +473,16 @@ class MarketDataGenerator(object):
 
         is_key_overriden = False
 
-        for k in DataConstants().override_multi_threading_for_categories:
+        for k in constants.override_multi_threading_for_categories:
             if k in key:
                 is_key_overriden = True
                 break
 
         # by default use other
-        thread_no = DataConstants().market_thread_no['other']
+        thread_no = constants.market_thread_no['other']
 
-        if market_data_request.data_source in DataConstants().market_thread_no:
-            thread_no = DataConstants().market_thread_no[market_data_request.data_source]
+        if market_data_request.data_source in constants.market_thread_no:
+            thread_no = constants.market_thread_no[market_data_request.data_source]
 
         # daily data does not include ticker in the key, as multiple tickers in the same file
         if thread_no == 1:
@@ -531,4 +533,4 @@ class MarketDataGenerator(object):
         return market_data_request
 
     def create_cache_file_name(self, filename):
-        return DataConstants().folder_time_series_data + "/" + filename
+        return constants.folder_time_series_data + "/" + filename

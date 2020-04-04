@@ -40,7 +40,6 @@ def key_store(service_name):
 
     return key
 
-
 class DataConstants(object):
 
     ###### SHOULD AUTODETECT FOLDER

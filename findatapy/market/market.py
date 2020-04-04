@@ -14,6 +14,8 @@ __author__ = 'saeedamen' # Saeed Amen
 
 from findatapy.util import DataConstants
 from findatapy.market.ioengine import SpeedCache
+
+constants = DataConstants()
 # from deco import *
 
 class Market(object):
@@ -26,10 +28,10 @@ class Market(object):
 
     def __init__(self, market_data_generator = None, md_request = None):
         if market_data_generator is None:
-            if DataConstants().default_market_data_generator == "marketdatagenerator":
+            if constants.default_market_data_generator == "marketdatagenerator":
                 from findatapy.market import MarketDataGenerator
                 market_data_generator = MarketDataGenerator()
-            elif DataConstants().default_market_data_generator == 'cachedmarketdatagenerator':
+            elif constants.default_market_data_generator == 'cachedmarketdatagenerator':
                 # NOT CURRENTLY IMPLEMENTED FOR FUTURE USE
                 from finaddpy.market import CachedMarketDataGenerator
                 market_data_generator = CachedMarketDataGenerator()
@@ -181,7 +183,8 @@ class Market(object):
             data_frame = self.filter.remove_duplicate_indices(data_frame)
 
         # push into cache
-        self.speed_cache.put_dataframe(key, data_frame)
+        if md_request.push_to_cache:
+            self.speed_cache.put_dataframe(key, data_frame)
 
         return data_frame
 
@@ -302,7 +305,7 @@ class FXCrossFactory(object):
         data_frame_agg = []
 
         # depends on the nature of operation as to whether we should use threading or multiprocessing library
-        if DataConstants().market_thread_technique is "thread":
+        if constantsmarket_thread_technique is "thread":
             from multiprocessing.dummy import Pool
         else:
             # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
@@ -310,10 +313,10 @@ class FXCrossFactory(object):
             # note: currently not very stable
             from multiprocessing_on_dill import Pool
 
-        thread_no = DataConstants().market_thread_no['other']
+        thread_no = constants.market_thread_no['other']
 
-        if market_data_request_list[0].data_source in DataConstants().market_thread_no:
-            thread_no = DataConstants().market_thread_no[market_data_request_list[0].data_source]
+        if market_data_request_list[0].data_source in constants.market_thread_no:
+            thread_no = constants.market_thread_no[market_data_request_list[0].data_source]
 
         # fudge, issue with multithreading and accessing HDF5 files
         # if self.market_data_generator.__class__.__name__ == 'CachedMarketDataGenerator':
