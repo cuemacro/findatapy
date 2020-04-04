@@ -1445,7 +1445,7 @@ class DataVendorDukasCopy(DataVendor):
 
         import time
 
-        # try up to 5 times to download
+        # Try up to 5 times to download
         while i < 20:
             try:
                 tick_request = requests.get(tick_url, timeout = 10)
@@ -1453,8 +1453,8 @@ class DataVendorDukasCopy(DataVendor):
                 tick_request_content = tick_request.content
                 tick_request.close()
 
-                # can sometimes get back an error HTML page, in which case retry
-                if 'error' not in str(tick_request_content):
+                # Can sometimes get back an error HTML page, in which case retry
+                if 'error' not in str(tick_request_content.decode("latin1")):
                     break
             except Exception as e:
                 logger.warning("Problem downloading.. " + str(e))
