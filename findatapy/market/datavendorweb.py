@@ -1343,19 +1343,23 @@ class DataVendorDukasCopy(DataVendor):
             completed = False
 
             for i in range(0, 5):
-                # Use threading (not multiprocess interface, which has issues with dukascopy download)
-                pool = SwimPool().create_pool('thread', constants.market_thread_no['dukascopy'])
-                results = [pool.apply_async(self.fetch_file, args=(time, symbol, do_retrieve_df,)) for time in time_list]
 
-                logger.debug("Attempting Dukascopy download " + str(i) + "... ")
-                tick_list = [p.get(timeout=constants.timeout_downloader['dukascopy']) for p in results]
+                try:
+                    # Use threading (not multiprocess interface, which has issues with dukascopy download)
+                    pool = SwimPool().create_pool('thread', constants.market_thread_no['dukascopy'])
+                    results = [pool.apply_async(self.fetch_file, args=(time, symbol, do_retrieve_df,)) for time in time_list]
 
-                pool.close()
-                pool.join()
+                    logger.debug("Attempting Dukascopy download " + str(i) + "... ")
+                    tick_list = [p.get(timeout=constants.timeout_downloader['dukascopy']) for p in results]
 
-                completed = True
+                    pool.close()
+                    pool.join()
 
-                break
+                    completed = True
+
+                    break
+                except:
+                    logger.warning("Didn't download on " + str(i) + " attempt... ")
 
             if not(completed):
                 logger.warning("Failed to download from Dukascopy after several attempts")
