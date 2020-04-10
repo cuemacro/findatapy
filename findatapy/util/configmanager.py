@@ -290,7 +290,6 @@ class ConfigManager(object):
         return ConfigManager._dict_time_series_fields_list_library_to_vendor[
             source + '.' + field]
 
-
 ## test function
 if __name__ == '__main__':
     logger = LoggerManager().getLogger(__name__)

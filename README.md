@@ -109,6 +109,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 06 Apr 2020
+    * Minor changes to ConfigManager
 * 05 Apr 2020
     * Added push to cache parameter for MarketDataRequest
 * 04 Apr 2020
