@@ -109,6 +109,8 @@ In findatapy/examples you will find several demos
 
 # Coding log
 
+* 07 Apr 2020
+    * Bug fix in constants
 * 06 Apr 2020
     * Minor changes to ConfigManager
 * 05 Apr 2020

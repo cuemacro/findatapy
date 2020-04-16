@@ -305,7 +305,7 @@ class FXCrossFactory(object):
         data_frame_agg = []
 
         # depends on the nature of operation as to whether we should use threading or multiprocessing library
-        if constantsmarket_thread_technique is "thread":
+        if constants.market_thread_technique is "thread":
             from multiprocessing.dummy import Pool
         else:
             # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
