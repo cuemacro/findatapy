@@ -1,4 +1,4 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = 'saeedamen'  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
@@ -24,9 +24,10 @@ class RetStats(object):
 
     """
 
-    def __init__(self, returns_df = None, ann_factor = None):
+    def __init__(self, returns_df=None, ann_factor=None, resample_freq=None):
         self._returns_df = returns_df
         self._ann_factor = ann_factor
+        self._resample_freq = resample_freq
 
         self._rets = None
         self._vol = None
@@ -81,7 +82,7 @@ class RetStats(object):
 
         self.calculate_ret_stats(calculations.calculate_returns(prices_df), ann_factor)
 
-    def calculate_ret_stats(self, returns_df = None, ann_factor = None):
+    def calculate_ret_stats(self, returns_df=None, ann_factor=None):
         """Calculates return statistics for an asset's returns including IR, vol, ret and drawdowns
 
         Parameters
@@ -98,6 +99,9 @@ class RetStats(object):
 
         if returns_df is None: returns_df = self._returns_df
         if ann_factor is None: ann_factor = self._ann_factor
+
+        if self._resample_freq is not None:
+            returns_df = returns_df.resample(self._resample_freq).sum()
 
         # TODO work on optimizing this method
         self._rets = returns_df.mean(axis=0) * ann_factor
@@ -204,6 +208,6 @@ class RetStats(object):
                              + "% Vol = " + str(round(self._vol[i] * 100, 1))
                              + "% IR = " + str(round(self._inforatio[i], 2))
                              + " Dr = " + str(round(self._dd[i] * 100, 1))
-                             + "% Kurt = " + str(round(self._kurtosis[i], 2)))
+                             + "%") # Kurt = " + str(round(self._kurtosis[i], 2)))
 
         return stat_list

@@ -14,6 +14,7 @@ __author__ = 'saeedamen' # Saeed Amen
 
 import logging
 import logging.config
+
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.singleton import Singleton
 

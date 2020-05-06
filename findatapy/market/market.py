@@ -1,4 +1,4 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = 'saeedamen'  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
@@ -16,6 +16,7 @@ from findatapy.util import DataConstants
 from findatapy.market.ioengine import SpeedCache
 
 constants = DataConstants()
+
 # from deco import *
 
 class Market(object):
@@ -23,10 +24,9 @@ class Market(object):
 
     Also contains several other classes, which are for asset specific instances, for example for generating FX spot time series
     or FX volatility surfaces.
-
     """
 
-    def __init__(self, market_data_generator = None, md_request = None):
+    def __init__(self, market_data_generator=None, md_request=None):
         if market_data_generator is None:
             if constants.default_market_data_generator == "marketdatagenerator":
                 from findatapy.market import MarketDataGenerator
@@ -41,7 +41,7 @@ class Market(object):
         self.filter = Filter()
         self.md_request = md_request
 
-    def fetch_market(self, md_request = None):
+    def fetch_market(self, md_request=None):
         """Fetches market data for specific tickers
 
         The user does not need to know to the low level API for each data provider works. The MarketDataRequest
@@ -75,7 +75,7 @@ class Market(object):
 
         data_frame = None
 
-        # if internet_load has been specified don't bother going to cache (might end up calling lower level cache though
+        # If internet_load has been specified don't bother going to cache (might end up calling lower level cache though
         # through MarketDataGenerator
         if 'cache_algo' in md_request.cache_algo:
             data_frame = self.speed_cache.get_dataframe(key)
@@ -83,7 +83,7 @@ class Market(object):
         if data_frame is not None:
             return data_frame
 
-        # special cases when a predefined category has been asked
+        # Special cases when a predefined category has been asked
         if md_request.category is not None:
 
             if (md_request.category == 'fx-spot-volume' and md_request.data_source == 'quandl'):
@@ -92,10 +92,10 @@ class Market(object):
                 fxcls = FXCLSVolume(market_data_generator=self.market_data_generator)
 
                 data_frame = fxcls.get_fx_volume(md_request.start_date, md_request.finish_date, md_request.tickers,
-                                           cut="LOC", data_source="quandl",
-                       cache_algo=md_request.cache_algo)
+                                                 cut="LOC", data_source="quandl",
+                                                 cache_algo=md_request.cache_algo)
 
-            # for FX we have special methods for returning cross rates or total returns
+            # For FX we have special methods for returning cross rates or total returns
             if (md_request.category == 'fx' or md_request.category == 'fx-tot') and md_request.tickers is not None:
                 fxcf = FXCrossFactory(market_data_generator=self.market_data_generator)
 
@@ -107,11 +107,12 @@ class Market(object):
                 if (md_request.freq != 'tick' and md_request.fields == ['close']) or \
                         (md_request.freq == 'tick' and md_request.data_source in ['dukascopy', 'fxcm']):
                     data_frame = fxcf.get_fx_cross(md_request.start_date, md_request.finish_date, md_request.tickers,
-                        cut = md_request.cut, data_source = md_request.data_source, freq = md_request.freq,
-                        cache_algo=md_request.cache_algo, type = type,
-                        environment = md_request.environment, fields=md_request.fields)
+                                                   cut=md_request.cut, data_source=md_request.data_source,
+                                                   freq=md_request.freq,
+                                                   cache_algo=md_request.cache_algo, type=type,
+                                                   environment=md_request.environment, fields=md_request.fields)
 
-            # for implied volatility we can return the full surface
+            # For FX implied volatility we can return the full surface
             if (md_request.category == 'fx-implied-vol'):
                 if md_request.tickers is not None and md_request.freq == 'daily':
                     df = []
@@ -120,16 +121,18 @@ class Market(object):
 
                     for t in md_request.tickers:
                         if len(t) == 6:
-                            df.append(fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
-                                                              cut=md_request.cut, data_source=md_request.data_source, part=fxvf.part,
-                               cache_algo=md_request.cache_algo))
+                            df.append(
+                                fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
+                                                        cut=md_request.cut, data_source=md_request.data_source,
+                                                        part=fxvf.part,
+                                                        cache_algo=md_request.cache_algo))
 
                     if df != []:
                         data_frame = Calculations().pandas_outer_join(df)
 
-            # for FX vol market return all the market data necessarily for pricing options
+            # For FX vol market return all the market data necessarily for pricing options
             # which includes FX spot, volatility surface, forward points, deposit rates
-            if(md_request.category == 'fx-vol-market'):
+            if (md_request.category == 'fx-vol-market'):
                 if md_request.tickers is not None:
                     df = []
 
@@ -137,25 +140,32 @@ class Market(object):
                     fxvf = FXVolFactory(market_data_generator=self.market_data_generator)
                     rates = RatesFactory(market_data_generator=self.market_data_generator)
 
-                    # for each FX cross fetch the spot, vol and forward points
+                    # For each FX cross fetch the spot, vol and forward points
                     for t in md_request.tickers:
                         if len(t) == 6:
-                            df.append(fxcf.get_fx_cross(start=md_request.start_date, end=md_request.finish_date, cross=t,
-                                                        cut=md_request.cut, data_source=md_request.data_source, freq=md_request.freq,
-                                                        cache_algo=md_request.cache_algo, type='spot', environment=md_request.environment,
-                                                        fields=['close']))
+                            df.append(
+                                fxcf.get_fx_cross(start=md_request.start_date, end=md_request.finish_date, cross=t,
+                                                  cut=md_request.cut, data_source=md_request.data_source,
+                                                  freq=md_request.freq,
+                                                  cache_algo=md_request.cache_algo, type='spot',
+                                                  environment=md_request.environment,
+                                                  fields=['close']))
 
-                            df.append(fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
-                                                              cut=md_request.cut, data_source=md_request.data_source,
-                                                              part=fxvf.part,
-                                                              cache_algo=md_request.cache_algo))
+                            df.append(
+                                fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
+                                                        cut=md_request.cut, data_source=md_request.data_source,
+                                                        part=fxvf.part,
+                                                        cache_algo=md_request.cache_algo))
 
-                            df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
-                                                              cut=md_request.cut, data_source=md_request.data_source,
-                                                              cache_algo=md_request.cache_algo))
+                            df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t,
+                                                                  fxvf.tenor,
+                                                                  cut=md_request.cut,
+                                                                  data_source=md_request.data_source,
+                                                                  cache_algo=md_request.cache_algo))
 
-                    # lastly fetch the base depos
-                    df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date, ["USD", "EUR", "CHF", "GBP"], fxvf.tenor,
+                    # Lastly fetch the base depos
+                    df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date,
+                                                   ["USD", "EUR", "CHF", "GBP"], fxvf.tenor,
                                                    cut=md_request.cut, data_source=md_request.data_source,
                                                    cache_algo=md_request.cache_algo
                                                    ))
@@ -164,33 +174,35 @@ class Market(object):
                         data_frame = Calculations().pandas_outer_join(df)
 
             if md_request.abstract_curve is not None:
-                data_frame = md_request.abstract_curve.fetch_continuous_time_series\
+                data_frame = md_request.abstract_curve.fetch_continuous_time_series \
                     (md_request, self.market_data_generator)
 
             if (md_request.category == 'crypto'):
-                # add more features later
+                # Add more features later
                 data_frame = self.market_data_generator.fetch_market_data(md_request)
 
             # TODO add more special examples here for different asset classes
             # the idea is that we do all the market data downloading here, rather than elsewhere
 
-        # by default: pass the market data request to MarketDataGenerator
+        # By default: pass the market data request to MarketDataGenerator
         if data_frame is None:
             data_frame = self.market_data_generator.fetch_market_data(md_request)
 
-        # special case where we can sometimes have duplicated data times
+        # Special case where we can sometimes have duplicated data times
         if md_request.freq == 'intraday' and md_request.cut == 'BSTP':
             data_frame = self.filter.remove_duplicate_indices(data_frame)
 
-        # push into cache
+        # Push into cache
         if md_request.push_to_cache:
             self.speed_cache.put_dataframe(key, data_frame)
 
         return data_frame
 
+
 ########################################################################################################################
 
 from findatapy.util.fxconv import FXConv
+
 
 class FXCrossFactory(object):
     """Generates FX spot time series and FX total return time series (assuming we already have
@@ -199,7 +211,7 @@ class FXCrossFactory(object):
 
     """
 
-    def __init__(self, market_data_generator = None):
+    def __init__(self, market_data_generator=None):
         self.logger = LoggerManager().getLogger(__name__)
         self.fxconv = FXConv()
 
@@ -211,24 +223,24 @@ class FXCrossFactory(object):
         return
 
     def get_fx_cross_tick(self, start, end, cross,
-                     cut = "NYC", data_source = "dukascopy", cache_algo = 'internet_load_return', type = 'spot',
-                     environment = 'backtest', fields = ['bid', 'ask']):
+                          cut="NYC", data_source="dukascopy", cache_algo='internet_load_return', type='spot',
+                          environment='backtest', fields=['bid', 'ask']):
 
         if isinstance(cross, str):
             cross = [cross]
 
         market_data_request = MarketDataRequest(
             gran_freq="tick",
-            freq_mult = 1,
-            freq = 'tick',
-            cut = cut,
-            fields = ['bid', 'ask', 'bidv', 'askv'],
+            freq_mult=1,
+            freq='tick',
+            cut=cut,
+            fields=['bid', 'ask', 'bidv', 'askv'],
             cache_algo=cache_algo,
-            environment = environment,
-            start_date = start,
-            finish_date = end,
-            data_source = data_source,
-            category = 'fx'
+            environment=environment,
+            start_date=start,
+            finish_date=end,
+            data_source=data_source,
+            category='fx'
         )
 
         market_data_generator = self.market_data_generator
@@ -243,7 +255,7 @@ class FXCrossFactory(object):
 
                 if cross_vals is not None:
 
-                    # if user only wants 'close' calculate that from the bid/ask fields
+                    # If user only wants 'close' calculate that from the bid/ask fields
                     if fields == ['close']:
                         cross_vals = cross_vals[[cr + '.bid', cr + '.ask']].mean(axis=1)
                         cross_vals.columns = [cr + '.close']
@@ -259,19 +271,20 @@ class FXCrossFactory(object):
                 data_frame_agg = data_frame_agg.join(cross_vals, how='outer')
 
         if data_frame_agg is not None:
-            # strip the nan elements
+            # Strip the nan elements
             data_frame_agg = data_frame_agg.dropna()
 
         return data_frame_agg
 
-
     def get_fx_cross(self, start, end, cross,
-                     cut = "NYC", data_source = "bloomberg", freq = "intraday", cache_algo='internet_load_return', type = 'spot',
-                     environment = 'backtest', fields = ['close']):
+                     cut="NYC", data_source="bloomberg", freq="intraday", cache_algo='internet_load_return',
+                     type='spot',
+                     environment='backtest', fields=['close']):
 
         if data_source == "gain" or data_source == 'dukascopy' or freq == 'tick':
             return self.get_fx_cross_tick(start, end, cross,
-                     cut = cut, data_source = data_source, cache_algo = cache_algo, type = 'spot', fields = fields)
+                                          cut=cut, data_source=data_source, cache_algo=cache_algo, type='spot',
+                                          fields=fields)
 
         if isinstance(cross, str):
             cross = [cross]
@@ -282,33 +295,33 @@ class FXCrossFactory(object):
 
         for cr in cross:
             market_data_request = MarketDataRequest(freq_mult=1,
-                                                cut=cut,
-                                                fields=['close'],
-                                                freq=freq,
-                                                cache_algo=cache_algo,
-                                                start_date=start,
-                                                finish_date=end,
-                                                data_source=data_source,
-                                                environment=environment)
+                                                    cut=cut,
+                                                    fields=['close'],
+                                                    freq=freq,
+                                                    cache_algo=cache_algo,
+                                                    start_date=start,
+                                                    finish_date=end,
+                                                    data_source=data_source,
+                                                    environment=environment)
 
             market_data_request.type = type
             market_data_request.cross = cr
 
             if freq == 'intraday':
-                market_data_request.gran_freq = "minute"                # intraday
+                market_data_request.gran_freq = "minute"  # intraday
 
             elif freq == 'daily':
-                market_data_request.gran_freq = "daily"                 # daily
+                market_data_request.gran_freq = "daily"  # daily
 
             market_data_request_list.append(market_data_request)
 
         data_frame_agg = []
 
-        # depends on the nature of operation as to whether we should use threading or multiprocessing library
+        # Depends on the nature of operation as to whether we should use threading or multiprocessing library
         if constants.market_thread_technique is "thread":
             from multiprocessing.dummy import Pool
         else:
-            # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
+            # Most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
             # must use the multiprocessing_on_dill library otherwise can't pickle objects correctly
             # note: currently not very stable
             from multiprocessing_on_dill import Pool
@@ -326,7 +339,7 @@ class FXCrossFactory(object):
         if (thread_no > 0):
             pool = Pool(thread_no)
 
-            # open the market data downloads in their own threads and return the results
+            # Open the market data downloads in their own threads and return the results
             df_list = pool.map_async(self._get_individual_fx_cross, market_data_request_list).get()
 
             data_frame_agg = self.calculations.iterative_outer_join(df_list)
@@ -336,14 +349,15 @@ class FXCrossFactory(object):
             try:
                 pool.close()
                 pool.join()
-            except: pass
+            except:
+                pass
         else:
             for md_request in market_data_request_list:
                 data_frame_agg.append(self._get_individual_fx_cross(md_request))
 
             data_frame_agg = self.calculations.pandas_outer_join(data_frame_agg)
 
-        # strip the nan elements
+        # Strip the nan elements
         data_frame_agg = data_frame_agg.dropna(how='all')
 
         # self.speed_cache.put_dataframe(key, data_frame_agg)
@@ -359,30 +373,30 @@ class FXCrossFactory(object):
         terms = cr[3:6]
 
         if (type == 'spot'):
-            # non-USD crosses
+            # Non-USD crosses
             if base != 'USD' and terms != 'USD':
                 base_USD = self.fxconv.correct_notation('USD' + base)
                 terms_USD = self.fxconv.correct_notation('USD' + terms)
 
                 # TODO check if the cross exists in the database
 
-                # download base USD cross
+                # Download base USD cross
                 market_data_request.tickers = base_USD
                 market_data_request.category = 'fx'
 
                 base_vals = self.market_data_generator.fetch_market_data(market_data_request)
 
-                # download terms USD cross
+                # Download terms USD cross
                 market_data_request.tickers = terms_USD
                 market_data_request.category = 'fx'
 
                 terms_vals = self.market_data_generator.fetch_market_data(market_data_request)
 
-                # if quoted USD/base flip to get USD terms
+                # If quoted USD/base flip to get USD terms
                 if (base_USD[0:3] == 'USD'):
                     base_vals = 1 / base_vals
 
-                # if quoted USD/terms flip to get USD terms
+                # If quoted USD/terms flip to get USD terms
                 if (terms_USD[0:3] == 'USD'):
                     terms_vals = 1 / terms_vals
 
@@ -405,14 +419,14 @@ class FXCrossFactory(object):
 
                 cross_vals = self.market_data_generator.fetch_market_data(market_data_request)
 
-                # special case for USDUSD!
+                # Special case for USDUSD!
                 if base + terms == 'USDUSD':
                     if freq == 'daily':
-                        cross_vals = pandas.DataFrame(1, index= cross_vals.index, columns=cross_vals.columns)
+                        cross_vals = pandas.DataFrame(1, index=cross_vals.index, columns=cross_vals.columns)
                         filter = Filter()
-                        cross_vals = filter.filter_time_series_by_holidays(cross_vals, cal = 'WEEKDAY')
+                        cross_vals = filter.filter_time_series_by_holidays(cross_vals, cal='WEEKDAY')
                 else:
-                    # flip if not convention (eg. JPYUSD)
+                    # Flip if not convention (eg. JPYUSD)
                     if (correct_cr != cr):
                         cross_vals = 1 / cross_vals
 
@@ -421,7 +435,7 @@ class FXCrossFactory(object):
 
         elif type[0:3] == "tot":
             if freq == 'daily':
-                # download base USD cross
+                # Download base USD cross
                 market_data_request.tickers = base + 'USD'
                 market_data_request.category = 'fx-tot'
 
@@ -430,7 +444,7 @@ class FXCrossFactory(object):
                 else:
                     x = 0
 
-                # download terms USD cross
+                # Download terms USD cross
                 market_data_request.tickers = terms + 'USD'
                 market_data_request.category = 'fx-tot'
 
@@ -442,10 +456,10 @@ class FXCrossFactory(object):
                 # base_rets = self.calculations.calculate_returns(base_vals)
                 # terms_rets = self.calculations.calculate_returns(terms_vals)
 
-                # special case for USDUSD case (and if base or terms USD are USDUSD
+                # Special case for USDUSD case (and if base or terms USD are USDUSD
                 if base + terms == 'USDUSD':
                     base_rets = self.calculations.calculate_returns(base_vals)
-                    cross_rets = pandas.DataFrame(0, index = base_rets.index, columns=base_rets.columns)
+                    cross_rets = pandas.DataFrame(0, index=base_rets.index, columns=base_rets.columns)
                 elif base + 'USD' == 'USDUSD':
                     cross_rets = -self.calculations.calculate_returns(terms_vals)
                 elif terms + 'USD' == 'USDUSD':
@@ -456,7 +470,7 @@ class FXCrossFactory(object):
 
                     cross_rets = base_rets.sub(terms_rets.iloc[:, 0], axis=0)
 
-                # first returns of a time series will by NaN, given we don't know previous point
+                # First returns of a time series will by NaN, given we don't know previous point
                 cross_rets.iloc[0] = 0
 
                 cross_vals = self.calculations.create_mult_index(cross_rets)
@@ -468,6 +482,7 @@ class FXCrossFactory(object):
 
         return cross_vals
 
+
 #######################################################################################################################
 
 import pandas
@@ -475,6 +490,7 @@ import pandas
 from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.util import LoggerManager
 from findatapy.timeseries import Calculations, Filter, Timezone
+
 
 class FXVolFactory(object):
     """Generates FX implied volatility time series and surfaces (using very simple interpolation!) and only in delta space.
@@ -484,7 +500,7 @@ class FXVolFactory(object):
     # ATM, 25d riskies, 10d riskies, 25d strangles, 10d strangles
     part = ["V", "25R", "10R", "25B", "10B"]
 
-    # all the tenors on our vol surface
+    # All the tenors on our vol surface
     tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
     def __init__(self, market_data_generator=None):
@@ -506,9 +522,9 @@ class FXVolFactory(object):
 
         Parameters
         ----------
-        start : Datetime
+        start : datetime
             start date of request
-        end : Datetime
+        end : datetime
             end date of request
         cross : str
             FX cross
@@ -524,7 +540,6 @@ class FXVolFactory(object):
         Return
         ------
         pandas.DataFrame
-
         """
 
         market_data_generator = self.market_data_generator
@@ -563,7 +578,7 @@ class FXVolFactory(object):
 
     def extract_vol_surface_for_date(self, df, cross, date_index):
 
-        # assume we have a matrix of the form
+        # Assume we have a matrix of the form
         # eg. EURUSDVON.close ...
 
         # types of quotation on vol surface
@@ -603,6 +618,7 @@ class FXVolFactory(object):
 
         return df_surf
 
+
 #######################################################################################################################
 
 class RatesFactory(object):
@@ -620,18 +636,18 @@ class RatesFactory(object):
 
         return
 
-    # all the tenors on our forwards
+    # All the tenors on our forwards
     # forwards_tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
     def get_base_depos(self, start, end, currencies, tenor, cut="NYC", data_source="bloomberg",
-                              cache_algo="internet_load_return"):
+                       cache_algo="internet_load_return"):
         """Gets the deposit rates for a particular tenor and part of surface
 
         Parameter
         ---------
-        start : Datetime
+        start : DateTime
             Start date
-        end : Datetime
+        end : DateTime
             End data
         currencies : str
             Currencies for which we want to download deposit rates
@@ -679,31 +695,31 @@ class RatesFactory(object):
         return data_frame
 
     def get_fx_forward_points(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg",
-                           cache_algo="internet_load_return"):
+                              cache_algo="internet_load_return"):
         """Gets the forward points for a particular tenor and currency
 
-               Parameter
-               ---------
-               start : Datetime
-                   Start date
-               end : Datetime
-                   End data
-               cross : str
-                   FX crosses for which we want to download forward points
-               tenor : str
-                   Tenor of deposit rate
-               cut : str
-                   Closing time of the market data
-               data_source : str
-                   data_source of the market data eg. bloomberg
-               cache_algo : str
-                   Caching scheme for the data
+        Parameter
+        ---------
+        start : Datetime
+            Start date
+        end : Datetime
+            End data
+        cross : str
+            FX crosses for which we want to download forward points
+        tenor : str
+            Tenor of deposit rate
+        cut : str
+            Closing time of the market data
+        data_source : str
+            data_source of the market data eg. bloomberg
+        cache_algo : str
+            Caching scheme for the data
 
-               Returns
-               -------
-               pandas.DataFrame
-                   Contains deposit rates
-               """
+        Returns
+        -------
+        pandas.DataFrame
+        Contains deposit rates
+        """
 
         market_data_request = MarketDataRequest()
         market_data_generator = self.market_data_generator
@@ -724,15 +740,15 @@ class RatesFactory(object):
                 tickers.append(cr + tn)
 
         market_data_request = MarketDataRequest(
-            start_date = start, finish_date = end,
-            data_source = data_source,
-            category = 'fx-forwards',
-            freq = 'daily',
-            cut = cut,
+            start_date=start, finish_date=end,
+            data_source=data_source,
+            category='fx-forwards',
+            freq='daily',
+            cut=cut,
             tickers=tickers,
-            fields = ['close'],
-            cache_algo = cache_algo,
-            environment = 'backtest'
+            fields=['close'],
+            cache_algo=cache_algo,
+            environment='backtest'
         )
 
         data_frame = market_data_generator.fetch_market_data(market_data_request)
@@ -740,5 +756,3 @@ class RatesFactory(object):
         data_frame.index.name = 'Date'
 
         return data_frame
-
-

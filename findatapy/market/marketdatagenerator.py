@@ -28,7 +28,6 @@ class MarketDataGenerator(object):
 
     At present it supports Bloomberg (bloomberg), Yahoo (yahoo), Quandl (quandl), FRED (fred) etc. which are implemented
     in subclasses of DataVendor class. This provides a common wrapper for all these data sources.
-
     """
 
     def __init__(self):
@@ -189,28 +188,28 @@ class MarketDataGenerator(object):
         if('internet_load' in market_data_request.cache_algo):
             self.logger.debug("Internet loading.. ")
 
-            # signal to data_vendor template to exit session
+            # Signal to data_vendor template to exit session
             # if data_vendor is not None and kill_session == True: data_vendor.kill_session()
 
         if(market_data_request.cache_algo == 'cache_algo'):
             self.logger.debug("Only caching data in memory, do not return any time series."); return
 
-        # only return time series if specified in the algo
+        # Only return time series if specified in the algo
         if 'return' in market_data_request.cache_algo:
-            # special case for events/events-dt which is not indexed like other tables (also same for downloading futures
+            # Special case for events/events-dt which is not indexed like other tables (also same for downloading futures
             # contracts dates)
             if market_data_request.category is not None:
                 if 'events' in market_data_request.category:
                     return data_frame_agg
 
-            # pad columns a second time (is this necessary to do here again?)
+            # Pad columns a second time (is this necessary to do here again?)
             # TODO only do this for not daily data?
             try:
                 if data_frame_agg is not None:
                     data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)\
                         .dropna(how = 'all')
 
-                    # resample data using pandas if specified in the MarketDataRequest
+                    # Resample data using pandas if specified in the MarketDataRequest
                     if market_data_request.resample is not None:
                         if 'last' in market_data_request.resample_how:
                             data_frame_agg = data_frame_agg.resample(market_data_request.resample).last()
@@ -272,7 +271,7 @@ class MarketDataGenerator(object):
 
         data_frame_group = []
 
-        # single threaded version
+        # Single threaded version
         # handle intraday ticker calls separately one by one
         if len(market_data_request.tickers) == 1 or constants.market_thread_no['other'] == 1:
             for ticker in market_data_request.tickers:
@@ -283,7 +282,7 @@ class MarketDataGenerator(object):
                     market_data_request_single.vendor_tickers = [market_data_request.vendor_tickers[ticker_cycle]]
                     ticker_cycle = ticker_cycle + 1
 
-                # we downscale into float32, to avoid memory problems in Python (32 bit)
+                # We downscale into float32, to avoid memory problems in Python (32 bit)
                 # data is stored on disk as float32 anyway
                 # old_finish_date = market_data_request_single.finish_date
                 #
@@ -300,7 +299,7 @@ class MarketDataGenerator(object):
 
                 data_frame_single = self.fetch_single_time_series(market_data_request)
 
-                # if the vendor doesn't provide any data, don't attempt to append
+                # If the vendor doesn't provide any data, don't attempt to append
                 if data_frame_single is not None:
                     if data_frame_single.empty == False:
                         data_frame_single.index.name = 'Date'
@@ -319,7 +318,7 @@ class MarketDataGenerator(object):
                 # self._time_series_cache[fname] = data_frame_agg  # cache in memory (disable for intraday)
 
 
-            # if you call for returning multiple tickers, be careful with memory considerations!
+            # If you call for returning multiple tickers, be careful with memory considerations!
             if data_frame_group is not None:
                 data_frame_agg = calcuations.pandas_outer_join(data_frame_group)
 
@@ -328,7 +327,7 @@ class MarketDataGenerator(object):
         else:
             market_data_request_list = []
 
-            # create a list of MarketDataRequests
+            # Create a list of MarketDataRequests
             for ticker in market_data_request.tickers:
                 market_data_request_single = copy.copy(market_data_request)
                 market_data_request_single.tickers = ticker
@@ -345,7 +344,7 @@ class MarketDataGenerator(object):
 
         market_data_request = MarketDataRequest(md_request=market_data_request)
 
-        # only includes those tickers have not expired yet!
+        # Only includes those tickers have not expired yet!
         start_date = pandas.Timestamp(market_data_request.start_date).date()
 
         import datetime
@@ -361,7 +360,7 @@ class MarketDataGenerator(object):
 
         config = ConfigManager().get_instance()
 
-        # in many cases no expiry is defined so skip them
+        # In many cases no expiry is defined so skip them
         for i in range(0, len(tickers)):
             try:
                 expiry_date = config.get_expiry_for_ticker(market_data_request.data_source, tickers[i])
@@ -371,12 +370,12 @@ class MarketDataGenerator(object):
             if expiry_date is not None:
                 expiry_date = pandas.Timestamp(expiry_date).date()
 
-                # use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
+                # Use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
                 # if the expiry is before the start date of our download don't bother downloading this ticker
                 if expiry_date < start_date:
                     tickers[i] = None
 
-                # special case for futures-contracts which are intraday
+                # Special case for futures-contracts which are intraday
                 # avoid downloading if the expiry date is very far in the past
                 # (we need this before there might be odd situations where we run on an expiry date, but still want to get
                 # data right till expiry time)
@@ -404,7 +403,7 @@ class MarketDataGenerator(object):
             if data_frame_single.empty == False:
                 data_frame_single.index.name = 'Date'
 
-                # will fail for dataframes which includes dates/strings (eg. futures contract names)
+                # Will fail for DataFrames which includes dates/strings (eg. futures contract names)
                 try:
                     data_frame_single = data_frame_single.astype('float32')
                 except:
@@ -427,7 +426,7 @@ class MarketDataGenerator(object):
         if thread_no > 0:
             pool = SwimPool().create_pool(thread_technique = constants.market_thread_technique, thread_no=thread_no)
 
-            # open the market data downloads in their own threads and return the results
+            # Open the market data downloads in their own threads and return the results
             result = pool.map_async(self.fetch_single_time_series, market_data_request_list)
             data_frame_group = result.get()
 
@@ -439,11 +438,11 @@ class MarketDataGenerator(object):
             for md_request in market_data_request_list:
                 data_frame_group.append(self.fetch_single_time_series(md_request))
 
-        # collect together all the time series
+        # Collect together all the time series
         if data_frame_group is not None:
             data_frame_group = [i for i in data_frame_group if i is not None]
 
-            # for debugging!
+            # For debugging!
             # import pickle
             # import datetime
             # pickle.dump(data_frame_group, open(str(datetime.datetime.now()).replace(':', '-').replace(' ', '-').replace(".", "-") + ".p", "wb"))
@@ -478,7 +477,7 @@ class MarketDataGenerator(object):
                 is_key_overriden = True
                 break
 
-        # by default use other
+        # By default use other
         thread_no = constants.market_thread_no['other']
 
         if market_data_request.data_source in constants.market_thread_no:
@@ -491,12 +490,12 @@ class MarketDataGenerator(object):
         else:
             market_data_request_list = []
             
-            # when trying your example 'equitiesdata_example' I had a -1 result so it went out of the comming loop and I had errors in execution
+            # When trying your example 'equitiesdata_example' I had a -1 result so it went out of the comming loop and I had errors in execution
             group_size = max(int(len(market_data_request.tickers) / thread_no - 1),0)
 
             if group_size == 0: group_size = 1
 
-            # split up tickers into groups related to number of threads to call
+            # Split up tickers into groups related to number of threads to call
             for i in range(0, len(market_data_request.tickers), group_size):
                 market_data_request_single = copy.copy(market_data_request)
                 market_data_request_single.tickers = market_data_request.tickers[i:i + group_size]
@@ -507,7 +506,7 @@ class MarketDataGenerator(object):
 
                 market_data_request_list.append(market_data_request_single)
 
-            # special case where we make smaller calls one after the other
+            # Special case where we make smaller calls one after the other
             if is_key_overriden:
 
                 data_frame_list = []
@@ -526,7 +525,7 @@ class MarketDataGenerator(object):
 
     def refine_expiry_date(self, market_data_request):
 
-        # expiry date
+        # Expiry date
         if market_data_request.expiry_date is None:
             ConfigManager().get_instance().get_expiry_for_ticker(market_data_request.data_source, market_data_request.ticker)
 

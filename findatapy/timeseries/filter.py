@@ -698,7 +698,7 @@ class Filter(object):
         return data_frame
 
     def remove_out_FX_out_of_hours(self, data_frame):
-        """Filtered a time series for FX hours (ie. excludes 22h GMT Fri - 19h GMT Sun)
+        """Filtered a time series for FX hours (ie. excludes 22h GMT Fri - 19h GMT Sun and New Year's Day)
 
         Parameters
         ----------
@@ -715,9 +715,10 @@ class Filter(object):
         # remove Sun before 19:00 GMT
 
         # Monday = 0, ..., Sunday = 6
-        data_frame = data_frame.ix[~((data_frame.index.dayofweek == 4) & (data_frame.index.hour > 22))]
-        data_frame = data_frame.ix[~((data_frame.index.dayofweek == 5))]
-        data_frame = data_frame.ix[~((data_frame.index.dayofweek == 6)& (data_frame.index.hour < 19))]
+        data_frame = data_frame[~((data_frame.index.dayofweek == 4) & (data_frame.index.hour > 22))]
+        data_frame = data_frame[~((data_frame.index.dayofweek == 5))]
+        data_frame = data_frame[~((data_frame.index.dayofweek == 6)& (data_frame.index.hour < 19))]
+        data_frame = data_frame[~((data_frame.index.day == 1) & (data_frame.index.month == 1))]
 
         return data_frame
 

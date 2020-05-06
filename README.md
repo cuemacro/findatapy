@@ -105,10 +105,14 @@ In findatapy/examples you will find several demos
 
 # Release Notes
 
-* No formal releases yet
+* 0.1.12 - findatapy (06 May 2020)
 
 # Coding log
 
+* 06 May 2020
+    * Amended function to remove points outside FX hours to exclude 1 Jan every year
+    * RetStats can now resample time series (removed kurtosis)
+    * Tidy up some code comments
 * 07 Apr 2020
     * Bug fix in constants
 * 06 Apr 2020
