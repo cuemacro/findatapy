@@ -598,23 +598,23 @@ class FXVolFactory(object):
         df_surf = pandas.DataFrame(index=strikes, columns=tenor)
 
         for ten in tenor:
-            df_surf.ix["10DP", ten] = df.ix[date_index, cross + "V" + ten + ".close"] \
-                                      - (df.ix[date_index, cross + "10R" + ten + ".close"] / 2.0) \
-                                      + (df.ix[date_index, cross + "10B" + ten + ".close"])
+            df_surf[ten]["10DP"] = df[cross + "V" + ten + ".close"][date_index] \
+                                      - (df[cross + "10R" + ten + ".close"][date_index] / 2.0) \
+                                      + (df[cross + "10B" + ten + ".close"][date_index])
 
-            df_surf.ix["10DC", ten] = df.ix[date_index, cross + "V" + ten + ".close"] \
-                                      + (df.ix[date_index, cross + "10R" + ten + ".close"] / 2.0) \
-                                      + (df.ix[date_index, cross + "10B" + ten + ".close"])
+            df_surf[ten]["10DC"] = df[cross + "V" + ten + ".close"][date_index] \
+                                      + (df[cross + "10R" + ten + ".close"][date_index] / 2.0) \
+                                      + (df[cross + "10B" + ten + ".close"][date_index])
 
-            df_surf.ix["25DP", ten] = df.ix[date_index, cross + "V" + ten + ".close"] \
-                                      - (df.ix[date_index, cross + "25R" + ten + ".close"] / 2.0) \
-                                      + (df.ix[date_index, cross + "25B" + ten + ".close"])
+            df_surf[ten]["25DP"] = df[cross + "V" + ten + ".close"][date_index] \
+                                      - (df[cross + "25R" + ten + ".close"][date_index] / 2.0) \
+                                      + (df[cross + "25B" + ten + ".close"][date_index])
 
-            df_surf.ix["25DC", ten] = df.ix[date_index, cross + "V" + ten + ".close"] \
-                                      + (df.ix[date_index, cross + "25R" + ten + ".close"] / 2.0) \
-                                      + (df.ix[date_index, cross + "25B" + ten + ".close"])
+            df_surf[ten]["25DC"] = df[cross + "V" + ten + ".close"][date_index] \
+                                      + (df[cross + "25R" + ten + ".close"][date_index] / 2.0) \
+                                      + (df[cross + "25B" + ten + ".close"][date_index])
 
-            df_surf.ix["ATM", ten] = df.ix[date_index, cross + "V" + ten + ".close"]
+            df_surf[ten]["ATM"] = df[cross + "V" + ten + ".close"][date_index]
 
         return df_surf
 

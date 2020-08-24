@@ -146,7 +146,7 @@ class Filter(object):
 
         # optimal case for weekdays: remove Saturday and Sunday
         if (cal == 'WEEKDAY'):
-            return data_frame.ix[data_frame.index.dayofweek <= 4]
+            return data_frame[data_frame.index.dayofweek <= 4]
 
         # select only those holidays in the sample
         holidays_start = self.get_holidays(data_frame.index[0], data_frame.index[-1], cal, holidays_list = holidays_list)
@@ -179,7 +179,7 @@ class Filter(object):
         # indices = list(range(counter, len(floored_dates)))
         # indices_to_keep = indices_to_keep + indices
         #
-        # data_frame_filtered = data_frame.ix[indices_to_keep]
+        # data_frame_filtered = data_frame[indices_to_keep]
 
         if data_frame.index.tz is None:
             holidays_start = holidays_start.tz_localize(None)
@@ -191,8 +191,8 @@ class Filter(object):
         for i in range(0, len(holidays_start)):
 
 
-            data_frame_temp = data_frame_left.ix[data_frame_left.index < holidays_start[i]]
-            data_frame_left = data_frame_left.ix[data_frame_left.index >= holidays_end[i]]
+            data_frame_temp = data_frame_left[data_frame_left.index < holidays_start[i]]
+            data_frame_left = data_frame_left[data_frame_left.index >= holidays_end[i]]
 
             data_frame_filtered.append(data_frame_temp)
 
@@ -385,7 +385,7 @@ class Filter(object):
         #     if (0 <= start_index + offset < len(data_frame.index)):
         #         start_index = start_index + offset
         #
-        #         # data_frame = data_frame.ix[start_date < data_frame.index]
+        #         # data_frame = data_frame[start_date < data_frame.index]
         #
         # if(finish_date is not None):
         #     finish_index = data_frame.index.searchsorted(finish_date)

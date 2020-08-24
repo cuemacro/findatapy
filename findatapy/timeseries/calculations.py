@@ -152,10 +152,10 @@ class Calculations(object):
             # TODO experiment with quicker ways of writing below?
             # for val in col.index:
             # trade_returns.set_value(val, col_name, col[val])
-            # trade_returns.ix[val, col_name] = col[val]
+            # trade_returns[col_name][val] = col[val]
 
             date_indices = trade_returns.index.searchsorted(col.index)
-            trade_returns.ix[date_indices, col_name] = col
+            trade_returns[col_name][date_indices] = col
 
         return trade_returns
 
@@ -1175,6 +1175,14 @@ class Calculations(object):
 
         return data_frame
 
+    def average_by_hour_min_sec_of_day_pretty_output(self, data_frame):
+        data_frame = data_frame. \
+            groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute'), data_frame.index.minute.rename('second')]).mean()
+
+        data_frame.index = data_frame.index.map(lambda t: datetime.time(*t))
+
+        return data_frame
+
     def all_by_hour_min_of_day_pretty_output(self, data_frame):
 
         df_new = []
@@ -1193,7 +1201,7 @@ class Calculations(object):
         # time_of_day = []
         #
         # for year in years:
-        #     temp = data_frame.ix[data_frame.index.year == year]
+        #     temp = data_frame[data_frame.index.year == year]
         #     time_of_day.append(temp.groupby(temp.index.time).mean())
         #
         # data_frame = pandas.concat(time_of_day, axis=1, keys = years)
