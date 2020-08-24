@@ -122,8 +122,8 @@ class DataQuality(object):
         c_new = [x.split(".")[0] for x in df.columns]
 
         index = df_dates.index.searchsorted(c_new)
-        start_date = df_dates.ix[index, start_date_field]
-        finish_date = df_dates.ix[index, finish_date_field]
+        start_date = df_dates[start_date_field][index]
+        finish_date = df_dates[finish_date_field][index]
 
         for i in range(0, len(df.columns)):
             df_sub = df[df.columns[i]]
