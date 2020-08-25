@@ -1158,26 +1158,41 @@ class Calculations(object):
 
         return df
 
-    ##### various methods for averaging time series by hours, mins and days (or specific columns) to create summary time series
+    ##### Various methods for averaging time series by hours, mins and days (or specific columns) to create summary time series
     def average_by_columns_list(self, data_frame, columns):
         return data_frame. \
             groupby(columns).mean()
 
     def average_by_hour_min_of_day(self, data_frame):
-        return data_frame. \
-            groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute')]).mean()
+        # Older Pandas
+        try:
+            return data_frame. \
+                groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute')]).mean()
+        except:
+            return data_frame. \
+                groupby([data_frame.index.hour, data_frame.index.minute]).mean()
 
     def average_by_hour_min_of_day_pretty_output(self, data_frame):
-        data_frame = data_frame. \
-            groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute')]).mean()
+        # Older Pandas
+        try:
+            data_frame = data_frame. \
+                groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute')]).mean()
+        except:
+            data_frame = data_frame. \
+                groupby([data_frame.index.hour, data_frame.index.minute]).mean()
 
         data_frame.index = data_frame.index.map(lambda t: datetime.time(*t))
 
         return data_frame
 
     def average_by_hour_min_sec_of_day_pretty_output(self, data_frame):
-        data_frame = data_frame. \
-            groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute'), data_frame.index.minute.rename('second')]).mean()
+        # Older Pandas
+        try:
+            data_frame = data_frame. \
+                groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute'), data_frame.index.minute.rename('second')]).mean()
+        except:
+            data_frame = data_frame. \
+                groupby([data_frame.index.hour, data_frame.index.minute, data_frame.index.minute]).mean()
 
         data_frame.index = data_frame.index.map(lambda t: datetime.time(*t))
 
@@ -1205,9 +1220,16 @@ class Calculations(object):
         #     time_of_day.append(temp.groupby(temp.index.time).mean())
         #
         # data_frame = pandas.concat(time_of_day, axis=1, keys = years)
-        data_frame = data_frame. \
-            groupby([data_frame.index.year.rename('year'), data_frame.index.hour.rename('hour'),
-                     data_frame.index.minute.rename('minute')]).mean()
+
+        # Older Pandas
+        try:
+            data_frame = data_frame. \
+                groupby([data_frame.index.year.rename('year'), data_frame.index.hour.rename('hour'),
+                         data_frame.index.minute.rename('minute')]).mean()
+        except:
+            data_frame = data_frame. \
+                groupby([data_frame.index.year, data_frame.index.hour,
+                         data_frame.index.minute]).mean()
 
         data_frame = data_frame.unstack(0)
 
@@ -1241,18 +1263,30 @@ class Calculations(object):
     def average_by_month_day_hour_min_by_bus_day(self, data_frame, cal="FX"):
         date_index = data_frame.index
 
-        return data_frame. \
-            groupby([date_index.month.rename('month'),
-                     Calendar().get_bus_day_of_month(date_index, cal).rename('day'),
-                     date_index.hour.rename('hour'), date_index.minute.rename('minute')]).mean()
+        # Older Pandas
+        try:
+            return data_frame. \
+                groupby([date_index.month.rename('month'),
+                         Calendar().get_bus_day_of_month(date_index, cal).rename('day'),
+                         date_index.hour.rename('hour'), date_index.minute.rename('minute')]).mean()
+        except:
+            return data_frame. \
+                groupby([date_index.month,
+                         Calendar().get_bus_day_of_month(date_index, cal),
+                         date_index.hour, date_index.minute]).mean()
 
     def average_by_month_day_by_bus_day(self, data_frame, cal="FX"):
         date_index = data_frame.index
 
-        return data_frame. \
-            groupby([date_index.month.rename('month'),
-                     Calendar().get_bus_day_of_month(date_index, cal).rename('day')]).mean()
-
+        # Older Pandas
+        try:
+            return data_frame. \
+                groupby([date_index.month.rename('month'),
+                         Calendar().get_bus_day_of_month(date_index, cal).rename('day')]).mean()
+        except:
+            return data_frame. \
+                groupby([date_index.month,
+                         Calendar().get_bus_day_of_month(date_index, cal)]).mean()
     def average_by_month_day_by_day(self, data_frame):
         date_index = data_frame.index
 
@@ -1268,9 +1302,15 @@ class Calculations(object):
     def average_by_day_hour_min_by_bus_day(self, data_frame):
         date_index = data_frame.index
 
-        return data_frame. \
-            groupby([Calendar().get_bus_day_of_month(date_index).rename('day'),
-                     date_index.hour.rename('hour'), date_index.minute.rename('minute')]).mean()
+        # Older Pandas
+        try:
+            return data_frame. \
+                groupby([Calendar().get_bus_day_of_month(date_index).rename('day'),
+                         date_index.hour.rename('hour'), date_index.minute.rename('minute')]).mean()
+        except:
+            return data_frame. \
+                groupby([Calendar().get_bus_day_of_month(date_index),
+                         date_index.hour, date_index.minute]).mean()
 
     def remove_NaN_rows(self, data_frame):
         return data_frame.dropna()

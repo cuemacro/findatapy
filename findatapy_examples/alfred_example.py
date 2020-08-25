@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     market = Market(market_data_generator=MarketDataGenerator())
 
-    # get the first release for GDP and also print the release date of that
+    # Get the first release for GDP and also print the release date of that
     md_request = MarketDataRequest(
         start_date="01 Jun 2000",                                                      # start date (download data over past decade)
         data_source='alfred',                                                          # use ALFRED/FRED as data source
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     print(df)
 
-    # compare the close and actual release of US GDP (and the final)
+    # Compare the close and actual release of US GDP (and the final)
     md_request = MarketDataRequest(
         start_date="01 Jun 2000",                                                      # start date (download data over past decade)
         data_source='alfred',                                                          # use ALFRED/FRED as data source
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     Chart().plot(df, style=style)
 
-    # get the change NFP SA (need to calculate that from the acutal-release and first-revision)
+    # Get the change NFP SA (need to calculate that from the acutal-release and first-revision)
     md_request = MarketDataRequest(
         start_date="01 Jun 2000",                                                      # start date (download data over past decade)
         data_source='alfred',                                                          # use ALFRED/FRED as data source
@@ -75,3 +75,21 @@ if __name__ == '__main__':
     df1 = pandas.DataFrame(df['US NFP change'])
 
     Chart().plot(df1, style=style)
+
+    # Get release times on their own
+    # Get the change NFP SA
+    # need to calculate that from the acutal-release and first-revision)
+    md_request = MarketDataRequest(
+        start_date="01 Aug 2013",
+        finish_date="30 Nov 2019",
+        data_source='alfred',
+        tickers=['US NFP'],
+        fields=['release-date-time-full'],
+        vendor_tickers=['PAYEMS'],
+        vendor_fields=['release-date-time-full'])
+
+    market = Market(market_data_generator=MarketDataGenerator())
+
+    df_nfp = market.fetch_market(md_request)
+
+    print(df_nfp)

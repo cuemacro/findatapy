@@ -12,6 +12,7 @@ __author__ = 'shihhau'  # Shih-Hau Tan
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
+# TODO: Needs fixing, given change in APIs
 
 if __name__ == '__main__':
     ###### below line CRUCIAL when running Windows, otherwise multiprocessing doesn't work! (not necessary on Linux)
@@ -44,7 +45,7 @@ if __name__ == '__main__':
 
         md_request = MarketDataRequest(start_date='11 Nov 2015', finish_date='02 Feb 2018', cut='LOC',
                                        freq='tick', data_source='bitcoincharts', category='crypto',
-                                       fields=['close','volume'], tickers=['XBTUSD_itbit'])
+                                       fields=['close', 'volume'], tickers=['XBTUSD_itbit'])
 
         df = market.fetch_market(md_request)
         print(df.head(5))
@@ -125,7 +126,7 @@ if __name__ == '__main__':
 
         md_request = MarketDataRequest(start_date='19 Feb 2018', finish_date='20 Feb 2018', cut='LOC',
                                        freq='tick', data_source='kraken', category='crypto',
-                                       fields=['close','volume','buy-sell','market-limit'],
+                                       fields=['close', 'volume', 'buy-sell', 'market-limit'],
                                        tickers=['XBTUSD'])
 
         df = market.fetch_market(md_request)

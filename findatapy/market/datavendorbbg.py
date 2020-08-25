@@ -1,4 +1,4 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = 'saeedamen'  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
@@ -21,12 +21,15 @@ import abc
 import datetime
 import copy
 
+
 class DataVendorBBG(DataVendor):
     """Abstract class for download of Bloomberg daily, intraday data and reference data.
 
     Implemented by:
         DataVendorBBGOpen - Adapted version of new Bloomberg Open API for Python which is recommended. Note that this
         requires compilation, via installed C++ compiler. For Python 3.5, this is Microsoft Visual Studio 2015.
+
+        Or it is easier to install blpapi via conda
 
         Note: no longer supports COM API, which is slower and only 32 bit
 
@@ -76,7 +79,6 @@ class DataVendorBBG(DataVendor):
             for i in range(0, len(market_data_request.fields)):
                 if market_data_request.fields[i] in self.list_of_ref_fields \
                         or market_data_request_vendor.fields[i] in self.list_of_ref_vendor_fields:
-
                     ref_fields.append(market_data_request.fields[i])
                     ref_vendor_fields.append(market_data_request_vendor.fields[i])
 
@@ -118,9 +120,9 @@ class DataVendorBBG(DataVendor):
                     events_data_frame = self.get_daily_data(market_data_request, market_data_request_vendor)
 
                     col = events_data_frame.index.name
-                    events_data_frame = events_data_frame.reset_index(drop = False)
+                    events_data_frame = events_data_frame.reset_index(drop=False)
 
-                    data_frame = pandas.concat([events_data_frame, datetime_data_frame], axis = 1)
+                    data_frame = pandas.concat([events_data_frame, datetime_data_frame], axis=1)
                     temp = data_frame[col]
                     del data_frame[col]
                     data_frame.index = temp
@@ -187,7 +189,8 @@ class DataVendorBBG(DataVendor):
 
                 try:
                     self.logger.info(str(market_data_request_vendor.tickers))
-                except: pass
+                except:
+                    pass
 
                 return None
 
@@ -216,7 +219,7 @@ class DataVendorBBG(DataVendor):
         end = datetime.utcnow()
 
         from datetime import timedelta
-        end = end + timedelta(days=365) # because very often we may with to download data about future calendar events
+        end = end + timedelta(days=365)  # because very often we may with to download data about future calendar events
         #  end.replace(year = end.year + 1)
 
         market_data_request_vendor.finish_date = end
@@ -277,6 +280,7 @@ class DataVendorBBG(DataVendor):
     def download_ref(self, market_data_request):
         return
 
+
 #######################################################################################################################
 
 import abc
@@ -288,18 +292,21 @@ import re
 import pandas
 
 try:
-    import blpapi   # obtainable from Bloomberg website
-except: pass
+    import blpapi  # obtainable from Bloomberg website
+except:
+    pass
 
 from findatapy.util.dataconstants import DataConstants
 from findatapy.market.datavendorbbg import DataVendorBBG
 
 from collections import defaultdict
 
+
 class DataVendorBBGOpen(DataVendorBBG):
     """Calls the Bloomberg Open API to download market data: daily, intraday and reference data (needs blpapi).
 
     """
+
     def __init__(self):
         super(DataVendorBBGOpen, self).__init__()
         self.logger = LoggerManager().getLogger(__name__)
@@ -314,7 +321,6 @@ class DataVendorBBGOpen(DataVendorBBG):
         # self.kill_session() # need to forcibly kill_session since can't always reopen
 
         return data_frame
-
 
     def download_intraday(self, market_data_request):
         # Bloomberg OpenAPI implementation
@@ -339,8 +345,7 @@ class DataVendorBBGOpen(DataVendorBBG):
         return data_frame
 
     def download_ref(self, market_data_request):
-
-         # Bloomberg Open API implementation
+        # Bloomberg Open API implementation
         low_level_loader = BBGLowLevelRef()
 
         market_data_request_vendor_selective = copy.copy(market_data_request)
@@ -352,7 +357,7 @@ class DataVendorBBGOpen(DataVendorBBG):
         # if 'last-tradeable-day' in market_data_request.fields:
         #     market_data_request_vendor_selective.fields = ['LAST_TRADEABLE_DT']
 
-        data_frame =  low_level_loader.load_time_series(market_data_request_vendor_selective)
+        data_frame = low_level_loader.load_time_series(market_data_request_vendor_selective)
 
         # self.kill_session() # need to forcibly kill_session since can't always reopen
 
@@ -364,12 +369,13 @@ class DataVendorBBGOpen(DataVendorBBG):
         BBGLowLevelRef().kill_session(None)
         BBGLowLevelIntraday().kill_session(None)
 
+
 ########################################################################################################################
 #### Lower level code to interact with Bloomberg Open API
 
-class BBGLowLevelTemplate(object): # in order that the init function works in child classes
+class BBGLowLevelTemplate(object):  # in order that the init function works in child classes
 
-    convert_override_fields = {'settlement-calendar-code' : 'SETTLEMENT_CALENDAR_CODE'}
+    convert_override_fields = {'settlement-calendar-code': 'SETTLEMENT_CALENDAR_CODE'}
 
     _session = None
 
@@ -383,9 +389,9 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
 
     def load_time_series(self, market_data_request):
 
-        #if(BBGLowLevelTemplate._session is None):
+        # if(BBGLowLevelTemplate._session is None):
         session = self.start_bloomberg_session()
-        #else:
+        # else:
         #    session = BBGLowLevelTemplate._session
 
         try:
@@ -397,7 +403,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
                 if session is not None:
                     if not session.openService("//blp/refdata"):
                         self.logger.info("Try reopening Bloomberg session... try " + str(i))
-                        self.kill_session(session) # need to forcibly kill_session since can't always reopen
+                        self.kill_session(session)  # need to forcibly kill_session since can't always reopen
                         session = self.start_bloomberg_session()
 
                         if session is not None:
@@ -434,7 +440,8 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
             # stop the session (will fail if NoneType)
             try:
                 session.stop()
-            except: pass
+            except:
+                pass
 
         return data_frame
 
@@ -449,7 +456,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
         while not_done:
             # nextEvent() method can be called with timeout to let
             # the program catch Ctrl-C between arrivals of new events
-            event = session.nextEvent() # removed time out
+            event = session.nextEvent()  # removed time out
             # event = eventQueue.nextEvent()
 
             # Bloomberg will send us responses in chunks
@@ -475,18 +482,19 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
                 # (this will fail for intraday time series)
                 try:
                     data_frame_cols.append(list(data_frame_slice.columns.get_level_values(1).values)[0])
-                except: pass
+                except:
+                    pass
 
         from findatapy.timeseries import Calculations
 
-        if data_frame_cols == [] and data_frame_list != []:   # intraday case
+        if data_frame_cols == [] and data_frame_list != []:  # intraday case
             data_frame = pandas.concat(data_frame_list)
-        else:                       # daily frequencies
+        else:  # daily frequencies
             data_frame = Calculations().iterative_outer_join(data_frame_list)
 
         # make sure we do not have any duplicates in the time series
         if data_frame is not None:
-            #if data_frame.empty == False:
+            # if data_frame.empty == False:
             data_frame.drop_duplicates(keep='last')
 
         return data_frame
@@ -533,7 +541,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
         session = None
 
         # try up to 5 times to start a session
-        while(tries < 5):
+        while (tries < 5):
             try:
                 # fill SessionOptions
                 sessionOptions = blpapi.SessionOptions()
@@ -561,7 +569,6 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
         if session is None:
             self.logger.error("Failed to start session.")
             return
-
 
         return session
 
@@ -599,6 +606,7 @@ class BBGLowLevelTemplate(object): # in order that the init function works in ch
 
             session = None
 
+
 class BBGLowLevelDaily(BBGLowLevelTemplate):
 
     def __init__(self):
@@ -610,11 +618,10 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         # data
         try:
             if (data_frame_slice.columns.get_level_values(1).values[0]
-                not in data_frame_cols):
-
+                    not in data_frame_cols):
                 # return data_frame.join(data_frame_slice, how="outer")
                 return data_frame_slice
-        except Exception as e :
+        except Exception as e:
             self.logger.warn('Data slice empty ' + str(e))
 
             return None
@@ -691,7 +698,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         data_frame = pandas.DataFrame(data)
 
         # if obsolete ticker could return no values
-        if (not(data_frame.empty)):
+        if (not (data_frame.empty)):
             # data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
             data_frame.index = pandas.to_datetime(data_frame.index)
             self.logger.info("Read: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
@@ -717,6 +724,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
         self.logger.info("Sending Bloomberg Daily Request:" + str(request))
         session.sendRequest(request=request, correlationId=cid)
+
 
 class BBGLowLevelRef(BBGLowLevelTemplate):
 
@@ -777,7 +785,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                     data[(field_name, ticker)][0] = field.getValueAsString()
 
                     index = index + 1
-                    single = True   # no need to create multi-index late, because just row!! CAREFUL!! needed for futures expiries
+                    single = True  # no need to create multi-index late, because just row!! CAREFUL!! needed for futures expiries
 
             fieldExceptionArray = securityData.getElement("fieldExceptions")
 
@@ -785,14 +793,14 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                 errorInfo = fieldException.getElement("errorInfo")
 
                 print(errorInfo.getElementAsString("category"), ":", \
-                    fieldException.getElementAsString("fieldId"))
+                      fieldException.getElementAsString("fieldId"))
                 print("stop")
 
         # explicitly state from_dict (buggy if create pandas.DataFrame(data)
         data_frame = pandas.DataFrame.from_dict(data)
 
         # if obsolete ticker could return no values
-        if (not(data_frame.empty)):
+        if (not (data_frame.empty)):
             # if not(single):
             #    pass
             # data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
@@ -805,7 +813,6 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
 
     def combine_slices(self, data_frame_cols, data_frame_slice):
         if (data_frame_slice.columns.get_level_values(1).values[0] not in data_frame_cols):
-
             # return data_frame.join(data_frame_slice, how="outer")
             return data_frame_slice
 
@@ -816,7 +823,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest('ReferenceDataRequest')
 
-        self.add_override(request, 'TIME_ZONE_OVERRIDE', 23)    # force GMT time
+        self.add_override(request, 'TIME_ZONE_OVERRIDE', 23)  # force GMT time
         self.add_override(request, 'INCLUDE_EXPIRED_CONTRACTS', "Y")  # include expired contracts
         self.add_override(request, 'START_DT', options.startDateTime.strftime('%Y%m%d'))
         self.add_override(request, 'END_DT', options.endDateTime.strftime('%Y%m%d'))
@@ -841,7 +848,9 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         self.logger.info("Sending Bloomberg Ref Request:" + str(request))
         session.sendRequest(request=request, correlationId=cid)
 
+
 from operator import itemgetter
+
 
 class BBGLowLevelIntraday(BBGLowLevelTemplate):
 
@@ -869,7 +878,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
     def fill_options(self, market_data_request):
         options = OptionsBBG()
 
-        options.security = market_data_request.tickers[0]    # get 1st ticker only!
+        options.security = market_data_request.tickers[0]  # get 1st ticker only!
         options.event = market_data_request.trade_side.upper()
         options.barInterval = market_data_request.freq_mult
         options.startDateTime = market_data_request.start_date
@@ -931,12 +940,12 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
 
         # each price time point has multiple fields - marginally quicker
         tuple = [([bar.getElementAsFloat(self.OPEN),
-                        bar.getElementAsFloat(self.HIGH),
-                        bar.getElementAsFloat(self.LOW),
-                        bar.getElementAsFloat(self.CLOSE),
-                        bar.getElementAsInteger(self.VOLUME),
-                        bar.getElementAsInteger(self.NUM_EVENTS)],
-                        bar.getElementAsDatetime(self.TIME)) for bar in data_vals]
+                   bar.getElementAsFloat(self.HIGH),
+                   bar.getElementAsFloat(self.LOW),
+                   bar.getElementAsFloat(self.CLOSE),
+                   bar.getElementAsInteger(self.VOLUME),
+                   bar.getElementAsInteger(self.NUM_EVENTS)],
+                  bar.getElementAsDatetime(self.TIME)) for bar in data_vals]
 
         data_table = list(map(itemgetter(0), tuple))
         time_list = list(map(itemgetter(1), tuple))
@@ -948,8 +957,8 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
             return None
 
         # create pandas dataframe with the Bloomberg output
-        return pandas.DataFrame(data = data_table, index = time_list,
-                      columns=['open', 'high', 'low', 'close', 'volume', 'events'])
+        return pandas.DataFrame(data=data_table, index=time_list,
+                                columns=['open', 'high', 'low', 'close', 'volume', 'events'])
 
     # implement abstract method: create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
@@ -973,6 +982,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         self.logger.info("Sending Intraday Bloomberg Request...")
 
         session.sendRequest(request=request, correlationId=cid)
+
 
 class BBGLowLevelTick(BBGLowLevelTemplate):
 
@@ -1001,7 +1011,7 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
     def fill_options(self, market_data_request):
         options = OptionsBBG()
 
-        options.security = market_data_request.tickers[0]    # get 1st ticker only!
+        options.security = market_data_request.tickers[0]  # get 1st ticker only!
         options.event = market_data_request.trade_side.upper()
         # self._options.barInterval = market_data_request.freq_mult
         options.startDateTime = market_data_request.start_date
@@ -1021,7 +1031,7 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
     def process_message(self, msg):
         data = msg.getElement(self.TICK_DATA).getElement(self.TICK_DATA)
 
-       #  self.logger.info("Processing tick data for " + str(self._options.security))
+        #  self.logger.info("Processing tick data for " + str(self._options.security))
 
         data_vals = data.values()
 
@@ -1038,8 +1048,8 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
 
         # slightly faster this way (note, we are skipping trade & CC fields)
         tuple = [([item.getElementAsFloat(self.VALUE),
-                             item.getElementAsInteger(self.TICK_SIZE)],
-                             item.getElementAsDatetime(self.TIME)) for item in data_vals]
+                   item.getElementAsInteger(self.TICK_SIZE)],
+                  item.getElementAsDatetime(self.TIME)) for item in data_vals]
 
         data_table = list(map(itemgetter(0), tuple))
         time_list = list(map(itemgetter(1), tuple))
@@ -1051,8 +1061,8 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
             return None
 
         # create pandas dataframe with the Bloomberg output
-        return pandas.DataFrame(data = data_table, index = time_list,
-                      columns=['close', 'ticksize'])
+        return pandas.DataFrame(data=data_table, index=time_list,
+                                columns=['close', 'ticksize'])
 
     # implement abstract method: create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
@@ -1075,10 +1085,12 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
 
         session.sendRequest(request=request, correlationId=cid)
 
+
 #######################################################################################################################
 
 from findatapy.util.loggermanager import LoggerManager
 from datetime import datetime
+
 
 class OptionsBBG:
 
