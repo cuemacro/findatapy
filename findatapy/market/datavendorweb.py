@@ -216,8 +216,9 @@ class DataVendorALFRED(DataVendor):
                                                                   observation_start=market_data_request.start_date,
                                                                   observation_end=market_data_request.finish_date)
 
-                        data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
-                                              market_data_request.tickers[i] + '.close']
+                        data_frame = data_frame.rename(columns={"realtime_start": market_data_request.tickers[i] + '.release-date-time-full',
+                                                                "date": "Date",
+                                                                "value" : market_data_request.tickers[i] + '.close'})
 
                         data_frame = data_frame.sort_values(by=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
                         data_frame = data_frame.drop_duplicates(subset=['Date'], keep='last')
@@ -234,8 +235,9 @@ class DataVendorALFRED(DataVendor):
                                                      observation_start=market_data_request.start_date,
                                                      observation_end=market_data_request.finish_date)
 
-                        data_frame = pandas.DataFrame(data_frame)
-                        data_frame.columns = [market_data_request.tickers[i] + '.close']
+                        data_frame = data_frame.to_frame(name=market_data_request.tickers[i] + '.close')
+                        data_frame.index.name = 'Date'
+
                         data_frame_list.append(data_frame)
 
                     if 'first-revision' in market_data_request.fields:
@@ -243,8 +245,8 @@ class DataVendorALFRED(DataVendor):
                                                                     observation_start=market_data_request.start_date,
                                                                     observation_end=market_data_request.finish_date)
 
-                        data_frame = pandas.DataFrame(data_frame)
-                        data_frame.columns = [market_data_request.tickers[i] + '.first-revision']
+                        data_frame = data_frame.to_frame(name=market_data_request.tickers[i] + '.first-revision')
+                        data_frame.index.name = 'Date'
 
                         filter = Filter()
                         data_frame = filter.filter_time_series_by_date(market_data_request.start_date,
@@ -257,8 +259,9 @@ class DataVendorALFRED(DataVendor):
                                                                   observation_start=market_data_request.start_date,
                                                                   observation_end=market_data_request.finish_date)
 
-                        data_frame.columns = ['Date', market_data_request.tickers[i] + '.release-date-time-full',
-                                              market_data_request.tickers[i] + '.actual-release']
+                        data_frame = data_frame.rename(columns={"realtime_start": market_data_request.tickers[i] + '.release-date-time-full',
+                                                                "date": "Date",
+                                                                "value" : market_data_request.tickers[i] + '.actual-release'})
 
                         data_frame = data_frame.sort_values(by=['Date', market_data_request.tickers[i] + '.release-date-time-full'])
                         data_frame = data_frame.drop_duplicates(subset=['Date'], keep='first')
@@ -275,8 +278,9 @@ class DataVendorALFRED(DataVendor):
                                                                    observation_start=market_data_request.start_date,
                                                                    observation_end=market_data_request.finish_date)
 
-                        data_frame = pandas.DataFrame(data_frame)
-                        data_frame.columns = [market_data_request.tickers[i] + '.actual-release']
+                        data_frame = data_frame.to_frame(name=market_data_request.tickers[i] + '.actual-release')
+                        data_frame.index.name = 'Date'
+                        # data_frame = data_frame.rename(columns={"value" : market_data_request.tickers[i] + '.actual-release'})
 
                         filter = Filter()
                         data_frame = filter.filter_time_series_by_date(market_data_request.start_date,
@@ -291,11 +295,10 @@ class DataVendorALFRED(DataVendor):
 
                         data_frame = data_frame['realtime_start']
 
-                        data_frame = pandas.DataFrame(data_frame)
-                        data_frame.columns = [market_data_request.tickers[i] + '.release-date-time-full']
+                        data_frame = data_frame.to_frame(name=market_data_request.tickers[i] + '.release-date-time-full')
 
                         data_frame.index = data_frame[market_data_request.tickers[i] + '.release-date-time-full']
-                        data_frame = data_frame.sort()
+                        data_frame = data_frame.sort_index()
                         data_frame = data_frame.drop_duplicates()
 
                         filter = Filter()

@@ -303,11 +303,19 @@ class Filter(object):
         if hasattr(data_frame.index, 'tz'):
             if data_frame.index.tz is not None:
 
+                # If the start/finish dates are timezone naive, overwrite with the DataFrame timezone
                 if not(isinstance(start_date, str)):
                     start_date = start_date.replace(tzinfo=data_frame.index.tz)
 
                 if not(isinstance(finish_date, str)):
                     finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
+            else:
+                # Otherwise remove timezone from start_date/finish_date
+                if not (isinstance(start_date, str)):
+                    start_date = start_date.replace(tzinfo=None)
+
+                if not (isinstance(finish_date, str)):
+                    finish_date = finish_date.replace(tzinfo=None)
 
         if 'int' in str(data_frame.index.dtype):
             return data_frame

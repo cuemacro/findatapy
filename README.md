@@ -105,11 +105,15 @@ In findatapy/examples you will find several demos
 
 # Release Notes
 
+* 0.1.14 - findatapy (25 Aug 2020)
 * 0.1.13 - findatapy (24 Aug 2020)
 * 0.1.12 - findatapy (06 May 2020)
 
 # Coding log
 
+* 25 Aug 2020
+    * Fixes for newer Pandas
+    * Fixes for ALFRED downloading of economic data
 * 24 Aug 2020
     * Removed .ix references (to work with newer Pandas)
 * 06 May 2020
