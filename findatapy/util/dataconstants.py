@@ -148,6 +148,9 @@ class DataConstants(object):
     # FXCM API (contact FXCM to get this)
     fxcm_api_key = "x"
 
+    # Eikon settings
+    eikon_api_key = key_store("Eikon")
+
     # Twitter settings (you need to set these up on Twitter)
     TWITTER_APP_KEY             = key_store("Twitter App Key")
     TWITTER_APP_SECRET          = key_store("Twitter App Secret")

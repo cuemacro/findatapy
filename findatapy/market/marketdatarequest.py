@@ -79,6 +79,7 @@ class MarketDataRequest(object):
                  environment="backtest", trade_side='trade', expiry_date=None, resample=None, resample_how='last',
                  md_request=None, abstract_curve=None, quandl_api_key=data_constants.quandl_api_key,
                  fred_api_key=data_constants.fred_api_key, alpha_vantage_api_key=data_constants.alpha_vantage_api_key,
+                 eikon_api_key=data_constants.eikon_api_key,
                  push_to_cache=True,
                  overrides={}
                  ):
@@ -121,6 +122,7 @@ class MarketDataRequest(object):
                 self.quandl_api_key = copy.deepcopy(md_request.quandl_api_key)
                 self.fred_api_key = copy.deepcopy(md_request.fred_api_key)
                 self.alpha_vantage_api_key = copy.deepcopy(md_request.alpha_vantage_api_key)
+                self.eikon_api_key = copy.deepcopy(md_request.eikon_api_key)
                 self.overrides = copy.deepcopy(md_request.overrides)
                 self.push_to_cache = copy.deepcopy(md_request.push_to_cache)
 
@@ -154,6 +156,7 @@ class MarketDataRequest(object):
             self.quandl_api_key = quandl_api_key
             self.fred_api_key = fred_api_key
             self.alpha_vantage_api_key = alpha_vantage_api_key
+            self.eikon_api_key = eikon_api_key
 
             self.overrides = overrides
             self.push_to_cache = push_to_cache
@@ -201,7 +204,7 @@ class MarketDataRequest(object):
     def data_source(self, data_source):
         try:
             valid_data_source = ['ats', 'bloomberg', 'dukascopy', 'fred', 'gain', 'google', 'quandl', 'yahoo',
-                                 'boe']
+                                 'boe', 'eikon']
 
             if not data_source in valid_data_source:
                 LoggerManager().getLogger(__name__).warning(data_source & " is not a defined data source.")
@@ -532,6 +535,14 @@ class MarketDataRequest(object):
     @alpha_vantage_api_key.setter
     def alpha_vantage_api_key(self, alpha_vantage_api_key):
         self.__alpha_vantage_api_key = alpha_vantage_api_key
+        
+    @property
+    def eikon_api_key(self):
+        return self.__eikon_api_key
+
+    @eikon_api_key.setter
+    def eikon_api_key(self, eikon_api_key):
+        self.__eikon_api_key = eikon_api_key
 
     @property
     def overrides(self):

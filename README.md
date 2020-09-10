@@ -68,10 +68,17 @@ For detailed installation instructions for chartpy, findatapy & finmarketpy and 
 [https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md](https://github.com/cuemacro/finmarketpy/blob/master/INSTALL.md). The tutorial includes details on how to setup your entire Python environment.
 
 You can install the library using the below. After installation:
-* Make sure you edit the dataconstants class for the correct Quandl API and Twitter API keys etc.
+* Make sure you edit the dataconstants class for the correct Eikon API, Quandl API and Twitter API keys etc.
 * Or you can run set_api_keys.py script to set the API keys via storing in your keyring
 * Or you can create a datacred.py file which overwrites these keys
+* Or some of these API keys can be passed via MarketDataRequest on demand
 
+To install via pip (latest release):
+```
+pip install findatapy
+```
+
+To install newest repo copy:
 ```
 pip install git+https://github.com/cuemacro/findatapy.git
 ```
@@ -101,18 +108,22 @@ although it lacks some functionality of later Redis versions.
 
 # findatapy examples
 
-In findatapy/examples you will find several demos
+In findatapy/examples you will find several demos on how to download data from many different sources. Note, 
+for some such as Bloomberg or Eikon, you'll need to have a licence/subscription for it to work.
 
 # Release Notes
 
+* 0.1.15 - findatapy (10 Sep 2020)
 * 0.1.14 - findatapy (25 Aug 2020)
 * 0.1.13 - findatapy (24 Aug 2020)
 * 0.1.12 - findatapy (06 May 2020)
 
 # Coding log
 
+* 10 Sep 2020
+    * Adding Eikon as a market data source
 * 25 Aug 2020
-    * Fixes for newer Pandas
+    * Fixes for newer Pandas eg. 1.0.5
     * Fixes for ALFRED downloading of economic data
 * 24 Aug 2020
     * Removed .ix references (to work with newer Pandas)

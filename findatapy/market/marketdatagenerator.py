@@ -78,6 +78,10 @@ class MarketDataGenerator(object):
             from findatapy.market.datavendorweb import DataVendorQuandl
             data_vendor = DataVendorQuandl()
 
+        elif source == 'eikon':
+            from findatapy.market.datavendorweb import DataVendorEikon
+            data_vendor = DataVendorEikon()
+
         elif source == 'ons':
             from findatapy.market.datavendorweb import DataVendorONS
             data_vendor = DataVendorONS()
@@ -217,7 +221,7 @@ class MarketDataGenerator(object):
                             data_frame_agg = data_frame_agg.resample(market_data_request.resample).first()
 
                         if 'dropna' in market_data_request.resample_how:
-                            data_frame_agg = data_frame_agg.dropna(how = 'all')
+                            data_frame_agg = data_frame_agg.dropna(how='all')
                 else:
                     self.logger.warn("No data returned for " + str(market_data_request.tickers))
 
@@ -442,6 +446,9 @@ class MarketDataGenerator(object):
         if data_frame_group is not None:
             data_frame_group = [i for i in data_frame_group if i is not None]
 
+            # import itertools
+            # columns = list(itertools.chain.from_iterable([i.columns for i in data_frame_group if i is not None]))
+
             # For debugging!
             # import pickle
             # import datetime
@@ -450,6 +457,9 @@ class MarketDataGenerator(object):
             if data_frame_group is not None:
                 try:
                     data_frame_agg = self.calculations.pandas_outer_join(data_frame_group)
+
+                    # Force ordering to be the same!
+                    # data_frame_agg = data_frame_agg[columns]
                 except Exception as e:
                     self.logger.warning('Possible overlap of columns? Have you specifed same ticker several times: ' + str(e))
 
