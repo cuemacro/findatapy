@@ -134,6 +134,120 @@ class DataVendorQuandl(DataVendor):
 
         return data_frame
 
+
+#######################################################################################################################
+
+# support Eikon
+try:
+    import asyncio
+    asyncio.set_event_loop(asyncio.SelectorEventLoop())
+    import eikon as ek
+except:
+    logger = LoggerManager().getLogger(__name__)
+    logger.info("Did not load Eikon library")
+
+
+#ek.set_port_number(9400)
+#ek.set_port_number(9000)
+
+class DataVendorEikon(DataVendor):
+    """Reads in data from Eikon into findatapy library
+
+    """
+
+    def __init__(self):
+        super(DataVendorEikon, self).__init__()
+
+    # implement method in abstract superclass
+    def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
+        market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
+
+        logger.info("Request Eikon data")
+
+        data_frame = self.download(market_data_request_vendor)
+
+        if data_frame is None or data_frame.index is []: return None
+
+        # Convert from vendor to findatapy tickers/fields
+        # if data_frame is not None:
+        #     returned_tickers = data_frame.columns
+
+        if data_frame is not None:
+            # Tidy up tickers into a format that is more easily translatable
+            # we can often get multiple fields returned (even if we don't ask for them!)
+            # convert to lower case
+            returned_fields = market_data_request_vendor.fields
+            returned_tickers = []
+
+            for vi in market_data_request_vendor.tickers:
+                for f in market_data_request_vendor.fields:
+                    returned_tickers.append(vi)
+
+            try:
+                fields = self.translate_from_vendor_field(returned_fields, market_data_request)
+                tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
+            except Exception:
+                print('error')
+
+            ticker_combined = []
+
+            for i in range(0, len(tickers)):
+                try:
+                    ticker_combined.append(tickers[i] + "." + fields[i])
+                except:
+                    ticker_combined.append(tickers[i] + ".close")
+
+            data_frame.columns = ticker_combined
+            data_frame.index.name = 'Date'
+
+        logger.info("Completed request from Eikon for " + str(ticker_combined))
+
+        # print(data_frame)
+        return data_frame
+
+    def download(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
+        trials = 0
+
+        data_frame = None
+
+        if market_data_request.freq == 'tick':
+            freq = 'taq' # Unofficial support https://community.developers.refinitiv.com/questions/48616/how-do-i-get-historical-ticks-using-python-eikon-p.html
+        elif market_data_request.freq == 'daily':
+            freq = 'daily'
+        else:
+            freq = 'minute'
+
+        while (trials < 5):
+            try:
+                # Can sometimes fail first time around
+                ek.set_app_key(market_data_request.eikon_api_key)
+                # ek.set_port_number(9000)
+
+                data_frame = ek.get_timeseries(market_data_request.tickers,
+                                         start_date=market_data_request.start_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                                         end_date=market_data_request.finish_date.strftime("%Y-%m-%dT%H:%M:%S"),
+                                         fields=market_data_request.fields,
+                                         interval=freq
+                                         )
+                break
+            except SyntaxError:
+                logger.error("The tickers %s do not exist on Eikon." % market_data_request.tickers)
+                break
+            except Exception as e:
+                trials = trials + 1
+                logger.info(
+                    "Attempting... " + str(trials) + " request to download from Eikon due to following error: " + str(
+                        e))
+
+        if trials == 5:
+            logger.error("Couldn't download from Eikon after several attempts!")
+
+        return data_frame
+
 #######################################################################################################################
 
 # # support Quandl 3.x.x

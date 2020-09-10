@@ -403,11 +403,15 @@ class Filter(object):
         # CAREFUL: need + 1 otherwise will only return 1 less than usual
         # return data_frame.iloc[start_date:finish_date]
 
-        # just use pandas, quicker and simpler code!
+        # Just use pandas, quicker and simpler code!
         if data_frame is None:
             return None
 
-        return data_frame.loc[start_date:finish_date]
+        # Slower method..
+        # return data_frame.loc[start_date:finish_date]
+
+        # Much faster, start and finish dates are inclusive
+        return data_frame[(data_frame.index >= start_date) & (data_frame.index <= finish_date)]
 
 
     def filter_time_series_by_time_of_day(self, hour, minute, data_frame, in_tz = None, out_tz = None):
@@ -668,7 +672,7 @@ class Filter(object):
 
         tickers_fields_list = []
 
-        # create ticker.field combination for series we wish to return
+        # Create ticker.field combination for series we wish to return
         for f in fields:
             for t in tickers:
                 tickers_fields_list.append(t + '.' + f)
@@ -680,7 +684,7 @@ class Filter(object):
 
     def resample_time_series_frequency(self, data_frame, data_resample_freq,
                                        data_resample_type = 'mean', fill_empties = False):
-        # should we take the mean, first, last in our resample
+        # Should we take the mean, first, last in our resample
         if data_resample_type == 'mean':
             data_frame_r = data_frame.resample(data_resample_freq).mean()
         elif data_resample_type == 'first':
@@ -755,29 +759,29 @@ class Filter(object):
         DataFrame  (which the time zone is 'UTC')
         """
 
-        # change the time zone from 'UTC' to a given one
+        # Change the time zone from 'UTC' to a given one
         df.index = df.index.tz_convert(time_zone)
         df_mask = pandas.DataFrame(0,index=df.index,columns=['mask'])
 
-        # mask data with each given tuple
+        # Mask data with each given tuple
         for i in range(0, len(time_list)):
             start_hour = int(time_list[i][0].split(':')[0])
             start_minute = int(time_list[i][0].split(':')[1])
             end_hour = int(time_list[i][1].split(':')[0])
             end_minute = int(time_list[i][1].split(':')[1])
 
-            # e.g. if tuple is ('01:08', '03:02'),
+            # E.g. if tuple is ('01:08', '03:02'),
             # take hours in target - take values in [01:00,04:00]
             narray = np.where(df.index.hour.isin(range(start_hour,end_hour + 1)), 1, 0)
             df_mask_temp = pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
 
-            # remove minutes not in target - remove values in [01:00,01:07], [03:03,03:59]
+            # Remove minutes not in target - remove values in [01:00,01:07], [03:03,03:59]
             narray = np.where(((df.index.hour == start_hour) & (df.index.minute < start_minute)), 0, 1)
             df_mask_temp = df_mask_temp * pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
             narray = np.where((df.index.hour == end_hour) & (df.index.minute > end_minute), 0, 1)
             df_mask_temp = df_mask_temp * pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
 
-            # collect all the periods we want to keep the data
+            # Collect all the periods we want to keep the data
             df_mask = df_mask + df_mask_temp
 
         narray = np.where(df_mask == 1, df, 0)
@@ -785,11 +789,6 @@ class Filter(object):
         df.index = df.index.tz_convert('UTC')  # change the time zone to 'UTC'
 
         return df
-
-
-
-
-
 
 #######################################################################################################################
 
@@ -897,6 +896,17 @@ if __name__ == '__main__':
     logger = LoggerManager.getLogger(__name__)
 
     tsf = Filter()
+
+    if True:
+        import pandas as pd
+        dates = pd.date_range('01 Jan 2020', '10 Jan 2020', freq='D')
+        data_frame = pd.DataFrame(index=dates)
+
+        start_date = '03 Jan 2020'; finish_date = '06 Jan 2020'
+        print(data_frame.loc[start_date:finish_date])
+
+        # Much faster!
+        print(data_frame[(data_frame.index >= start_date) & (data_frame.index <= finish_date)])
 
     if False:
         start = pandas.to_datetime('2000-01-01')
