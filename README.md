@@ -120,6 +120,8 @@ for some such as Bloomberg or Eikon, you'll need to have a licence/subscription 
 
 # Coding log
 
+* 13 Sep 2020
+    * Removed multiprocessing_on_dill as dependency
 * 10 Sep 2020
     * Adding Eikon as a market data source
 * 25 Aug 2020
