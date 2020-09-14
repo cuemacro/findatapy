@@ -113,6 +113,7 @@ for some such as Bloomberg or Eikon, you'll need to have a licence/subscription 
 
 # Release Notes
 
+* 0.1.16 - findatapy (13 Sep 2020)
 * 0.1.15 - findatapy (10 Sep 2020)
 * 0.1.14 - findatapy (25 Aug 2020)
 * 0.1.13 - findatapy (24 Aug 2020)
