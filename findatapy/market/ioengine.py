@@ -216,12 +216,13 @@ class IOEngine(object):
             except:
                 pass
 
-    ### functions to handle HDF5 on disk
+    ### functions to handle HDF5 on disk, arctic etc.
     def write_time_series_cache_to_disk(self, fname, data_frame,
                                         engine='hdf5_fixed', append_data=False, db_server=DataConstants().db_server,
                                         db_port=DataConstants().db_port, username=None, password=None,
                                         filter_out_matching=None, timeout=10,
-                                        use_cache_compression=DataConstants().use_cache_compression):
+                                        use_cache_compression=DataConstants().use_cache_compression,
+                                        parquet_compression='gzip'):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
@@ -415,10 +416,11 @@ class IOEngine(object):
             self.logger.info("Written HDF5: " + fname)
 
         elif (engine == 'parquet'):
-            if fname[-5:] != '.gzip':
-                fname = fname + '.gzip'
+            if '.parquet' not in fname:
+                if fname[-5:] != '.gzip':
+                    fname = fname + '.gzip'
 
-            data_frame.to_parquet(fname, compression='gzip')
+            data_frame.to_parquet(fname, compression=parquet_compression)
 
             self.logger.info("Written Parquet: " + fname)
 

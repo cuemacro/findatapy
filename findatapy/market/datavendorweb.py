@@ -801,7 +801,7 @@ class DataVendorPoloniex(DataVendor):
     def __init__(self):
         super(DataVendorPoloniex, self).__init__()
 
-    # implement method in abstract superclass
+    # Implement method in abstract superclass
     def load_ticker(self, market_data_request):
         logger = LoggerManager().getLogger(__name__)
 
@@ -810,6 +810,7 @@ class DataVendorPoloniex(DataVendor):
         logger.info("Request data from Poloniex")
 
         poloniex_url = 'https://poloniex.com/public?command=returnChartData&currencyPair={}&start={}&end={}&period={}'
+
         if market_data_request_vendor.freq == 'intraday':
             period = 300
         if market_data_request_vendor.freq == 'daily':
@@ -1035,6 +1036,7 @@ class DataVendorGdax(DataVendor):
         start_time = market_data_request_vendor.start_date
         end_time = market_data_request_vendor.finish_date
         if market_data_request_vendor.freq == 'intraday':
+            # 1 minute data
             period = '60'
             dt = timedelta(minutes=1)
         if market_data_request_vendor.freq == 'daily':

@@ -109,7 +109,9 @@ although it lacks some functionality of later Redis versions.
 # findatapy examples
 
 In findatapy/examples you will find several demos on how to download data from many different sources. Note, 
-for some such as Bloomberg or Eikon, you'll need to have a licence/subscription for it to work.
+for some such as Bloomberg or Eikon, you'll need to have a licence/subscription for it to work. Also there might be 
+certain limits of the history you can download for intraday data from certain sources (you will need to check with
+individual data providers)
 
 # Release Notes
 
@@ -121,10 +123,14 @@ for some such as Bloomberg or Eikon, you'll need to have a licence/subscription 
 
 # Coding log
 
+* 30 Sep 2020
+    * Fix crypto downloaders (added tickers, fields etc. to CSV files)
+* 24 Sep 2020
+    * Refactoring of Calculations
 * 13 Sep 2020
-    * Removed multiprocessing_on_dill as dependency
+    * Removed multiprocessing_on_dill as dependency, which is no longer being used
 * 10 Sep 2020
-    * Adding Eikon as a market data source
+    * Adding Eikon as a market data source (daily, intraday and tick market data)
 * 25 Aug 2020
     * Fixes for newer Pandas eg. 1.0.5
     * Fixes for ALFRED downloading of economic data

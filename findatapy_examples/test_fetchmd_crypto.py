@@ -18,7 +18,7 @@ def test_bitcoincharts():
 def test_binance():
 
     market = Market(market_data_generator=MarketDataGenerator())
-    md_request = MarketDataRequest(start_date='18 Feb 2017', finish_date='20 Feb 2018', cut='LOC',
+    md_request = MarketDataRequest(start_date='18 Feb 2018', finish_date='20 Feb 2018', cut='LOC',
                                    freq='daily', data_source='binance', category='crypto',
                                    fields=['close', 'volume', 'quote-asset-volume'],
                                    tickers=['WTCXBT'])
@@ -31,7 +31,7 @@ def test_huobi():
     market = Market(market_data_generator=MarketDataGenerator())
 
     # test daily historical data
-    md_request = MarketDataRequest(start_date='11 Apr 2018', finish_date='20 Apr 2018', cut='LOC',
+    md_request = MarketDataRequest(start_date='11 Apr 2018', finish_date='12 Apr 2018', cut='LOC',
                                    freq='daily', data_source='huobi', category='crypto',
                                    fields=['high', 'low'], tickers=['XBTUSD'])
 
