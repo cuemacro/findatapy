@@ -38,7 +38,6 @@ if __name__ == '__main__':
     # Note: there will generally be a limit of how many data points you can pull in one call, so you might
     # have to choose smaller time periods
 
-
     run_example = 0
 
     if run_example == 1 or run_example == 0:

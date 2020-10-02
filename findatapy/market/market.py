@@ -322,9 +322,9 @@ class FXCrossFactory(object):
             from multiprocessing.dummy import Pool
         else:
             # Most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
-            # must use the multiprocessing_on_dill library otherwise can't pickle objects correctly
+            # must use the multiprocess library otherwise can't pickle objects correctly
             # note: currently not very stable
-            from multiprocessing_on_dill import Pool
+            from multiprocess import Pool
 
         thread_no = constants.market_thread_no['other']
 
@@ -557,6 +557,7 @@ class FXVolFactory(object):
             cache_algo=cache_algo,
             environment='backtest'
         )
+
         data_frame = market_data_generator.fetch_market_data(market_data_request)
         data_frame.index.name = 'Date'
 

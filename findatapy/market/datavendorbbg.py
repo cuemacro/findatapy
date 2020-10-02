@@ -474,11 +474,11 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
                         if msg.messageType() == self.SESSION_TERMINATED:
                             not_done = False
 
-            # append DataFrame only if not empty
+            # Append DataFrame only if not empty
             if data_frame_slice is not None:
                 data_frame_list.append(self.combine_slices(data_frame_cols, data_frame_slice))
 
-                # keep list of columns we've already found (occasionally BBG seems to return columns more than once?)
+                # Keep list of columns we've already found (occasionally BBG seems to return columns more than once?)
                 # (this will fail for intraday time series)
                 try:
                     data_frame_cols.append(list(data_frame_slice.columns.get_level_values(1).values)[0])
@@ -490,7 +490,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
         if data_frame_cols == [] and data_frame_list != []:  # intraday case
             data_frame = pandas.concat(data_frame_list)
         else:  # daily frequencies
-            data_frame = Calculations().iterative_outer_join(data_frame_list)
+            data_frame = Calculations().pandas_outer_join(data_frame_list)
 
         # make sure we do not have any duplicates in the time series
         if data_frame is not None:
@@ -499,7 +499,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
 
         return data_frame
 
-    # process raw message returned by Bloomberg
+    # Process raw message returned by Bloomberg
     def process_response_event(self, event):
         data_frame_list = []
 
@@ -534,13 +534,13 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
             if tradedOn.weekday() not in [5, 6]:
                 return tradedOn
 
-    # create a session for Bloomberg with appropriate server & port
+    # Create a session for Bloomberg with appropriate server & port
     def start_bloomberg_session(self):
         tries = 0
 
         session = None
 
-        # try up to 5 times to start a session
+        # Try up to 5 times to start a session
         while (tries < 5):
             try:
                 # fill SessionOptions
@@ -580,19 +580,19 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
 
     @abc.abstractmethod
     def process_message(self, msg):
-        # to be implemented by subclass
+        # To be implemented by subclass
         return
 
     # create request for data
     @abc.abstractmethod
     def send_bar_request(self, session, eventQueue, options, cid):
-        # to be implemented by subclass
+        # To be implemented by subclass
         return
 
     # create request for data
     @abc.abstractmethod
     def combine_slices(self, data_frame_cols, data_frame_slice):
-        # to be implemented by subclass
+        # To be implemented by subclass
         return
 
     def kill_session(self, session):
@@ -628,7 +628,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
         return None
 
-    # populate options for Bloomberg request for asset daily request
+    # Populate options for Bloomberg request for asset daily request
     def fill_options(self, market_data_request):
         options = OptionsBBG()
 
