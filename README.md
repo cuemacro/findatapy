@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.18 - findatapy (02 Oct 2020)
 * 0.1.17 - findatapy (01 Oct 2020)
 * 0.1.16 - findatapy (13 Sep 2020)
 * 0.1.15 - findatapy (10 Sep 2020)
@@ -124,6 +125,9 @@ individual data providers)
 
 # Coding log
 
+* 02 Oct 2020
+    * Fix vol ticker mapping for 4M points
+    * Fix Bloomberg downloader for events
 * 30 Sep 2020
     * Fix crypto downloaders (added tickers, fields etc. to CSV files)
 * 24 Sep 2020

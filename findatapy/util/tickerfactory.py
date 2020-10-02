@@ -93,7 +93,7 @@ if __name__ == '__main__':
     logger = LoggerManager.getLogger(__name__)
 
     tf = TickerFactory()
-    root = 'E:/Remote/canary/conf'
+    root = 'E:/cuemacro/yen/conf'
 
     csv_file = root + '/fx_vol_tickers_maker.csv'
     out_csv_file = root + '/fx_vol_tickers.csv'
