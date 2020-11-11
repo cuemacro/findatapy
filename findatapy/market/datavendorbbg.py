@@ -35,7 +35,8 @@ class DataVendorBBG(DataVendor):
 
     """
 
-    # these fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
+    # These fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
+    # You may need to add to this list
     list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day', 'futures-chain-tickers',
                           'futures-chain-last-trade-dates', 'first-notice-date', 'first-tradeable-day',
                           'cal-non-settle-dates']
@@ -46,8 +47,6 @@ class DataVendorBBG(DataVendor):
 
     def __init__(self):
         super(DataVendorBBG, self).__init__()
-
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
@@ -66,7 +65,9 @@ class DataVendorBBG(DataVendor):
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         data_frame = None
-        self.logger.info("Request Bloomberg data")
+
+        logger = LoggerManager().getLogger(__name__)
+        logger.info("Request Bloomberg data")
 
         # do we need daily or intraday data?
         if (market_data_request.freq in ['daily', 'weekly', 'monthly', 'quarterly', 'yearly']):
@@ -91,11 +92,11 @@ class DataVendorBBG(DataVendor):
                     non_ref_fields.append(market_data_request.fields[i])
                     non_ref_vendor_fields.append(market_data_request_vendor.fields[i])
 
-            # for certain cases, need to use ReferenceDataRequest
+            # For certain cases, need to use ReferenceDataRequest
             # eg. for events times/dates, last tradeable date fields (when specified)
             if len(ref_fields) > 0:
 
-                # careful: make sure you copy the market data request object (when threading, altering that can
+                # Careful: make sure you copy the market data request object (when threading, altering that can
                 # cause concurrency issues!)
                 old_fields = copy.deepcopy(market_data_request.fields)
                 old_vendor_fields = copy.deepcopy(market_data_request_vendor.fields)
@@ -106,10 +107,10 @@ class DataVendorBBG(DataVendor):
                 market_data_request.vendor_fields = ref_vendor_fields
                 market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-                # just select those reference fields to download via reference
+                # Just select those reference fields to download via reference
                 datetime_data_frame = self.get_reference_data(market_data_request_vendor, market_data_request)
 
-                # download all the other event or non-ref fields (uses HistoricalDataRequest to Bloomberg)
+                # Download all the other event or non-ref fields (uses HistoricalDataRequest to Bloomberg)
                 # concatenate with date time fields
                 if len(non_ref_fields) > 0:
 
@@ -132,7 +133,7 @@ class DataVendorBBG(DataVendor):
                 market_data_request.fields = copy.deepcopy(old_fields)
                 market_data_request_vendor.fields = copy.deepcopy(old_vendor_fields)
 
-            # for all other daily/monthly/quarter data, we can use HistoricalDataRequest to Bloomberg
+            # For all other daily/monthly/quarter data, we can use HistoricalDataRequest to Bloomberg
             else:
                 data_frame = self.get_daily_data(market_data_request, market_data_request_vendor)
 
@@ -145,7 +146,7 @@ class DataVendorBBG(DataVendor):
                 except:
                     pass
 
-        # assume one ticker only for intraday data and use IntradayDataRequest to Bloomberg
+        # Assume one ticker only for intraday data and use IntradayDataRequest to Bloomberg
         if (market_data_request.freq in ['tick', 'intraday', 'second', 'minute', 'hourly']):
             market_data_request_vendor.tickers = market_data_request_vendor.tickers[0]
 
@@ -157,7 +158,7 @@ class DataVendorBBG(DataVendor):
             if data_frame is not None:
                 if data_frame.empty:
                     try:
-                        self.logger.info("No tickers returned for: " + market_data_request_vendor.tickers)
+                        logger.info("No tickers returned for: " + market_data_request_vendor.tickers)
                     except:
                         pass
 
@@ -175,20 +176,22 @@ class DataVendorBBG(DataVendor):
                 cols = market_data_request.tickers[0] + "." + cols
                 data_frame.columns = cols
 
-        self.logger.info("Completed request from Bloomberg.")
+        logger.info("Completed request from Bloomberg.")
 
         return data_frame
 
     def get_daily_data(self, market_data_request, market_data_request_vendor):
+        logger = LoggerManager().getLogger(__name__)
+
         data_frame = self.download_daily(market_data_request_vendor)
 
         # convert from vendor to findatapy tickers/fields
         if data_frame is not None:
             if data_frame.empty:
-                self.logger.info("No tickers returned for...")
+                logger.info("No tickers returned for...")
 
                 try:
-                    self.logger.info(str(market_data_request_vendor.tickers))
+                    logger.info(str(market_data_request_vendor.tickers))
                 except:
                     pass
 
@@ -201,7 +204,7 @@ class DataVendorBBG(DataVendor):
             try:
                 fields = self.translate_from_vendor_field(returned_fields, market_data_request)
             except:
-                print('t')
+                print('Problem translating vendor field')
 
             tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
 
@@ -216,6 +219,8 @@ class DataVendorBBG(DataVendor):
         return data_frame
 
     def get_reference_data(self, market_data_request_vendor, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         end = datetime.utcnow()
 
         from datetime import timedelta
@@ -224,11 +229,11 @@ class DataVendorBBG(DataVendor):
 
         market_data_request_vendor.finish_date = end
 
-        self.logger.debug("Requesting ref for " + market_data_request_vendor.tickers[0] + " etc.")
+        logger.debug("Requesting ref for " + market_data_request_vendor.tickers[0] + " etc.")
 
         data_frame = self.download_ref(market_data_request_vendor)
 
-        self.logger.debug("Waiting for ref...")
+        logger.debug("Waiting for ref...")
 
         # convert from vendor to findatapy tickers/fields
         if data_frame is not None:
@@ -309,7 +314,6 @@ class DataVendorBBGOpen(DataVendorBBG):
 
     def __init__(self):
         super(DataVendorBBGOpen, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     def download_tick(self, market_data_request):
         # Bloomberg OpenAPI implementation
@@ -337,7 +341,7 @@ class DataVendorBBGOpen(DataVendorBBG):
         # Bloomberg Open API implementation
         low_level_loader = BBGLowLevelDaily()
 
-        # by default we download all available fields!
+        # By default we download all available fields!
         data_frame = low_level_loader.load_time_series(market_data_request)
 
         # self.kill_session() # need to forcibly kill_session since can't always reopen
@@ -390,6 +394,8 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
     def load_time_series(self, market_data_request):
 
         # if(BBGLowLevelTemplate._session is None):
+        logger = LoggerManager().getLogger(__name__)
+
         session = self.start_bloomberg_session()
         # else:
         #    session = BBGLowLevelTemplate._session
@@ -402,25 +408,25 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
             while i < 5:
                 if session is not None:
                     if not session.openService("//blp/refdata"):
-                        self.logger.info("Try reopening Bloomberg session... try " + str(i))
+                        logger.info("Try reopening Bloomberg session... try " + str(i))
                         self.kill_session(session)  # need to forcibly kill_session since can't always reopen
                         session = self.start_bloomberg_session()
 
                         if session is not None:
                             if session.openService("//blp/refdata"): i = 6
                 else:
-                    self.logger.info("Try opening Bloomberg session... try " + str(i))
+                    logger.info("Try opening Bloomberg session... try " + str(i))
                     session = self.start_bloomberg_session()
 
                 i = i + 1
 
             # give error if still doesn't work after several tries..
             if not session.openService("//blp/refdata"):
-                self.logger.error("Failed to open //blp/refdata")
+                logger.error("Failed to open //blp/refdata")
 
                 return
 
-            self.logger.info("Creating request...")
+            logger.info("Creating request...")
 
             eventQueue = blpapi.EventQueue()
             # eventQueue = None
@@ -430,12 +436,16 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
             cid = CorrelationId()
             options = self.fill_options(market_data_request)
 
-            self.send_bar_request(session, eventQueue, options, cid)
+            if options.security is not None:
+                self.send_bar_request(session, eventQueue, options, cid)
 
-            self.logger.info("Waiting for data to be returned...")
+                logger.info("Waiting for data to be returned...")
 
-            data_frame = self.event_loop(session)
+                data_frame = self.event_loop(session)
+            else:
+                logger.warn("No ticker or field specified!")
 
+                data_frame = None
         finally:
             # stop the session (will fail if NoneType)
             try:
@@ -461,10 +471,10 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
 
             # Bloomberg will send us responses in chunks
             if event.eventType() == blpapi.Event.PARTIAL_RESPONSE:
-                # self.logger.info("Processing Bloomberg Partial Response")
+                # logger.info("Processing Bloomberg Partial Response")
                 data_frame_slice = self.process_response_event(event)
             elif event.eventType() == blpapi.Event.RESPONSE:
-                # self.logger.info("Processing Bloomberg Full Response")
+                # logger.info("Processing Bloomberg Full Response")
                 data_frame_slice = self.process_response_event(event)
                 not_done = False
             else:
@@ -503,12 +513,14 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
     def process_response_event(self, event):
         data_frame_list = []
 
+        logger = LoggerManager().getLogger(__name__)
+
         for msg in event:
             # generates a lot of output - so don't use unless for debugging purposes
-            # self.logger.info(msg)
+            # logger.info(msg)
 
             if msg.hasElement(self.RESPONSE_ERROR):
-                self.logger.error("REQUEST FAILED: " + str(msg.getElement(self.RESPONSE_ERROR)))
+                logger.error("REQUEST FAILED: " + str(msg.getElement(self.RESPONSE_ERROR)))
                 continue
 
             data_frame_slice = self.process_message(msg)
@@ -517,7 +529,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
                 data_frame_list.append(data_frame_slice)
 
         if data_frame_list == []:
-            self.logger.warn("No elements for ticker.")
+            logger.warn("No elements for ticker.")
             return None
         else:
             return pandas.concat(data_frame_list)
@@ -540,6 +552,8 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
 
         session = None
 
+        logger = LoggerManager().getLogger(__name__)
+
         # Try up to 5 times to start a session
         while (tries < 5):
             try:
@@ -548,17 +562,17 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
                 sessionOptions.setServerHost(DataConstants().bbg_server)
                 sessionOptions.setServerPort(DataConstants().bbg_server_port)
 
-                self.logger.info("Starting Bloomberg session...")
+                logger.info("Starting Bloomberg session...")
 
                 # create a Session
                 session = blpapi.Session(sessionOptions)
 
                 # start a Session
                 if not session.start():
-                    self.logger.error("Failed to start session.")
+                    logger.error("Failed to start session.")
                     return
 
-                self.logger.info("Returning session...")
+                logger.info("Returning session...")
 
                 tries = 5
             except:
@@ -567,7 +581,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
         # BBGLowLevelTemplate._session = session
 
         if session is None:
-            self.logger.error("Failed to start session.")
+            logger.error("Failed to start session.")
             return
 
         return session
@@ -596,13 +610,14 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
         return
 
     def kill_session(self, session):
+        logger = LoggerManager().getLogger(__name__)
         if (session is not None):
             try:
                 session.stop()
 
-                self.logger.info("Stopping session...")
+                logger.info("Stopping session...")
             finally:
-                self.logger.info("Finally stopping session...")
+                logger.info("Finally stopping session...")
 
             session = None
 
@@ -612,8 +627,6 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
     def __init__(self):
         super(BBGLowLevelDaily, self).__init__()
 
-        self.logger = LoggerManager().getLogger(__name__)
-
     def combine_slices(self, data_frame_cols, data_frame_slice):
         # data
         try:
@@ -622,7 +635,8 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
                 # return data_frame.join(data_frame_slice, how="outer")
                 return data_frame_slice
         except Exception as e:
-            self.logger.warn('Data slice empty ' + str(e))
+
+            LoggerManager().getLogger(__name__).warn('Data slice empty ' + str(e))
 
             return None
 
@@ -646,6 +660,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
         # SLOW loop (careful, not all the fields will be returned every time hence need to include the field name in the tuple)
         # perhaps try to run in parallel?
+        logger = LoggerManager().getLogger(__name__)
 
         implementation = 'simple'
 
@@ -701,28 +716,30 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         if (not (data_frame.empty)):
             # data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
             data_frame.index = pandas.to_datetime(data_frame.index)
-            self.logger.info("Read: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
+            logger.info("Read: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
         else:
             return None
 
         return data_frame
 
-    # create request for data
+    # Create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
+        logger = LoggerManager().getLogger(__name__)
+
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest("HistoricalDataRequest")
 
         request.set("startDate", options.startDateTime.strftime('%Y%m%d'))
         request.set("endDate", options.endDateTime.strftime('%Y%m%d'))
 
-        # # only one security/eventType per request
+        # Only one security/eventType per request
         for field in options.fields:
             request.getElement("fields").appendValue(field)
 
         for security in options.security:
             request.getElement("securities").appendValue(security)
 
-        self.logger.info("Sending Bloomberg Daily Request:" + str(request))
+        logger.info("Sending Bloomberg Daily Request:" + str(request))
         session.sendRequest(request=request, correlationId=cid)
 
 
@@ -731,9 +748,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
     def __init__(self):
         super(BBGLowLevelRef, self).__init__()
 
-        self.logger = LoggerManager().getLogger(__name__)
-
-    # populate options for Bloomberg request for asset intraday request
+    # Populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
         options = OptionsBBG()
 
@@ -747,6 +762,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         return options
 
     def process_message(self, msg):
+        logger = LoggerManager().getLogger(__name__)
         data = collections.defaultdict(dict)
 
         # process received events
@@ -764,7 +780,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                 if not field.isValid():
                     field_name = "%s" % field.name()
 
-                    self.logger.error(field_name + " is NULL")
+                    logger.error(field_name + " is NULL")
                 elif field.isArray():
                     # iterate over complex data returns.
                     field_name = "%s" % field.name()
@@ -805,7 +821,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
             #    pass
             # data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
 
-            self.logger.info("Reading: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
+            logger.info("Reading: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
         else:
             return None
 
@@ -820,6 +836,8 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
 
     # create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
+        logger = LoggerManager().getLogger(__name__)
+
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest('ReferenceDataRequest')
 
@@ -845,7 +863,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
 
                 self.add_override(request, new_k, options.overrides[k])
 
-        self.logger.info("Sending Bloomberg Ref Request:" + str(request))
+        logger.info("Sending Bloomberg Ref Request:" + str(request))
         session.sendRequest(request=request, correlationId=cid)
 
 
@@ -856,8 +874,6 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
 
     def __init__(self):
         super(BBGLowLevelIntraday, self).__init__()
-
-        self.logger = LoggerManager().getLogger(__name__)
 
         # constants
         self.BAR_DATA = blpapi.Name("barData")
@@ -899,7 +915,9 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
     def process_message(self, msg):
         data = msg.getElement(self.BAR_DATA).getElement(self.BAR_TICK_DATA)
 
-        # self.logger.info("Processing intraday data for " + str(self._options.security))
+        logger = LoggerManager().getLogger(__name__)
+
+        # logger.info("Processing intraday data for " + str(self._options.security))
 
         data_vals = list(data.values())
 
@@ -918,7 +936,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         #
         #     date_index[i] = data_vals[i].getElementAsDatetime(self.TIME)
         #
-        # self.logger.info("Dates between " + str(date_index[0]) + " - " + str(date_index[-1]))
+        # logger.info("Dates between " + str(date_index[0]) + " - " + str(date_index[-1]))
         #
         # # create pandas dataframe with the Bloomberg output
         # return pandas.DataFrame(data = data_matrix, index = date_index,
@@ -951,9 +969,9 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         time_list = list(map(itemgetter(1), tuple))
 
         try:
-            self.logger.info("Dates between " + str(time_list[0]) + " - " + str(time_list[-1]))
+            logger.info("Dates between " + str(time_list[0]) + " - " + str(time_list[-1]))
         except:
-            self.logger.info("No dates retrieved")
+            logger.info("No dates retrieved")
             return None
 
         # create pandas dataframe with the Bloomberg output
@@ -962,6 +980,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
 
     # implement abstract method: create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
+        logger = LoggerManager().getLogger(__name__)
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest("IntradayBarRequest")
 
@@ -979,7 +998,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         if options.gapFillInitialBar:
             request.append("gapFillInitialBar", True)
 
-        self.logger.info("Sending Intraday Bloomberg Request...")
+        logger.info("Sending Intraday Bloomberg Request...")
 
         session.sendRequest(request=request, correlationId=cid)
 
@@ -988,8 +1007,6 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
 
     def __init__(self):
         super(BBGLowLevelTick, self).__init__()
-
-        self.logger = LoggerManager().getLogger(__name__)
 
         # constants
         self.TICK_DATA = blpapi.Name("tickData")
@@ -1030,8 +1047,9 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
     # implements abstract method
     def process_message(self, msg):
         data = msg.getElement(self.TICK_DATA).getElement(self.TICK_DATA)
+        logger = LoggerManager().getLogger(__name__)
 
-        #  self.logger.info("Processing tick data for " + str(self._options.security))
+        #  logger.info("Processing tick data for " + str(self._options.security))
 
         data_vals = data.values()
 
@@ -1055,9 +1073,9 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
         time_list = list(map(itemgetter(1), tuple))
 
         try:
-            self.logger.info("Dates between " + str(time_list[0]) + " - " + str(time_list[-1]))
+            logger.info("Dates between " + str(time_list[0]) + " - " + str(time_list[-1]))
         except:
-            self.logger.info("No dates retrieved")
+            logger.info("No dates retrieved")
             return None
 
         # create pandas dataframe with the Bloomberg output
@@ -1066,6 +1084,8 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
 
     # implement abstract method: create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
+        logger = LoggerManager().getLogger(__name__)
+
         refDataService = session.getService("//blp/refdata")
         request = refDataService.createRequest("IntradayTickRequest")
 
@@ -1081,7 +1101,7 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
             request.set("startDateTime", options.startDateTime)
             request.set("endDateTime", options.endDateTime)
 
-        self.logger.info("Sending Tick Bloomberg Request...")
+        logger.info("Sending Tick Bloomberg Request...")
 
         session.sendRequest(request=request, correlationId=cid)
 
@@ -1096,4 +1116,4 @@ class OptionsBBG:
 
     # TODO create properties that cannot be manipulated
     def __init__(self):
-        self.logger = LoggerManager().getLogger(__name__)
+        pass

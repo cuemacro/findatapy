@@ -634,7 +634,7 @@ class Calculations(object):
         return math.log(data_frame / data_frame.shift(period_shift))
 
     def create_mult_index(self, df_rets):
-        """ Calculates a multiplicative index for a time series of returns
+        """ Calculates a multiplicative index for a time series of returns starting from 100
 
         Parameters
         ----------
@@ -688,6 +688,62 @@ class Calculations(object):
         DataFrame
         """
         return self.create_mult_index(self.calculate_returns(data_frame))
+
+    def create_add_index(self, df_rets):
+        """ Calculates a additive index for a time series of returns starting from 1
+
+        Parameters
+        ----------
+        df_rets : DataFrame
+            asset price returns
+
+        Returns
+        -------
+        DataFrame
+        """
+
+        df = 1.0 + df_rets.cumsum()
+
+        # get the first non-nan values for rets and then start index
+        # one before that (otherwise will ignore first rets point)
+        # first_date_indices = df_rets.apply(lambda series: series.first_valid_index())
+        # first_ord_indices = list()
+        #
+        # for i in first_date_indices:
+        #     try:
+        #         ind = df.index.searchsorted(i)
+        #     except:
+        #         ind = 0
+        #
+        #     if ind > 0: ind = ind - 1
+        #
+        #     first_ord_indices.append(ind)
+        #
+        # for i in range(0, len(df.columns)):
+        #     df.iloc[first_ord_indices[i],i] = 100
+
+        if isinstance(df, pd.Series):
+            df = pd.DataFrame(df)
+
+        # Probably a quicker way to do this, maybe using group by?
+        for c in df.columns:
+            df.loc[df[c].first_valid_index(), c] = 1
+
+        return df
+
+    def create_add_index_from_prices(self, data_frame):
+        """Calculates a additive index for a time series of prices
+
+        Parameters
+        ----------
+        df_rets : DataFrame
+            asset price
+
+        Returns
+        -------
+        DataFrame
+        """
+        return self.create_add_index(self.calculate_returns(data_frame))
 
     def rolling_z_score(self, data_frame, periods):
         """Calculates the rolling z score for a time series
@@ -1031,7 +1087,7 @@ class Calculations(object):
             pool = Pool(4)
 
         if (len(df_list) < 3):
-            return self.pd_outer_join(df_list)
+            return self.pandas_outer_join(df_list)
 
         while (True):
             # split into two
