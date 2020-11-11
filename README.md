@@ -54,7 +54,7 @@ To appear
 # Requirements
 
 Major requirements
-* Required: Python 3.6
+* Required: Python 3.7
 * Required: pandas, numpy etc.
 * Recommended: blpapi - Bloomberg Python Open API
 * Recommended: chartpy - for funky interactive plots ([https://github.com/cuemacro/chartpy](https://github.com/cuemacro/chartpy)) and
@@ -125,6 +125,10 @@ individual data providers)
 
 # Coding log
 
+* 11 Nov 2020
+    * Added cumulative additive index returns 
+    * Removed log as field variable in DataVendorBBG
+    * Added 10am NYC cut for FX vol surface download
 * 02 Oct 2020
     * Fix vol ticker mapping for 4M points
     * Fix Bloomberg downloader for events

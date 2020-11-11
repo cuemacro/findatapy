@@ -84,7 +84,7 @@ class MarketDataRequest(object):
                  overrides={}
                  ):
 
-        # can deep copy MarketDataRequest (use a lock, so can be used with threading when downloading time series)
+        # Can deep copy MarketDataRequest (use a lock, so can be used with threading when downloading time series)
         if md_request is not None:
             import threading
             lock = threading.Lock()
@@ -126,7 +126,7 @@ class MarketDataRequest(object):
                 self.overrides = copy.deepcopy(md_request.overrides)
                 self.push_to_cache = copy.deepcopy(md_request.push_to_cache)
 
-                self.tickers = copy.deepcopy(md_request.tickers)  # need this after category in case have wildcard
+                self.tickers = copy.deepcopy(md_request.tickers)  # Need this after category in case have wildcard
         else:
             self.freq_mult = freq_mult
 

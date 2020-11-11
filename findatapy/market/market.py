@@ -76,7 +76,7 @@ class Market(object):
         data_frame = None
 
         # If internet_load has been specified don't bother going to cache (might end up calling lower level cache though
-        # through MarketDataGenerator
+        # through MarketDataGenerator)
         if 'cache_algo' in md_request.cache_algo:
             data_frame = self.speed_cache.get_dataframe(key)
 
@@ -122,15 +122,15 @@ class Market(object):
                     for t in md_request.tickers:
                         if len(t) == 6:
                             df.append(
-                                fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
+                                fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor_default,
                                                         cut=md_request.cut, data_source=md_request.data_source,
-                                                        part=fxvf.part,
+                                                        part=fxvf.part_default,
                                                         cache_algo=md_request.cache_algo))
 
                     if df != []:
                         data_frame = Calculations().pandas_outer_join(df)
 
-            # For FX vol market return all the market data necessarily for pricing options
+            # For FX vol market return all the market data necessary for pricing options
             # which includes FX spot, volatility surface, forward points, deposit rates
             if (md_request.category == 'fx-vol-market'):
                 if md_request.tickers is not None:
@@ -143,6 +143,7 @@ class Market(object):
                     # For each FX cross fetch the spot, vol and forward points
                     for t in md_request.tickers:
                         if len(t) == 6:
+                            # Spot
                             df.append(
                                 fxcf.get_fx_cross(start=md_request.start_date, end=md_request.finish_date, cross=t,
                                                   cut=md_request.cut, data_source=md_request.data_source,
@@ -151,21 +152,23 @@ class Market(object):
                                                   environment=md_request.environment,
                                                   fields=['close']))
 
+                            # Entire FX vol surface
                             df.append(
-                                fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor,
+                                fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, fxvf.tenor_default,
                                                         cut=md_request.cut, data_source=md_request.data_source,
-                                                        part=fxvf.part,
+                                                        part=fxvf.part_default,
                                                         cache_algo=md_request.cache_algo))
 
+                            # FX forward points for every point on curve
                             df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t,
-                                                                  fxvf.tenor,
+                                                                  fxvf.tenor_default,
                                                                   cut=md_request.cut,
                                                                   data_source=md_request.data_source,
                                                                   cache_algo=md_request.cache_algo))
 
                     # Lastly fetch the base depos
                     df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date,
-                                                   ["USD", "EUR", "CHF", "GBP"], fxvf.tenor,
+                                                   ["USD", "EUR", "CHF", "GBP"], fxvf.tenor_default,
                                                    cut=md_request.cut, data_source=md_request.data_source,
                                                    cache_algo=md_request.cache_algo
                                                    ))
@@ -212,7 +215,6 @@ class FXCrossFactory(object):
     """
 
     def __init__(self, market_data_generator=None):
-        self.logger = LoggerManager().getLogger(__name__)
         self.fxconv = FXConv()
 
         self.cache = {}
@@ -331,7 +333,7 @@ class FXCrossFactory(object):
         if market_data_request_list[0].data_source in constants.market_thread_no:
             thread_no = constants.market_thread_no[market_data_request_list[0].data_source]
 
-        # fudge, issue with multithreading and accessing HDF5 files
+        # Fudge, issue with multithreading and accessing HDF5 files
         # if self.market_data_generator.__class__.__name__ == 'CachedMarketDataGenerator':
         #    thread_no = 0
         thread_no = 0
@@ -477,7 +479,7 @@ class FXCrossFactory(object):
                 cross_vals.columns = [cr + '-tot.close']
 
             elif freq == 'intraday':
-                self.logger.info('Total calculated returns for intraday not implemented yet')
+                LoggerManager().getLogger(__name__).info('Total calculated returns for intraday not implemented yet')
                 return None
 
         return cross_vals
@@ -491,20 +493,18 @@ from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.util import LoggerManager
 from findatapy.timeseries import Calculations, Filter, Timezone
 
-
 class FXVolFactory(object):
     """Generates FX implied volatility time series and surfaces (using very simple interpolation!) and only in delta space.
 
     """
     # types of quotation on vol surface
     # ATM, 25d riskies, 10d riskies, 25d strangles, 10d strangles
-    part = ["V", "25R", "10R", "25B", "10B"]
+    part_default = ["V", "25R", "10R", "25B", "10B"]
 
     # All the tenors on our vol surface
-    tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
+    tenor_default = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
     def __init__(self, market_data_generator=None):
-        self.logger = LoggerManager().getLogger(__name__)
 
         self.market_data_generator = market_data_generator
 
@@ -517,8 +517,12 @@ class FXVolFactory(object):
         return
 
     def get_fx_implied_vol(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg", part="V",
-                           cache_algo="internet_load_return"):
-        """Get implied vol for specified cross, tenor and part of surface
+                           cache_algo="internet_load_return", environment='backtest'):
+        """Get implied vol for specified cross, tenor and part of surface. By default we use Bloomberg, but we could
+        use any data provider for which we have vol tickers.
+
+        Note, that for Bloomberg not every point will be quoted for each dataset (typically, BGN will have more points
+        than for example LDN)
 
         Parameters
         ----------
@@ -544,6 +548,12 @@ class FXVolFactory(object):
 
         market_data_generator = self.market_data_generator
 
+        if tenor is None:
+            tenor = self.tenor_default
+
+        if part is None:
+            part = self.part_default
+
         tickers = self.get_labels(cross, part, tenor)
 
         market_data_request = MarketDataRequest(
@@ -555,11 +565,60 @@ class FXVolFactory(object):
             tickers=tickers,
             fields=['close'],
             cache_algo=cache_algo,
-            environment='backtest'
+            environment=environment
         )
 
         data_frame = market_data_generator.fetch_market_data(market_data_request)
-        data_frame.index.name = 'Date'
+        # data_frame.index.name = 'Date'
+
+        # Special case for 10AM NYC cut
+        # - get some historical 10AM NYC data (only available on BBG for a few years, before 2007)
+        # - fill the rest with a weighted average of TOK/LDN closes
+        if cut == "10AM":
+            # Where we have actual 10am NY data use that & overwrite earlier estimated data (next)
+            vol_data_10am = data_frame
+
+            # As for most dates we probably won't have 10am data
+            if vol_data_10am is not None:
+                vol_data_10am = vol_data_10am.dropna()  # Only have limited ON 10am cut data
+
+            # Now get LDN and TOK vol data to fill any gaps
+            vol_data_LDN = self.get_fx_implied_vol(start=start, end=end, cross=cross, tenor=tenor,
+                                                                       data_source=data_source, cut='LDN', part=part,
+                                                                       cache_algo=cache_algo)
+
+            vol_data_TOK = self.get_fx_implied_vol(start=start, end=end, cross=cross, tenor=tenor,
+                                                                       data_source=data_source, cut='TOK', part=part,
+                                                                       cache_algo=cache_algo)
+
+            # vol_data_LDN.index = pandas.DatetimeIndex(vol_data_LDN.index)
+            # vol_data_TOK.index = pandas.DatetimeIndex(vol_data_TOK.index)
+
+            old_cols = vol_data_LDN.columns
+
+            vol_data_LDN.columns = vol_data_LDN.columns.values + "LDN"
+            vol_data_TOK.columns = vol_data_TOK.columns.values + "TOK"
+
+            data_frame = vol_data_LDN.join(vol_data_TOK, how='outer')
+
+            # Create very naive average of LDN and TOK to estimate 10am NY value because we often don't have this data
+            # Note, this isn't perfect, particularly on days where you have payrolls data, and we're looking at ON data
+            for col in old_cols:
+                data_frame[col] = (1 * data_frame[col + "LDN"] + 3 * data_frame[col + "TOK"]) / 4
+
+                data_frame.pop(col + "LDN")
+                data_frame.pop(col + "TOK")
+
+            # Get TOK/LDN vol data before 10am and after 10am (10am data is only available for a few years)
+            # If we have no original 10am data don't bother
+            if vol_data_10am is not None:
+                if not(vol_data_10am.empty):
+                    pre_vol_data = data_frame[data_frame.index < vol_data_10am.index[0]]
+                    post_vol_data = data_frame[data_frame.index > vol_data_10am.index[-1]]
+
+                    data_frame = (pre_vol_data.append(vol_data_10am)).append(post_vol_data)
+
+            # data_frame.index = pandas.to_datetime(data_frame.index)
 
         return data_frame
 
@@ -578,6 +637,21 @@ class FXVolFactory(object):
         return tickers
 
     def extract_vol_surface_for_date(self, df, cross, date_index):
+        """Get's the vol surface in delta space without any interpolation
+
+        Parameters
+        ----------
+        df : DataFrame
+            With vol data
+        cross : str
+            Currency pair
+        date_index : int
+            Which date to extract
+
+        Returns
+        -------
+        DataFrame
+        """
 
         # Assume we have a matrix of the form
         # eg. EURUSDVON.close ...
@@ -594,7 +668,7 @@ class FXVolFactory(object):
                    "25DC",
                    "10DC"]
 
-        tenor = self.tenor
+        tenor = self.tenor_default
 
         df_surf = pandas.DataFrame(index=strikes, columns=tenor)
 
@@ -623,12 +697,11 @@ class FXVolFactory(object):
 #######################################################################################################################
 
 class RatesFactory(object):
-    """Gets the deposit rates for a particular currency
+    """Gets the deposit rates for a particular currency (or forwards for a currency pair)
 
     """
 
     def __init__(self, market_data_generator=None):
-        self.logger = LoggerManager().getLogger(__name__)
 
         self.cache = {}
 
@@ -668,6 +741,9 @@ class RatesFactory(object):
         """
 
         market_data_generator = self.market_data_generator
+
+        if tenor is None:
+            tenor = FXVolFactory.tenor_default
 
         if isinstance(currencies, str): currencies = [currencies]
         if isinstance(tenor, str): tenor = [tenor]
@@ -722,16 +798,20 @@ class RatesFactory(object):
         Contains deposit rates
         """
 
-        market_data_request = MarketDataRequest()
+        # market_data_request = MarketDataRequest()
         market_data_generator = self.market_data_generator
 
-        market_data_request.data_source = data_source  # use bbg as a data_source
-        market_data_request.start_date = start  # start_date
-        market_data_request.finish_date = end  # finish_date
+        # market_data_request.data_source = data_source  # use bbg as a data_source
+        # market_data_request.start_date = start  # start_date
+        # market_data_request.finish_date = end  # finish_date
+
+        if tenor is None:
+            tenor = FXVolFactory.tenor_default
 
         if isinstance(cross, str): cross = [cross]
         if isinstance(tenor, str): tenor = [tenor]
 
+        # Tickers are often different on Bloomberg for forwards/depos vs vol, so want consistency
         tenor = [x.replace('1Y', '12M') for x in tenor]
 
         tickers = []
