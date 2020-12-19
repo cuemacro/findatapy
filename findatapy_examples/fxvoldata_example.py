@@ -27,33 +27,38 @@ if __name__ == '__main__':
 
     run_example = 0
 
-    ###### download FX volatility quotations from Bloomberg
+    cache_algo = 'cache_algo_return'
+
+    ###### Download FX volatility quotations from Bloomberg
     if run_example == 1 or run_example == 0:
 
         ####### Bloomberg examples (you need to have a Bloomberg Terminal installed for this to work!)
-        # let's download past month of 1M ATM data for EURUSD
+        # let's download of 1M ATM data for EURUSD
 
         # we can use shortcuts given that implied vol surfaces for most major crosses have been defined
-        md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='NYC', category='fx-implied-vol',
-                                       tickers=['EURUSDV1M'])
+        md_request = MarketDataRequest(start_date='01 Jan 2020', finish_date='15 Feb 2020',
+                                       data_source='bloomberg', cut='NYC', category='fx-implied-vol',
+                                       tickers=['EURUSDV1M'], cache_algo=cache_algo)
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
 
         # we can also download the whole volatility surface for EURUSD, this way.. without having to define every point!
-        md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-implied-vol',
-                                       tickers=['EURUSD'])
+        md_request = MarketDataRequest(start_date='01 Jan 2020', finish_date='15 Feb 2020', data_source='bloomberg',
+                                       cut='LDN', category='fx-implied-vol',
+                                       tickers=['EURUSD'], cache_algo=cache_algo)
 
         df = market.fetch_market(md_request)
 
         # we can also download the whole all market data for EURUSD for pricing options (vol surface)
-        md_request = MarketDataRequest(start_date='month', data_source='bloomberg', cut='LDN', category='fx-vol-market',
-                                       tickers=['EURUSD'])
+        md_request = MarketDataRequest(start_date='01 Jan 2020', finish_date='15 Feb 2020', data_source='bloomberg',
+                                       cut='LDN', category='fx-vol-market',
+                                       tickers=['EURUSD'], cache_algo=cache_algo)
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
 
-###### download FX volatility quotations from Bloomberg defining all fields
+###### Download FX volatility quotations from Bloomberg defining all fields
 if run_example == 2 or run_example == 0:
 
     ####### Bloomberg examples (you need to have a Bloomberg Terminal installed for this to work!)
@@ -61,9 +66,9 @@ if run_example == 2 or run_example == 0:
     # we use NOK/SEK vol quotations, because these haven't been predefined
 
     # we can use shortcuts given that implied vol surfaces for most major crosses have been defined
-    md_request = MarketDataRequest(start_date='month', data_source='bloomberg',
+    md_request = MarketDataRequest(start_date='01 Jan 2020', finish_date='15 Feb 2020', data_source='bloomberg',
                                    tickers=['NOKSEKV1M'], vendor_tickers=['NOKSEKV1M BGN Curncy'],
-                                   fields=['close'], vendor_fields=['PX_LAST'])
+                                   fields=['close'], vendor_fields=['PX_LAST'], cache_algo=cache_algo)
 
     df = market.fetch_market(md_request)
     print(df.tail(n=10))

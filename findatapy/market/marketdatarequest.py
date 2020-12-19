@@ -77,6 +77,10 @@ class MarketDataRequest(object):
                  fields=['close'], cache_algo="internet_load_return",
                  vendor_tickers=None, vendor_fields=None,
                  environment="backtest", trade_side='trade', expiry_date=None, resample=None, resample_how='last',
+                 fx_vol_part=data_constants.fx_vol_part, fx_vol_tenor=data_constants.fx_vol_tenor,
+                 fx_forwards_tenor=data_constants.fx_forwards_tenor,
+                 base_depos_currencies=data_constants.base_depos_currencies,
+                 base_depos_tenor=data_constants.base_depos_tenor,
                  md_request=None, abstract_curve=None, quandl_api_key=data_constants.quandl_api_key,
                  fred_api_key=data_constants.fred_api_key, alpha_vantage_api_key=data_constants.alpha_vantage_api_key,
                  eikon_api_key=data_constants.eikon_api_key,
@@ -118,6 +122,13 @@ class MarketDataRequest(object):
                 self.expiry_date = copy.deepcopy(md_request.expiry_date)
                 self.resample = copy.deepcopy(md_request.resample)
                 self.resample_how = copy.deepcopy(md_request.resample_how)
+
+                self.fx_vol_part = copy.deepcopy(md_request.fx_vol_part)
+                self.fx_vol_tenor = copy.deepcopy(md_request.fx_vol_tenor)
+                self.fx_forwards_tenor = copy.deepcopy(md_request.fx_forwards_tenor)
+                self.base_depos_currencies = copy.deepcopy(md_request.base_depos_currencies)
+                self.base_depos_tenor = copy.deepcopy(md_request.base_depos_tenor)
+
                 self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
                 self.quandl_api_key = copy.deepcopy(md_request.quandl_api_key)
                 self.fred_api_key = copy.deepcopy(md_request.fred_api_key)
@@ -151,6 +162,13 @@ class MarketDataRequest(object):
             self.expiry_date = expiry_date
             self.resample = resample
             self.resample_how = resample_how
+
+            self.fx_vol_part = fx_vol_part
+            self.fx_vol_tenor = fx_vol_tenor
+            self.fx_forwards_tenor = fx_forwards_tenor
+            self.base_depos_currencies = base_depos_currencies
+            self.base_depos_tenor = base_depos_tenor
+
             self.abstract_curve = abstract_curve
             
             self.quandl_api_key = quandl_api_key
@@ -498,7 +516,49 @@ class MarketDataRequest(object):
     @expiry_date.setter
     def expiry_date(self, expiry_date):
         self.__expiry_date = self.date_parser(expiry_date)
+        
+    ###### For FX vol, FX forwards and base depos ######
+    @property
+    def fx_vol_part(self):
+        return self.__fx_vol_part
 
+    @fx_vol_part.setter
+    def fx_vol_part(self, fx_vol_part):
+        self.__fx_vol_part = fx_vol_part
+        
+    @property
+    def fx_vol_tenor(self):
+        return self.__fx_vol_tenor
+
+    @fx_vol_tenor.setter
+    def fx_vol_tenor(self, fx_vol_tenor):
+        self.__fx_vol_tenor = fx_vol_tenor
+        
+    @property
+    def fx_forwards_tenor(self):
+        return self.__fx_forwards_tenor
+
+    @fx_forwards_tenor.setter
+    def fx_forwards_tenor(self, fx_forwards_tenor):
+        self.__fx_forwards_tenor = fx_forwards_tenor
+
+    @property
+    def base_depos_currencies(self):
+        return self.__base_depos_currencies
+
+    @base_depos_currencies.setter
+    def base_depos_currencies(self, base_depos_currencies):
+        self.__base_depos_currencies = base_depos_currencies
+        
+    @property
+    def base_depos_tenor(self):
+        return self.__base_depos_tenor
+
+    @base_depos_tenor.setter
+    def base_depos_tenor(self, base_depos_tenor):
+        self.__base_depos_tenor = base_depos_tenor
+
+    ######
     @property
     def abstract_curve(self):
         return self.__abstract_curve

@@ -1619,6 +1619,27 @@ class Calculations(object):
 
         return date
 
+    def resample_tick_data_ohlc(self, df, asset, freq='1min', avg_fields=['bid', 'ask']):
+
+        if not(isinstance(asset, list)):
+            asset = [asset]
+
+        if avg_fields is not None:
+            for a in asset:
+                df[a] = df[[a + "." + f for f in avg_fields]].mean(axis=1)
+
+        df = df[asset]
+        df = df.resample(freq).ohlc().dropna()
+
+        new_fields = []
+
+        for a in asset:
+            for x in ['open', 'high', 'low', 'close']:
+                new_fields.append(a + "." + x)
+
+        df.columns = new_fields
+
+        return df
 
 if __name__ == '__main__':
     # test functions

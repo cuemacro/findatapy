@@ -28,6 +28,19 @@ Bitcoinchart - DataVendorBitcoincharts
 
 #######################################################################################################################
 
+import sys
+import os
+import json
+import datetime
+from datetime import datetime
+from datetime import timedelta
+import time
+
+import requests
+
+import pandas as pd
+
+
 # support Quandl 3.x.x
 try:
     import quandl as Quandl
@@ -35,9 +48,14 @@ except:
     # if import fails use Quandl 2.x.x
     import Quandl
 
+from findatapy.market import IOEngine
+
+# Abstract class on which this is based
 from findatapy.market.datavendor import DataVendor
 
-from findatapy.market import IOEngine
+# For logging and constants
+from findatapy.util import ConfigManager, DataConstants, LoggerManager
+
 
 import pandas
 
@@ -506,8 +524,6 @@ class DataVendorONS(DataVendor):
 
 #######################################################################################################################
 
-import pandas as pd
-
 class DataVendorBOE(DataVendor):
 
     def __init__(self):
@@ -768,7 +784,6 @@ class DataVendorBitcoincharts(DataVendor):
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         logger.info("Request data from Bitcoincharts")
-        
 
         data_website = 'http://api.bitcoincharts.com/v1/csv/' + market_data_request_vendor.tickers[0] + '.csv.gz'
         data_frame = pandas.read_csv(data_website, names = ['datetime','close','volume'])
@@ -1027,11 +1042,6 @@ class DataVendorGdax(DataVendor):
 
         logger.info("Request data from Gdax.")
 
-        
-        from datetime import datetime
-        from datetime import timedelta
-        import time
-
         gdax_url = 'https://api.gdax.com/products/{}/candles?start={}&end={}&granularity={}'
         start_time = market_data_request_vendor.start_date
         end_time = market_data_request_vendor.finish_date
@@ -1106,16 +1116,10 @@ class DataVendorKraken(DataVendor):
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
         logger = LoggerManager().getLogger(__name__)
+
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         logger.info("Request data from Kraken.")
-
-        
-        import json
-        import requests
-        import time
-        import datetime
-        from datetime import datetime
 
         #kraken_url = 'https://api.kraken.com/0/public/OHLC?pair={}&interval={}&since=0'
         #if market_data_request_vendor.freq == 'intraday':
@@ -1174,7 +1178,7 @@ class DataVendorKraken(DataVendor):
             field_selected[-1] = market_data_request.tickers[0]+'.'+market_data_request_vendor.fields[i]
 
 
-        self.logger.info("Completed request from Kraken.")
+        logger.info("Completed request from Kraken.")
 
         return data_frame[field_selected]
 
@@ -1195,9 +1199,6 @@ class DataVendorBitmex(DataVendor):
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         logger.info("Request data from Bitmex.")
-
-        
-        import time
 
         bitMEX_url = 'https://www.bitmex.com/api/v1/quote?symbol={}&count=500&reverse=false&startTime={}&endTime={}'
         data_frame = pandas.DataFrame(columns=['askPrice', 'askSize', 'bidPrice', 'bidSize', 'symbol', 'timestamp'])
@@ -1256,10 +1257,6 @@ class DataVendorHuobi(DataVendor):
     def load_ticker(self, market_data_request):
         logger = LoggerManager().getLogger(__name__)
         
-        import requests
-        
-        import json
-        
         def _calc_period_size(freq, start_dt, finish_dt):
             actual_window = finish_dt - start_dt
             extra_window = datetime.datetime.now() - finish_dt
@@ -1309,9 +1306,9 @@ class DataVendorHuobi(DataVendor):
         df.drop(["id"], axis=1, inplace=True)
 
         if df.empty:
-            self.logger.info('###############################################################')
-            self.logger.info('Warning: No data. Please change the start_date and finish_date.')
-            self.logger.info('###############################################################')
+            logger.info('###############################################################')
+            logger.info('Warning: No data. Please change the start_date and finish_date.')
+            logger.info('###############################################################')
 
         df.columns = ["{}.{}".format(market_data_request.tickers[0], col) for col in df.columns]
 
@@ -1330,12 +1327,6 @@ class DataVendorHuobi(DataVendor):
 
 #########################################################################################################
 
-
-import os
-from datetime import timedelta
-
-import requests
-
 try:
     from numba import jit
 finally:
@@ -1346,12 +1337,6 @@ try:
     import lzma
 except ImportError:
     from backports import lzma
-
-# abstract class on which this is based
-from findatapy.market.datavendor import DataVendor
-
-# for logging and constants
-from findatapy.util import ConfigManager, DataConstants, LoggerManager
 
 constants = DataConstants()
 
@@ -1368,7 +1353,7 @@ class DataVendorDukasCopy(DataVendor):
 
     def __init__(self):
         super(DataVendor, self).__init__()
-        # self.logger = LoggerManager.getLogger(__name__)
+
         import logging
         logging.getLogger("requests").setLevel(logging.WARNING)
         self.config = ConfigManager()
@@ -1407,7 +1392,8 @@ class DataVendorDukasCopy(DataVendor):
 
             import pytz
 
-            if data_frame is not None: data_frame.tz_localize(pytz.utc)
+            if data_frame is not None:
+                data_frame = data_frame.tz_localize(pytz.utc)
 
         logger.info("Completed request from Dukascopy")
 
@@ -1672,9 +1658,6 @@ class DataVendorDukasCopy(DataVendor):
 from io import BytesIO
 import gzip
 import urllib
-import datetime
-
-
 
 ##Available Currencies
 ##AUDCAD,AUDCHF,AUDJPY, AUDNZD,CADCHF,EURAUD,EURCHF,EURGBP
@@ -1694,7 +1677,6 @@ class DataVendorFXCM(DataVendor):
 
     def __init__(self):
         super(DataVendor, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
         import logging
         logging.getLogger("requests").setLevel(logging.WARNING)
@@ -1714,14 +1696,15 @@ class DataVendorFXCM(DataVendor):
         DataFrame
         """
 
+        logger = LoggerManager().getLogger(__name__)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
         data_frame = None
-        self.logger.info("Request FXCM data")
+        logger.info("Request FXCM data")
 
         # doesn't support non-tick data
         if (market_data_request.freq in ['daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'intraday', 'minute', 'hourly']):
-            self.logger.warning("FXCM loader is for tick data only")
+            logger.warning("FXCM loader is for tick data only")
 
             return None
 
@@ -1735,7 +1718,7 @@ class DataVendorFXCM(DataVendor):
 
             if data_frame is not None: data_frame.tz_localize(pytz.utc)
 
-        self.logger.info("Completed request from FXCM")
+        logger.info("Completed request from FXCM")
 
         return data_frame
 
@@ -1766,10 +1749,11 @@ class DataVendorFXCM(DataVendor):
         return data_frame
 
     def download_tick(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
 
         symbol = market_data_request.tickers[0]
 
-        self.logger.info("About to download from FXCM... for " + symbol)
+        logger.info("About to download from FXCM... for " + symbol)
 
         # single threaded
         # df_list = [self.fetch_file(week_year, symbol) for week_year in
@@ -1790,7 +1774,8 @@ class DataVendorFXCM(DataVendor):
             return None
 
     def fetch_file(self, week_year, symbol):
-        self.logger.info("Downloading... " + str(week_year))
+        logger = LoggerManager().getLogger(__name__)
+        logger.info("Downloading... " + str(week_year))
 
         week = week_year[0]
         year = week_year[1]
@@ -1804,6 +1789,8 @@ class DataVendorFXCM(DataVendor):
 
     def retrieve_df(self, tick_url):
         i = 0
+
+        logger = LoggerManager().getLogger(__name__)
 
         data_frame = None
 
@@ -1839,7 +1826,8 @@ class DataVendorFXCM(DataVendor):
                 i = i + 1
 
         if (data_frame is None):
-            self.logger.warning("Failed to download from " + tick_url)
+            logger.warning("Failed to download from " + tick_url)
+
             return None
 
         return data_frame
@@ -1870,9 +1858,6 @@ class DataVendorFXCM(DataVendor):
         pass
 
 ########################################################################################################################
-
-import os
-import sys
 
 if sys.version_info[0] >= 3:
     from urllib.request import urlopen
@@ -2362,12 +2347,12 @@ class DataVendorFlatFile(DataVendor):
 
     def __init__(self):
         super(DataVendorFlatFile, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
 
-        self.logger.info("Request " + market_data_request.data_source + " data")
+        logger.info("Request " + market_data_request.data_source + " data")
 
         if ".csv" in market_data_request.data_source:
             data_frame = pandas.read_csv(market_data_request.data_source, index_col = 0, parse_dates = True,
@@ -2395,7 +2380,7 @@ class DataVendorFlatFile(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from " + market_data_request.data_source + " for " + str(ticker_combined))
+        logger.info("Completed request from " + market_data_request.data_source + " for " + str(ticker_combined))
 
         return data_frame
 
@@ -2410,13 +2395,14 @@ class DataVendorAlphaVantage(DataVendor):
 
     def __init__(self):
         super(DataVendorAlphaVantage, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request AlphaVantage data")
+        logger.info("Request AlphaVantage data")
 
         data_frame, _ = self.download(market_data_request_vendor)
 
@@ -2452,11 +2438,13 @@ class DataVendorAlphaVantage(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from Alpha Vantage for " + str(ticker_combined))
+        logger.info("Completed request from Alpha Vantage for " + str(ticker_combined))
 
         return data_frame
 
     def download(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         trials = 0
 
         ts = TimeSeries(key=market_data_request.alpha_vantage_api_key, output_format='pandas', indexing_type='date')
@@ -2473,10 +2461,10 @@ class DataVendorAlphaVantage(DataVendor):
                 break
             except Exception as e:
                 trials = trials + 1
-                self.logger.info("Attempting... " + str(trials) + " request to download from Alpha Vantage due to following error: " + str(e))
+                logger.info("Attempting... " + str(trials) + " request to download from Alpha Vantage due to following error: " + str(e))
 
         if trials == 5:
-            self.logger.error("Couldn't download from Alpha Vantage after several attempts!")
+            logger.error("Couldn't download from Alpha Vantage after several attempts!")
 
         return data_frame
 
@@ -2496,13 +2484,14 @@ class DataVendorFXCMPY(DataVendor):
 
     def __init__(self):
         super(DataVendorFXCM, self).__init__()
-        self.logger = LoggerManager().getLogger(__name__)
 
     # implement method in abstract superclass
     def load_ticker(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
-        self.logger.info("Request FXCM data")
+        logger.info("Request FXCM data")
 
         data_frame, _ = self.download(market_data_request_vendor)
 
@@ -2538,11 +2527,13 @@ class DataVendorFXCMPY(DataVendor):
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
 
-        self.logger.info("Completed request from FXCM for " + str(ticker_combined))
+        logger.info("Completed request from FXCM for " + str(ticker_combined))
 
         return data_frame
 
     def download(self, market_data_request):
+        logger = LoggerManager().getLogger(__name__)
+
         trials = 0
 
         con = fxcmpy.fxcmpy(access_token=constants.fxcm_API, log_level='error')
@@ -2563,9 +2554,9 @@ class DataVendorFXCMPY(DataVendor):
                 break
             except Exception as e:
                 trials = trials + 1
-                self.logger.info("Attempting... " + str(trials) + " request to download from FXCM due to following error: " + str(e))
+                logger.info("Attempting... " + str(trials) + " request to download from FXCM due to following error: " + str(e))
 
         if trials == 5:
-            self.logger.error("Couldn't download from FXCM after several attempts!")
+            logger.error("Couldn't download from FXCM after several attempts!")
 
         return data_frame

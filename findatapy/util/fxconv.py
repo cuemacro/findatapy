@@ -21,7 +21,15 @@ class FXConv(object):
 
     # TODO
     g10 = ['EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
-    order = ['XBT', 'XET', 'XLC', 'XRP', 'XAU', 'XPT', 'XAG', 'EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
+
+    order = ['XBT', 'XET', 'XLC', 'XRP', 'XAU', 'XPT', 'XAG', 'EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF',
+             'TRY', 'SGD', 'CHN', 'CNY',
+             'NOK', 'SEK',
+             'BRL', 'ZAR', 'MXN',
+             'TWD', 'INR',
+             'JPY',
+             'CLP', 'COP', 'KRW', 'IDR']
+
     ndf = ['CNY', 'IDR', 'INR', 'KRW', 'MYR', 'PHP', 'TWD', 'VND',
            'BRL', 'ARS', 'BRL', 'CLP', 'GTQ', 'PEN', 'UVU', 'VEF'
            'EGP', 'KZT', 'NGN']
