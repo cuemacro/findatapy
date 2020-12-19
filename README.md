@@ -125,6 +125,15 @@ individual data providers)
 
 # Coding log
 
+* 19 Dec 2020
+  * Added functionality to download FX forwards based total indices from BBG
+  * Fixed downloading of forward points for NDFs
+  * Fixed missing timestamp issue with DukasCopy
+  * Adding holidays functionality and calculation of FX options expiries (and FX delivery dates)
+* 10 Dec 2020
+    * Added resample method on Calculations for tick data
+    * Fixed logger in DataVendorWeb
+    * Fixed setting no timezone method
 * 11 Nov 2020
     * Added cumulative additive index returns 
     * Removed log as field variable in DataVendorBBG

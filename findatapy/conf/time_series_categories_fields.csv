@@ -9,6 +9,7 @@ fx,bloomberg,daily,TOK,"close,open,high,low",1-Jan-70
 fx,bloomberg,daily,LDN,"close,open,high,low",1-Jan-70
 fx,bloomberg,daily,10AM,"close,open,high,low",1-Jan-07
 fx-tot,bloomberg,daily,NYC,"close,open,high,low",1-Jan-70
+fx-tot-forwards,bloomberg,daily,NYC,close,1-Jan-99
 fx,bloomberg,intraday,NYC,"close,open,high,low,volume,events",1-Jan-03
 fx,bloomberg,intraday,BSTP,"close,open,high,low,volume,events",1-Jan-03
 fx,eikon,intraday,NYC,"close,open,high,low",1-Jan-03

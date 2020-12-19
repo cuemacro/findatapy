@@ -83,6 +83,8 @@ class DataConstants(object):
     econ_country_codes = root_folder + "conf/econ_country_codes.csv"
     econ_country_groups = root_folder + "conf/econ_country_groups.csv"
 
+    holidays_parquet_table = config_root_folder + '/conf/holidays_table.parquet'
+
     # for events filtering
     events_category = 'events'
     events_category_dt = 'events_dt'
@@ -159,6 +161,26 @@ class DataConstants(object):
 
     # FRED (Federal Reserve of St Louis data) settings
     fred_api_key = key_store("FRED")
+
+    # Default download for FX vol surfaces etc.
+    # types of quotation on vol surface
+    # ATM, 25d riskies, 10d riskies, 25d strangles/butterflies, 10d strangles/butterflies
+    fx_vol_part = ["V", "25R", "10R", "25B", "10B"]
+
+    # Deltas quoted, eg 10d and 25d
+    fx_vol_delta = [10, 25]
+
+    # All the tenors on our vol surface
+    fx_vol_tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
+
+    # All the tenors on our forwards
+    fx_forwards_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
+
+    # Which base depo currencies are available?
+    base_depos_currencies = ['EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
+
+    # Tenors available for base depos
+    base_depos_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
     # overwrite field variables with those listed in DataCred
     def __init__(self):

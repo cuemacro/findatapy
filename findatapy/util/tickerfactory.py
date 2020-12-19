@@ -51,7 +51,7 @@ class TickerFactory(object):
                         spl1 = cut_postfix.split('.')
                         cut = spl1[0]
                         postfix = spl1[1]
-                        for ticker in data_frame['ticker']:
+                        for ticker, st in zip(data_frame['ticker'], data_frame['sourceticker']):
                             if isinstance(ticker, str):
                                 if 'midfix' in data_frame.columns:
                                     for midfix in data_frame['midfix']:
@@ -59,7 +59,7 @@ class TickerFactory(object):
                                             for postmidfix in data_frame['postmidfix']:
                                                 if isinstance(postmidfix, str):
                                                     ticker_ext = ticker + midfix + postmidfix
-                                                    sourceticker = ticker + midfix + postmidfix + ' ' + postfix
+                                                    sourceticker = st + midfix + postmidfix + ' ' + postfix
                                                     data_frame_out.loc[i] = [category, source, freq, ticker_ext,
                                                                              cut, fields, sourceticker]
 
@@ -68,7 +68,7 @@ class TickerFactory(object):
                                     for postmidfix in data_frame['postmidfix']:
                                         if isinstance(postmidfix, str):
                                             ticker_ext = ticker + postmidfix
-                                            sourceticker = ticker + postmidfix + ' ' + postfix
+                                            sourceticker = st + postmidfix + ' ' + postfix
                                             data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields,
                                                                      sourceticker]
 
@@ -93,7 +93,9 @@ if __name__ == '__main__':
     logger = LoggerManager.getLogger(__name__)
 
     tf = TickerFactory()
+
     root = 'E:/cuemacro/yen/conf'
+    root = 'E:/cuemacro/findatapy/findatapy/conf'
 
     csv_file = root + '/fx_vol_tickers_maker.csv'
     out_csv_file = root + '/fx_vol_tickers.csv'

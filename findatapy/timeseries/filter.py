@@ -1,4 +1,4 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = 'saeedamen'  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
@@ -12,29 +12,46 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-from findatapy.util.loggermanager import LoggerManager
 
-from pandas.tseries.offsets import CustomBusinessDay
+
+import re
 
 import numpy as np
-import pandas
+import pandas as pd
 import pytz
+
+import datetime
+from datetime import timedelta
+
+import pandas.tseries.offsets
+
+from pandas.tseries.offsets import BDay, CustomBusinessDay, Day, CustomBusinessMonthEnd, MonthOffset
+
+from findatapy.timeseries.timezone import Timezone
+
+from findatapy.util.dataconstants import DataConstants
+from findatapy.util.loggermanager import LoggerManager
+
+constants = DataConstants()
 
 class Filter(object):
     """Functions for filtering time series by dates and columns.
 
     This class is used extensively in both findatapy and finmarketpy.
 
+    Market holidays are collected from web sources such as https://www.timeanddate.com/holidays/ and also individual
+    exchange websites, and is manually updated from time to time to take into account newly instituted holidays, and stored
+    in conf/holidays_table.parquet - if you need to add your own holidays.
+
     """
 
-    _time_series_cache = {} # shared across all instances of object!
+    _time_series_cache = {}  # shared across all instances of object!
 
     def __init__(self):
         # self.config = ConfigManager()
-        self.logger = LoggerManager().getLogger(__name__)
-        return
+        self._holiday_df = pd.read_parquet(constants.holidays_parquet_table)
 
-    def filter_time_series(self, market_data_request, data_frame, pad_columns = False):
+    def filter_time_series(self, market_data_request, data_frame, pad_columns=False):
         """Filters a time series given a set of criteria (like start/finish date and tickers)
 
         Parameters
@@ -65,7 +82,7 @@ class Filter(object):
 
         return data_frame
 
-    def create_calendar_bus_days(self, start_date, end_date, cal = 'FX'):
+    def create_calendar_bus_days(self, start_date, end_date, cal='FX'):
         """Creates a calendar of business days
 
         Parameters
@@ -81,12 +98,48 @@ class Filter(object):
         -------
         list
         """
-        hols = self.get_holidays(start_date, end_date, cal)
-        index = pandas.bdate_range(start=start_date, end=end_date, freq='D')
+        hols = self.get_holidays(start_date=start_date, end_date=end_date, cal=cal)
 
-        return [x for x in index if x not in hols]
+        return pd.bdate_range(start=start_date, end=end_date, freq='D', holidays=hols)
 
-    def get_holidays(self, start_date, end_date, cal = 'FX', holidays_list = []):
+    def _get_full_cal(self, cal):
+        holidays_list = []
+
+        # Calendars which have been hardcoded in the parquet file (which users may also edit)
+        if len(cal) == 6:
+            # Eg. EURUSD (load EUR and USD calendars and combine the holidays)
+            holidays_list.append([self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6])])
+        elif len(cal) == 9:
+            holidays_list.append([self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6]), self._get_full_cal(cal[6:9])])
+        else:
+            if cal == 'FX':
+                # Filter for Christmas & New Year's Day
+                for i in range(1999, 2025):
+                    holidays_list.append(pd.Timestamp(str(i) + "-12-25"))
+                    holidays_list.append(pd.Timestamp(str(i) + "-01-01"))
+
+            elif cal == 'NYD' or cal == 'NEWYEARSDAY':
+                # Filter for New Year's Day
+                for i in range(1999, 2025):
+                    holidays_list.append(pd.Timestamp(str(i) + "-01-01"))
+
+            elif cal == 'WDY' or cal == 'WEEKDAY':
+                bday = CustomBusinessDay(weekmask='Sat Sun')
+
+                holidays_list.append([x for x in pd.date_range('01 Jan 1999', '31 Dec 2025', freq=bday)])
+
+            else:
+                label = cal + ".holiday-dates"
+
+                try:
+                    holidays_list = self._holiday_df[label].dropna().tolist()
+                except:
+                    logger = LoggerManager().getLogger(__name__)
+                    logger.warning(cal + " holiday calendar not found.")
+
+        return holidays_list
+
+    def get_holidays(self, start_date=None, end_date=None, cal='FX'):
         """Gets the holidays for a given calendar
 
         Parameters
@@ -102,34 +155,33 @@ class Filter(object):
         -------
         list
         """
+        #holidays_list ,  = []
 
         # TODO use Pandas CustomBusinessDays to get more calendars
+        holidays_list = self._get_full_cal(cal)
+        #.append(lst)
 
-        if cal == 'FX':
-            # filter for Christmas & New Year's Day
-            for i in range(1970, 2020):
-                holidays_list.append(str(i) + "-12-25")
-                holidays_list.append(str(i) + "-01-01")
+        # Use 'set' so we don't have duplicate dates if we are incorporating multiple calendars
+        holidays_list = np.array(list(set(self.flatten_list_of_lists(holidays_list))))
+        holidays_list = pd.to_datetime(holidays_list).sort_values()
 
-        if cal == 'WEEKDAY':
-            bday = CustomBusinessDay(weekmask='Sat Sun')
+        # Floor start date
+        if start_date is not None:
+            start_date = pd.Timestamp(start_date).floor('D')
+            holidays_list = holidays_list[(holidays_list >= start_date)]
 
-            holidays_list = pandas.date_range(start_date, end_date, freq=bday)
+        if end_date is not None:
+            # Ceiling end date
+            end_date = pd.Timestamp(end_date).ceil('D')
+            holidays_list = holidays_list[(holidays_list <= end_date)]
 
-        # holidays_list = pandas.to_datetime(holidays_list).order()
-        holidays_list = pandas.to_datetime(holidays_list).sort_values()
+        # Remove all weekends unless it is WEEKDAY calendar
+        if cal != 'WEEKDAY' or cal != 'WKY':
+            holidays_list = holidays_list[holidays_list.dayofweek <= 4]
 
-        # floor start date
-        start = np.datetime64(start_date) - np.timedelta64(1, 'D')
+        return holidays_list.tz_localize('UTC')
 
-        # ceiling end date
-        end = np.datetime64(end_date) + np.timedelta64(1, 'D')
-
-        holidays_list = [x for x in holidays_list if x >= start and x <= end]
-
-        return pandas.to_datetime(holidays_list).tz_localize('UTC')
-
-    def filter_time_series_by_holidays(self, data_frame, cal = 'FX', holidays_list = []):
+    def filter_time_series_by_holidays(self, data_frame, cal='FX', holidays_list=[]):
         """Removes holidays from a given time series
 
         Parameters
@@ -148,13 +200,13 @@ class Filter(object):
         if (cal == 'WEEKDAY'):
             return data_frame[data_frame.index.dayofweek <= 4]
 
-        # select only those holidays in the sample
-        holidays_start = self.get_holidays(data_frame.index[0], data_frame.index[-1], cal, holidays_list = holidays_list)
+        # Select only those holidays in the sample
+        holidays_start = self.get_holidays(data_frame.index[0], data_frame.index[-1], cal, holidays_list=holidays_list)
 
-        if(holidays_start.size == 0):
+        if (holidays_start.size == 0):
             return data_frame
 
-        holidays_end = holidays_start + np.timedelta64(1,'D')
+        holidays_end = holidays_start + np.timedelta64(1, 'D')
 
         # floored_dates = data_frame.index.normalize()
         #
@@ -189,8 +241,6 @@ class Filter(object):
         data_frame_filtered = []
 
         for i in range(0, len(holidays_start)):
-
-
             data_frame_temp = data_frame_left[data_frame_left.index < holidays_start[i]]
             data_frame_left = data_frame_left[data_frame_left.index >= holidays_end[i]]
 
@@ -198,7 +248,7 @@ class Filter(object):
 
         data_frame_filtered.append(data_frame_left)
 
-        return pandas.concat(data_frame_filtered)
+        return pd.concat(data_frame_filtered)
 
     def filter_time_series_by_date(self, start_date, finish_date, data_frame):
         """Filter time series by start/finish dates
@@ -216,9 +266,10 @@ class Filter(object):
         -------
         DataFrame
         """
-        offset = 0 # inclusive
+        offset = 0  # inclusive
 
-        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset, exclude_start_end = False)
+        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset,
+                                                      exclude_start_end=False)
 
     def filter_time_series_by_days(self, days, data_frame):
         """Filter time series by start/finish dates
@@ -236,7 +287,7 @@ class Filter(object):
         -------
         DataFrame
         """
-        offset = 0 # inclusive
+        offset = 0  # inclusive
 
         finish_date = datetime.datetime.utcnow()
         start_date = finish_date - timedelta(days=days)
@@ -258,9 +309,10 @@ class Filter(object):
         -------
         DataFrame
         """
-        offset = 1 # exclusive of start finish date
+        offset = 1  # exclusive of start finish date
 
-        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset, exclude_start_end = True)
+        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset,
+                                                      exclude_start_end=True)
 
         # try:
         #     # filter by dates for intraday data
@@ -281,7 +333,7 @@ class Filter(object):
         #
         # return data_frame
 
-    def filter_time_series_by_date_offset(self, start_date, finish_date, data_frame, offset, exclude_start_end = False):
+    def filter_time_series_by_date_offset(self, start_date, finish_date, data_frame, offset, exclude_start_end=False):
         """Filter time series by start/finish dates (and an offset)
 
         Parameters
@@ -304,10 +356,10 @@ class Filter(object):
             if data_frame.index.tz is not None:
 
                 # If the start/finish dates are timezone naive, overwrite with the DataFrame timezone
-                if not(isinstance(start_date, str)):
+                if not (isinstance(start_date, str)):
                     start_date = start_date.replace(tzinfo=data_frame.index.tz)
 
-                if not(isinstance(finish_date, str)):
+                if not (isinstance(finish_date, str)):
                     finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
             else:
                 # Otherwise remove timezone from start_date/finish_date
@@ -349,13 +401,13 @@ class Filter(object):
 
             # if we have dates stored as opposed to TimeStamps (ie. daily data), we use a simple (slower) method
             # for filtering daily data
-            if(start_date is not None):
+            if (start_date is not None):
                 if exclude_start_end:
                     data_frame = data_frame.loc[start_date < data_frame.index]
                 else:
                     data_frame = data_frame.loc[start_date <= data_frame.index]
 
-            if(finish_date is not None):
+            if (finish_date is not None):
                 if exclude_start_end:
                     data_frame = data_frame.loc[data_frame.index < finish_date]
                 else:
@@ -413,8 +465,19 @@ class Filter(object):
         # Much faster, start and finish dates are inclusive
         return data_frame[(data_frame.index >= start_date) & (data_frame.index <= finish_date)]
 
+    def filter_time_series_by_time_of_day_timezone(self, hour, minute, data_frame, timezone_of_snap='UTC'):
 
-    def filter_time_series_by_time_of_day(self, hour, minute, data_frame, in_tz = None, out_tz = None):
+        old_tz = data_frame.index.tz
+        data_frame = data_frame.tz_convert(pytz.timezone(timezone_of_snap))
+
+        data_frame = data_frame[data_frame.index.minute == minute]
+        data_frame = data_frame[data_frame.index.hour == hour]
+
+        data_frame = data_frame.tz_convert(old_tz)
+
+        return data_frame
+
+    def filter_time_series_by_time_of_day(self, hour, minute, data_frame, in_tz=None, out_tz=None):
         """Filter time series by time of day
 
         Parameters
@@ -435,20 +498,23 @@ class Filter(object):
         DataFrame
         """
         if out_tz is not None:
-            if in_tz is not None:
-                data_frame = data_frame.tz_localize(pytz.timezone(in_tz))
+            try:
+                if in_tz is not None:
+                    data_frame = data_frame.tz_localize(pytz.timezone(in_tz))
+            except:
+                data_frame = data_frame.tz_convert(pytz.timezone(in_tz))
 
             data_frame = data_frame.tz_convert(pytz.timezone(out_tz))
 
             # change internal representation of time
-            data_frame.index = pandas.DatetimeIndex(data_frame.index.values)
+            data_frame.index = pd.DatetimeIndex(data_frame.index.values)
 
         data_frame = data_frame[data_frame.index.minute == minute]
         data_frame = data_frame[data_frame.index.hour == hour]
 
         return data_frame
 
-    def filter_time_series_by_minute_of_hour(self, minute, data_frame, in_tz = None, out_tz = None):
+    def filter_time_series_by_minute_of_hour(self, minute, data_frame, in_tz=None, out_tz=None):
         """Filter time series by minute of hour
 
         Parameters
@@ -473,7 +539,7 @@ class Filter(object):
             data_frame = data_frame.tz_convert(pytz.timezone(out_tz))
 
             # change internal representation of time
-            data_frame.index = pandas.DatetimeIndex(data_frame.index.values)
+            data_frame.index = pd.DatetimeIndex(data_frame.index.values)
 
         data_frame = data_frame[data_frame.index.minute == minute]
 
@@ -543,11 +609,13 @@ class Filter(object):
         data_frame = data_frame[common_columns]
 
         if len(uncommon_columns) > 0:
-            self.logger.info("Padding missing columns...") # " + str(uncommon_columns))
+            logger = LoggerManager().getLogger(__name__)
 
-            new_data_frame = pandas.DataFrame(index=data_frame.index, columns=uncommon_columns)
+            logger.info("Padding missing columns...")  # " + str(uncommon_columns))
 
-            data_frame = pandas.concat([data_frame, new_data_frame], axis=1)
+            new_data_frame = pd.DataFrame(index=data_frame.index, columns=uncommon_columns)
+
+            data_frame = pd.concat([data_frame, new_data_frame], axis=1)
 
             # SLOW method below
             # for x in uncommon_columns: data_frame.loc[:,x] = np.nan
@@ -572,7 +640,7 @@ class Filter(object):
         DataFrame
         """
 
-        if not(isinstance(keyword, list)):
+        if not (isinstance(keyword, list)):
             keyword = [keyword]
 
         columns = []
@@ -599,7 +667,7 @@ class Filter(object):
         DataFrame
         """
 
-        if not(isinstance(keyword, list)):
+        if not (isinstance(keyword, list)):
             keyword = [keyword]
 
         columns = []
@@ -680,10 +748,10 @@ class Filter(object):
         return tickers_fields_list
 
     def resample_time_series(self, data_frame, freq):
-        return data_frame.asfreq(freq, method = 'pad')
+        return data_frame.asfreq(freq, method='pad')
 
     def resample_time_series_frequency(self, data_frame, data_resample_freq,
-                                       data_resample_type = 'mean', fill_empties = False):
+                                       data_resample_type='mean', fill_empties=False):
         # Should we take the mean, first, last in our resample
         if data_resample_type == 'mean':
             data_frame_r = data_frame.resample(data_resample_freq).mean()
@@ -729,14 +797,13 @@ class Filter(object):
         # Monday = 0, ..., Sunday = 6
         data_frame = data_frame[~((data_frame.index.dayofweek == 4) & (data_frame.index.hour > 22))]
         data_frame = data_frame[~((data_frame.index.dayofweek == 5))]
-        data_frame = data_frame[~((data_frame.index.dayofweek == 6)& (data_frame.index.hour < 19))]
+        data_frame = data_frame[~((data_frame.index.dayofweek == 6) & (data_frame.index.hour < 19))]
         data_frame = data_frame[~((data_frame.index.day == 1) & (data_frame.index.month == 1))]
 
         return data_frame
 
     def remove_duplicate_indices(self, df):
         return df[~df.index.duplicated(keep='first')]
-
 
     def mask_time_series_by_time(self, df, time_list, time_zone):
         """ Mask a time series by time of day and time zone specified
@@ -761,7 +828,7 @@ class Filter(object):
 
         # Change the time zone from 'UTC' to a given one
         df.index = df.index.tz_convert(time_zone)
-        df_mask = pandas.DataFrame(0,index=df.index,columns=['mask'])
+        df_mask = pd.DataFrame(0, index=df.index, columns=['mask'])
 
         # Mask data with each given tuple
         for i in range(0, len(time_list)):
@@ -772,74 +839,234 @@ class Filter(object):
 
             # E.g. if tuple is ('01:08', '03:02'),
             # take hours in target - take values in [01:00,04:00]
-            narray = np.where(df.index.hour.isin(range(start_hour,end_hour + 1)), 1, 0)
-            df_mask_temp = pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
+            narray = np.where(df.index.hour.isin(range(start_hour, end_hour + 1)), 1, 0)
+            df_mask_temp = pd.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
 
             # Remove minutes not in target - remove values in [01:00,01:07], [03:03,03:59]
             narray = np.where(((df.index.hour == start_hour) & (df.index.minute < start_minute)), 0, 1)
-            df_mask_temp = df_mask_temp * pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
+            df_mask_temp = df_mask_temp * pd.DataFrame(index=df.index, columns=df_mask.columns.tolist(),
+                                                           data=narray)
             narray = np.where((df.index.hour == end_hour) & (df.index.minute > end_minute), 0, 1)
-            df_mask_temp = df_mask_temp * pandas.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
+            df_mask_temp = df_mask_temp * pd.DataFrame(index=df.index, columns=df_mask.columns.tolist(),
+                                                           data=narray)
 
             # Collect all the periods we want to keep the data
             df_mask = df_mask + df_mask_temp
 
         narray = np.where(df_mask == 1, df, 0)
-        df = pandas.DataFrame(index=df.index,columns=df.columns.tolist(),data=narray)
+        df = pd.DataFrame(index=df.index, columns=df.columns.tolist(), data=narray)
         df.index = df.index.tz_convert('UTC')  # change the time zone to 'UTC'
 
         return df
 
+
 #######################################################################################################################
 
-import datetime
-from datetime import timedelta
-
-import numpy
-import pandas
-import pandas.tseries.offsets
-
-from findatapy.timeseries.timezone import Timezone
-
-from pandas.tseries.offsets import BDay
-from pandas.tseries.offsets import CustomBusinessDay
-
-from findatapy.timeseries.filter import Filter
-
 class Calendar(object):
-    """Provides calendar based functions for working out options expiries. Note, that in practice, we would often take
-    into account market holidays.
+    """Provides calendar based functions for working out options expiries, holidays etc. Note, that at present, the
+    expiry _calculations are approximate.
 
     """
 
+    # Approximate mapping from tenor to number of business days
+    _tenor_bus_day_dict = {'ON' : 1,
+        'TN' : 2,
+        '1W' : 5,
+        '2W' : 10,
+        '3W' : 15,
+        '1M' : 20,
+        '2M' : 40,
+        '3M' : 60,
+        '4M' : 80,
+        '6M' : 120,
+        '9M' : 180,
+        '1Y' : 252,
+        '2Y' : 252 * 2,
+        '3Y' : 252 * 3,
+        '5Y' : 252 * 5
+    }
+
+    def __init__(self):
+        self._filter = Filter()
+
     def get_business_days_tenor(self, tenor):
-        if tenor == '1W':
-            return 5
-        elif tenor == 'ON':
-            return 1
-        elif tenor == '1M':
-            return 20
-        elif tenor == '3M':
-            return 60
-        elif tenor == '6M':
-            return 120
-        elif tenor == '1Y':
-            return 252
+        if tenor in self._tenor_bus_day_dict.keys():
+            return self._tenor_bus_day_dict[tenor]
 
-    def get_dates_from_tenors(self, start, end, calendar, tenor):
+        return None
+
+    def get_dates_from_tenors(self, start, end, tenor, cal=None):
         freq = str(self.get_business_days_tenor(tenor)) + "B"
-        return pandas.DataFrame(index=pandas.bdate_range(start, end, freq=freq))
+        return pd.DataFrame(index=pd.bdate_range(start, end, freq=freq))
 
-    def get_expiries_from_dates(self, date_time_index, calendar, tenor):
-        freq = self.get_business_days_tenor(tenor)
+    def get_delivery_date_from_horizon_date(self, horizon_date, tenor, cal=None, asset_class='fx'):
+        if 'fx' in asset_class:
+            tenor_unit = ''.join(re.compile(r'\D+').findall(tenor))
+            asset_holidays = self._filter.get_holidays(cal=cal)
 
-        return pandas.DatetimeIndex(date_time_index + BDay(freq))
+            if tenor_unit == 'ON':
+                return horizon_date + CustomBusinessDay(n=1, holidays=asset_holidays)
+            elif tenor_unit == 'TN':
+                return horizon_date + CustomBusinessDay(n=2, holidays=asset_holidays)
+            elif tenor_unit == 'SP':
+                pass
+            elif tenor_unit == 'SN':
+                tenor_unit = 'D'
+                tenor_digit = 1
+            else:
+                tenor_digit = int(''.join(re.compile(r'\d+').findall(tenor)))
 
-    def align_to_NY_cut_in_UTC(self, date_time):
+            horizon_date = self.get_spot_date_from_horizon_date(horizon_date, cal, asset_holidays=asset_holidays)
+
+            if 'SP' in tenor_unit:
+                return horizon_date
+            elif tenor_unit == 'D':
+                return horizon_date + CustomBusinessDay(n=tenor_digit, holidays=asset_holidays)
+            elif tenor_unit == 'W':
+                return horizon_date + Day(n=tenor_digit * 7) + CustomBusinessDay(n=0, holidays=asset_holidays)
+            else:
+                if tenor_unit == 'Y':
+                    tenor_digit = tenor_digit * 12
+
+                horizon_period_end = horizon_date + CustomBusinessMonthEnd(tenor_digit + 1)
+                horizon_floating = horizon_date + MonthOffset(tenor_digit)
+
+                cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
+
+                delivery_date = []
+
+                for period_end, floating in zip(horizon_period_end, horizon_floating):
+                    if floating < period_end:
+                        delivery_date.append(floating - cbd + cbd)
+                    else:
+                        delivery_date.append(period_end)
+
+                return pd.DatetimeIndex(delivery_date)
+
+    def get_expiry_date_from_horizon_date(self, horizon_date, tenor, cal=None, asset_class='fx-vol'):
+        """Calculates the expiry date of FX options, based on the horizon date, the tenor and the holiday
+        calendar associated with the asset.
+
+        Uses expiry rules from Iain Clark's FX option pricing book
+
+        Parameters
+        ----------
+        horizon_date : pd.Timestamp (collection)
+            Horizon date of contract
+
+        tenor : str
+            Tenor of the contract
+
+        cal : str
+            Holiday calendar (usually related to the asset)
+
+        asset_class : str
+            'fx-vol' - FX options (default)
+
+        Returns
+        -------
+        pd.Timestamp (collection)
+        """
+        if asset_class == 'fx-vol':
+
+            tenor_unit = ''.join(re.compile(r'\D+').findall(tenor))
+
+            asset_holidays = self._filter.get_holidays(cal=cal)
+
+            if tenor_unit == 'ON':
+                tenor_digit = 1
+            else:
+                tenor_digit = int(''.join(re.compile(r'\d+') .findall(tenor)))
+
+            if tenor_unit == 'D':
+                return horizon_date + CustomBusinessDay(n=tenor_digit, holidays=asset_holidays)
+            elif tenor_unit == 'W':
+                return horizon_date + Day(n=tenor_digit * 7) + CustomBusinessDay(n=0, holidays=asset_holidays)
+            else:
+                horizon_date = self.get_spot_date_from_horizon_date(horizon_date, cal, asset_holidays=asset_holidays)
+
+                if tenor_unit == 'M':
+                    pass
+                elif tenor_unit == 'Y':
+                    tenor_digit = tenor_digit * 12
+
+                horizon_period_end = horizon_date + CustomBusinessMonthEnd(tenor_digit + 1)
+                horizon_floating = horizon_date + MonthOffset(tenor_digit)
+
+                cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
+
+                delivery_date = []
+
+                for period_end, floating in zip(horizon_period_end, horizon_floating):
+                    if floating < period_end:
+                        delivery_date.append(floating - cbd + cbd)
+                    else:
+                        delivery_date.append(period_end)
+
+                delivery_date = pd.DatetimeIndex(delivery_date)
+
+                return self.get_expiry_date_from_delivery_date(delivery_date, cal)
+
+    def _get_settlement_T(self, asset):
+        base = asset[0:3]
+        terms = asset[3:6]
+
+        if base in ['CAD', 'TRY', 'RUB'] or terms in ['CAD', 'TRY', 'RUB']:
+            return 1
+
+        return 2
+
+    def get_spot_date_from_horizon_date(self, horizon_date, asset, asset_holidays=None):
+        base = asset[0:3]
+        terms = asset[3:6]
+
+        settlement_T = self._get_settlement_T(asset)
+
+        if asset_holidays is None:
+            asset_holidays = self._filter.get_holidays(cal=asset)
+
+        # First adjustment step
+        if settlement_T == 2:
+            if base in ['MXN', 'ARS', 'CLP'] or terms in ['MXN', 'ARS', 'CLP']:
+                horizon_date = horizon_date + BDay(1)
+            else:
+                if base == 'USD':
+                    horizon_date = horizon_date + CustomBusinessDay(holidays=self._filter.get_holidays(cal=terms))
+                elif terms == 'USD':
+                    horizon_date = horizon_date + CustomBusinessDay(holidays=self._filter.get_holidays(cal=base))
+                else:
+                    horizon_date = horizon_date + CustomBusinessDay(holidays=asset_holidays)
+
+        if 'USD' not in asset:
+            asset_holidays = self._filter.get_holidays(cal='USD' + asset)
+
+        # Second adjustment step - move forward if horizon_date isn't a good business day in base, terms or USD
+        if settlement_T <= 2:
+            horizon_date = horizon_date + CustomBusinessDay(holidays=asset_holidays)
+
+        return horizon_date
+
+    def get_delivery_date_from_spot_date(self, spot_date, cal):
+        pass
+
+    def get_expiry_date_from_delivery_date(self, delivery_date, cal):
+        base = cal[0:3]
+        terms = cal[3:6]
+
+        if base == 'USD':
+             cal = terms
+        elif terms == 'USD':
+             cal = base
+
+        hols = self._filter.get_holidays(cal=cal + 'NYD')
+
+        return delivery_date - CustomBusinessDay(self._get_settlement_T(cal), holidays=hols)
+
+    def align_to_NY_cut_in_UTC(self, date_time, hour_of_day=10):
 
         tstz = Timezone()
-        date_time = tstz.localise_index_as_new_york_time(date_time)
-        date_time.index = date_time.index + timedelta(hours=10)
+        date_time = tstz.localize_index_as_new_york_time(date_time)
+        date_time.index = date_time.index + timedelta(hours=hour_of_day)
 
         return tstz.convert_index_aware_to_UTC_time(date_time)
 
@@ -848,38 +1075,39 @@ class Calendar(object):
 
         return data_frame
 
-    def create_bus_day(self, start, end):
-        return pandas.date_range(start, end, freq='B')
+    def create_bus_day(self, start, end, cal=None):
 
-    def get_bus_day_of_month(self, date, cal = 'FX'):
-        """ get_bus_day_of_month(date = list of dates, cal = calendar name)
+        if cal is None:
+            return pd.bdate_range(start, end)
 
-            returns the business day of the month (ie. 3rd Jan, on a Monday,
-            would be the 1st business day of the month
+        return pd.date_range(start, end, hols=self._filter.get_holidays(start_date=start, end_date=end, cal=cal))
+
+    def get_bus_day_of_month(self, date, cal='FX'):
+        """ Returns the business day of the month (ie. 3rd Jan, on a Monday, would be the 1st business day of the month)
         """
-        filter = Filter()
 
         try:
-            date = date.normalize() # strip times off the dates - for business dates just want dates!
-        except: pass
+            date = date.normalize()  # strip times off the dates - for business dates just want dates!
+        except:
+            pass
 
-        start = pandas.to_datetime(datetime.datetime(date.year[0], date.month[0], 1))
-        end = datetime.datetime.today()#pandas.to_datetime(datetime.datetime(date.year[-1], date.month[-1], date.day[-1]))
+        start = pd.to_datetime(datetime.datetime(date.year[0], date.month[0], 1))
+        end = datetime.datetime.today()  # pd.to_datetime(datetime.datetime(date.year[-1], date.month[-1], date.day[-1]))
 
-        holidays = filter.get_holidays(start, end, cal)
+        holidays = self._filter.get_holidays(start_date=start, end_date=end, cal=cal)
 
-        bday = CustomBusinessDay(holidays=holidays, weekmask='Mon Tue Wed Thu Fri')
+        # bday = CustomBusinessDay(holidays=holidays, weekmask='Mon Tue Wed Thu Fri')
 
-        bus_dates = pandas.date_range(start, end, freq=bday)
+        bus_dates = pd.bdate_range(start, end, holidays=holidays)
 
         month = bus_dates.month
 
-        work_day_index = numpy.zeros(len(bus_dates))
+        work_day_index = np.zeros(len(bus_dates))
         work_day_index[0] = 1
 
         for i in range(1, len(bus_dates)):
-            if month[i] == month[i-1]:
-                work_day_index[i] = work_day_index[i-1] + 1
+            if month[i] == month[i - 1]:
+                work_day_index[i] = work_day_index[i - 1] + 1
             else:
                 work_day_index[i] = 1
 
@@ -888,7 +1116,8 @@ class Calendar(object):
         return bus_day_of_month
 
     def set_market_holidays(self, holiday_df):
-        self.holiday_df = holiday_df
+        self._holiday_df = holiday_df
+
 
 # functions to test class
 if __name__ == '__main__':
@@ -899,10 +1128,12 @@ if __name__ == '__main__':
 
     if True:
         import pandas as pd
+
         dates = pd.date_range('01 Jan 2020', '10 Jan 2020', freq='D')
         data_frame = pd.DataFrame(index=dates)
 
-        start_date = '03 Jan 2020'; finish_date = '06 Jan 2020'
+        start_date = '03 Jan 2020';
+        finish_date = '06 Jan 2020'
         print(data_frame.loc[start_date:finish_date])
 
         # Much faster!
@@ -942,4 +1173,3 @@ if __name__ == '__main__':
         cProfile.run("intraday_vals = tsf.filter_time_series_by_holidays(intraday_vals, 'FX')")
 
         print(intraday_vals)
-

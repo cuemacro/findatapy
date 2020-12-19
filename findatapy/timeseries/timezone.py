@@ -81,36 +81,35 @@ class Timezone(object):
 
         return data_frame
 
-    def localise_index_as_UTC(self, data_frame):
+    def localize_index_as_UTC(self, data_frame):
         data_frame = data_frame.tz_localize(pytz.utc)
 
         return data_frame
 
-    def localise_index_as_new_york_time(self, data_frame):
+    def localize_index_as_new_york_time(self, data_frame):
         new_york = pytz.timezone('America/New_York')
         data_frame = data_frame.tz_localize(new_york)
 
         return data_frame
 
-    def localise_index_as_chicago_time(self, data_frame):
+    def localize_index_as_chicago_time(self, data_frame):
         chicago = pytz.timezone('America/Chicago')
         data_frame = data_frame.tz_localize(chicago)
 
         return data_frame
 
-    def localise_index_as_london_time(self, data_frame):
+    def localize_index_as_london_time(self, data_frame):
         london = pytz.timezone('Europe/London')
         data_frame = data_frame.tz_localize(london)
 
         return data_frame
 
     def set_as_no_timezone(self, data_frame):
-        data_frame.index.tz = None
+        data_frame = data_frame.tz_localize(None)
         return data_frame
 
     def tz_UTC_to_naive(self, data_frame):
-        """
-        tz_UTC_to_naive - Converts a tz-aware DatetimeIndex into a tz-naive DatetimeIndex,
+        """Converts a tz-aware DatetimeIndex into a tz-naive DatetimeIndex,
         effectively baking the timezone into the internal representation.
 
         Parameters
@@ -140,8 +139,7 @@ class Timezone(object):
         return None #data_frame #(doesn't work)
 
     def tz_strip(self, data_frame):
-        """
-        tz_strip - Converts a tz-aware DatetimeIndex into a tz-naive DatetimeIndex,
+        """Converts a tz-aware DatetimeIndex into a tz-naive DatetimeIndex,
         effectively baking the timezone into the internal representation.
 
         Parameters
