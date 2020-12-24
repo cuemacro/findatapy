@@ -1,7 +1,7 @@
 __author__ = 'saeedamen'  # Saeed Amen
 
 #
-# Copyright 2016 Cuemacro
+# Copyright 2016-2020 Cuemacro
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
 # License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -25,7 +25,8 @@ from datetime import timedelta
 
 import pandas.tseries.offsets
 
-from pandas.tseries.offsets import BDay, CustomBusinessDay, Day, CustomBusinessMonthEnd, MonthOffset
+from pandas.tseries.offsets import BDay, CustomBusinessDay, Day, CustomBusinessMonthEnd, DateOffset
+
 
 from findatapy.timeseries.timezone import Timezone
 
@@ -196,8 +197,8 @@ class Filter(object):
         DataFrame
         """
 
-        # optimal case for weekdays: remove Saturday and Sunday
-        if (cal == 'WEEKDAY'):
+        # Optimal case for weekdays: remove Saturday and Sunday
+        if (cal == 'WEEKDAY' or cal == 'WKY'):
             return data_frame[data_frame.index.dayofweek <= 4]
 
         # Select only those holidays in the sample
@@ -899,6 +900,10 @@ class Calendar(object):
         freq = str(self.get_business_days_tenor(tenor)) + "B"
         return pd.DataFrame(index=pd.bdate_range(start, end, freq=freq))
 
+    def get_delta_between_dates(self, date1, date2, unit='days'):
+        if unit == 'days':
+            return (date2 - date1).days
+
     def get_delivery_date_from_horizon_date(self, horizon_date, tenor, cal=None, asset_class='fx'):
         if 'fx' in asset_class:
             tenor_unit = ''.join(re.compile(r'\D+').findall(tenor))
@@ -929,11 +934,17 @@ class Calendar(object):
                     tenor_digit = tenor_digit * 12
 
                 horizon_period_end = horizon_date + CustomBusinessMonthEnd(tenor_digit + 1)
-                horizon_floating = horizon_date + MonthOffset(tenor_digit)
+                horizon_floating = horizon_date + DateOffset(months=tenor_digit)
 
                 cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
 
                 delivery_date = []
+
+                if isinstance(horizon_period_end, pd.Timestamp):
+                    horizon_period_end = [horizon_period_end]
+
+                if isinstance(horizon_floating, pd.Timestamp):
+                    horizon_floating = [horizon_floating]
 
                 for period_end, floating in zip(horizon_period_end, horizon_floating):
                     if floating < period_end:
@@ -991,11 +1002,17 @@ class Calendar(object):
                     tenor_digit = tenor_digit * 12
 
                 horizon_period_end = horizon_date + CustomBusinessMonthEnd(tenor_digit + 1)
-                horizon_floating = horizon_date + MonthOffset(tenor_digit)
+                horizon_floating = horizon_date + DateOffset(months=tenor_digit)
 
                 cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
 
                 delivery_date = []
+
+                if isinstance(horizon_period_end, pd.Timestamp):
+                    horizon_period_end = [horizon_period_end]
+
+                if isinstance(horizon_floating, pd.Timestamp):
+                    horizon_floating = [horizon_floating]
 
                 for period_end, floating in zip(horizon_period_end, horizon_floating):
                     if floating < period_end:

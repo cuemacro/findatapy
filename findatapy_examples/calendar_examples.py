@@ -28,8 +28,9 @@ if __name__ == '__main__':
     # choose run_example = 0 for everything
     # run_example = 1 - get holidays for FX, EUR and EURUSD, as well as listing weekends
     # run_example = 2 - get FX delivery dates and FX option expiries for various tenors
+    # run_example = 3 - get number of days between pandas DatetimeIndex
 
-    run_example = 0
+    run_example = 3
 
     if run_example == 1 or run_example == 0:
 
@@ -56,5 +57,13 @@ if __name__ == '__main__':
         # Get 1M expires for these horizon dates - typically would use to get option expiries
         print(calendar.get_expiry_date_from_horizon_date(
             pd.to_datetime([pd.Timestamp('26 Oct 2020')]), '1M', cal='EURUSD'))
+
+    if run_example == 3 or run_example == 0:
+        # Create a list of business days and one which is + 1 day
+
+        bus_days = pd.bdate_range('1 Jan 2020', '30 Jan 2020')
+        bus_days_plus = bus_days + pd.Timedelta(days=7)
+
+        print(calendar.get_delta_between_dates(bus_days, bus_days_plus))
 
 

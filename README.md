@@ -125,6 +125,9 @@ individual data providers)
 
 # Coding log
 
+* 24 Dec 2020
+  * Remove logger as field variable in IOEngine
+  * Fixed Calendar methods so can take single input
 * 19 Dec 2020
   * Added functionality to download FX forwards based total indices from BBG
   * Fixed downloading of forward points for NDFs

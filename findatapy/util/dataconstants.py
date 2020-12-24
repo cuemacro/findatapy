@@ -173,14 +173,15 @@ class DataConstants(object):
     # All the tenors on our vol surface
     fx_vol_tenor = ["ON", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
-    # All the tenors on our forwards
-    fx_forwards_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
-
     # Which base depo currencies are available?
     base_depos_currencies = ['EUR', 'GBP', 'AUD', 'NZD', 'USD', 'CAD', 'CHF', 'NOK', 'SEK', 'JPY']
 
     # Tenors available for base depos
     base_depos_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
+
+    ### FX forwards total return index construction
+    # All the tenors on our forwards
+    fx_forwards_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
     # overwrite field variables with those listed in DataCred
     def __init__(self):
