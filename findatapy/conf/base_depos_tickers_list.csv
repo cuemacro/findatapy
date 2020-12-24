@@ -1,5 +1,5 @@
 category,source,freq,ticker,cut,fields,sourceticker,local-close
-base-depos,bloomberg,daily,Fed Funds Effective Rate,NYC,close,FEDL01 Index,5:00pm NYC
+base-depos,bloomberg,daily,USDFedEffectiveRate,NYC,close,FEDL01 Index,5:00pm NYC
 base-depos,bloomberg,daily,USDON,NYC,close,USDR1T CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,USDTN,NYC,close,USDR2T CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,USDSN,NYC,close,USDR3T CMPN Index,5:00pm NYC

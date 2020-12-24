@@ -74,7 +74,7 @@ class IOEngine(object):
     """
 
     def __init__(self):
-        self.logger = LoggerManager().getLogger(__name__)
+        pass
 
     ### functions to handle Excel on disk
     def write_time_series_to_excel(self, fname, sheet, data_frame, create_new=False):
@@ -153,6 +153,8 @@ class IOEngine(object):
                                          timeout=10, username=None,
                                          password=None):
 
+        logger = LoggerManager().getLogger(__name__)
+
         if 'hdf5' in engine:
             engine = 'hdf5'
 
@@ -180,7 +182,7 @@ class IOEngine(object):
                     # r.delete(fname)
 
             except Exception as e:
-                self.logger.warning("Cannot delete non-existent key " + fname + " in Redis: " + str(e))
+                logger.warning("Cannot delete non-existent key " + fname + " in Redis: " + str(e))
 
         elif (engine == 'arctic'):
             from arctic import Arctic
@@ -189,7 +191,7 @@ class IOEngine(object):
             socketTimeoutMS = 30 * 1000
             fname = os.path.basename(fname).replace('.', '_')
 
-            self.logger.info('Load MongoDB library: ' + fname)
+            logger.info('Load MongoDB library: ' + fname)
 
             if username is not None and password is not None:
                 c = pymongo.MongoClient(
@@ -205,7 +207,7 @@ class IOEngine(object):
 
             c.close()
 
-            self.logger.info("Deleted MongoDB library: " + fname)
+            logger.info("Deleted MongoDB library: " + fname)
 
         elif (engine == 'hdf5'):
             h5_filename = self.get_h5_filename(fname)
@@ -245,6 +247,8 @@ class IOEngine(object):
         timeout : int
             Number of seconds to do timeout
         """
+
+        logger = LoggerManager().getLogger(__name__)
 
         # default HDF5 format
         hdf5_format = 'fixed'
@@ -289,12 +293,12 @@ class IOEngine(object):
                         else:
                             r.set(fname, ser.to_pybytes())
 
-                    self.logger.info("Pushed " + fname + " to Redis")
+                    logger.info("Pushed " + fname + " to Redis")
                 else:
-                    self.logger.info("Object " + fname + " is empty, not pushed to Redis.")
+                    logger.info("Object " + fname + " is empty, not pushed to Redis.")
 
             except Exception as e:
-                self.logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
+                logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
 
         elif (engine == 'arctic'):
             from arctic import Arctic
@@ -303,7 +307,7 @@ class IOEngine(object):
             socketTimeoutMS = 30 * 1000
             fname = os.path.basename(fname).replace('.', '_')
 
-            self.logger.info('Load Arctic/MongoDB library: ' + fname)
+            logger.info('Load Arctic/MongoDB library: ' + fname)
 
             if username is not None and password is not None:
                 c = pymongo.MongoClient(
@@ -324,9 +328,9 @@ class IOEngine(object):
 
             if database is None:
                 store.initialize_library(fname, audit=False)
-                self.logger.info("Created MongoDB library: " + fname)
+                logger.info("Created MongoDB library: " + fname)
             else:
-                self.logger.info("Got MongoDB library: " + fname)
+                logger.info("Got MongoDB library: " + fname)
 
             # Access the library
             library = store[fname]
@@ -356,7 +360,7 @@ class IOEngine(object):
 
             c.close()
 
-            self.logger.info("Written MongoDB library: " + fname)
+            logger.info("Written MongoDB library: " + fname)
 
         elif (engine == 'hdf5'):
             h5_filename = self.get_h5_filename(fname)
@@ -413,7 +417,7 @@ class IOEngine(object):
                 # once written to disk rename
                 os.rename(h5_filename_temp, h5_filename)
 
-            self.logger.info("Written HDF5: " + fname)
+            logger.info("Written HDF5: " + fname)
 
         elif (engine == 'parquet'):
             if '.parquet' not in fname:
@@ -422,7 +426,7 @@ class IOEngine(object):
 
             data_frame.to_parquet(fname, compression=parquet_compression)
 
-            self.logger.info("Written Parquet: " + fname)
+            logger.info("Written Parquet: " + fname)
 
     def get_h5_filename(self, fname):
         """Strips h5 off filename returning first portion of filename
@@ -470,9 +474,12 @@ class IOEngine(object):
         fields : list(str)
             columns to be written
         """
+
+        logger = LoggerManager().getLogger(__name__)
+
         fname_r = self.get_h5_filename(fname)
 
-        self.logger.info("About to dump R binary HDF5 - " + fname_r)
+        logger.info("About to dump R binary HDF5 - " + fname_r)
         data_frame32 = data_frame.astype('float32')
 
         if fields is None:
@@ -581,15 +588,15 @@ class IOEngine(object):
                         # print(fname_single)
                         if msg is not None:
                             msg = context.deserialize(msg)
-                            # self.logger.warning("Key " + fname_single + " not in Redis cache?")
+                            # logger.warning("Key " + fname_single + " not in Redis cache?")
 
                 except Exception as e:
-                    self.logger.info("Cache not existent for " + fname_single + " in Redis: " + str(e))
+                    logger.info("Cache not existent for " + fname_single + " in Redis: " + str(e))
 
                 if msg is None:
                     data_frame = None
                 else:
-                    self.logger.info('Load Redis cache: ' + fname_single)
+                    logger.info('Load Redis cache: ' + fname_single)
 
                     data_frame = msg # pandas.read_msgpack(msg)
 
@@ -601,7 +608,7 @@ class IOEngine(object):
 
                 fname_single = os.path.basename(fname_single).replace('.', '_')
 
-                self.logger.info('Load Arctic/MongoDB library: ' + fname_single)
+                logger.info('Load Arctic/MongoDB library: ' + fname_single)
 
                 if username is not None and password is not None:
                     c = pymongo.MongoClient(
@@ -625,12 +632,12 @@ class IOEngine(object):
 
                     c.close()
 
-                    self.logger.info('Read ' + fname_single)
+                    logger.info('Read ' + fname_single)
 
                     data_frame = item.data
 
                 except Exception as e:
-                    self.logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
+                    logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
                     data_frame = None
 
             elif os.path.isfile(self.get_h5_filename(fname_single)):
@@ -779,7 +786,9 @@ class IOEngine(object):
             date parser to use
         """
 
-        self.logger.info("About to read... " + f_name)
+        logger = LoggerManager().getLogger(__name__)
+
+        logger.info("About to read... " + f_name)
 
         data_frame = self.read_csv_data_frame(f_name, freq, cutoff=cutoff, dateparse=dateparse)
 
@@ -795,13 +804,14 @@ class IOEngine(object):
         f_name : str
             CSV file to be cleaned
         """
+        logger = LoggerManager().getLogger(__name__)
 
         with codecs.open(f_name, 'rb', 'utf-8') as myfile:
             data = myfile.read()
 
             # clean file first if dirty
             if data.count('\x00'):
-                self.logger.info('Cleaning CSV...')
+                logger.info('Cleaning CSV...')
 
                 with codecs.open(f_name + '.tmp', 'w', 'utf-8') as of:
                     of.write(data.replace('\x00', ''))
