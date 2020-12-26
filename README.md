@@ -126,7 +126,8 @@ individual data providers)
 # Coding log
 
 * 26 Dec 2020
-    * Added missing holiday file
+  * Added missing holiday file
+  * Refactored Calendar (so is no longer dependent on Filter)
 * 24 Dec 2020
   * Remove logger as field variable in IOEngine
   * Fixed Calendar methods so can take single input

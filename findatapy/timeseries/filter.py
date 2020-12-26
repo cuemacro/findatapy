@@ -49,8 +49,7 @@ class Filter(object):
     _time_series_cache = {}  # shared across all instances of object!
 
     def __init__(self):
-        # self.config = ConfigManager()
-        self._holiday_df = pd.read_parquet(constants.holidays_parquet_table)
+        self._calendar = Calendar()
 
     def filter_time_series(self, market_data_request, data_frame, pad_columns=False):
         """Filters a time series given a set of criteria (like start/finish date and tickers)
@@ -83,105 +82,6 @@ class Filter(object):
 
         return data_frame
 
-    def create_calendar_bus_days(self, start_date, end_date, cal='FX'):
-        """Creates a calendar of business days
-
-        Parameters
-        ----------
-        start_date : DateTime
-            start date of calendar
-        end_date : DataFrame
-            finish date of calendar
-        cal : str
-            business calendar to use
-
-        Returns
-        -------
-        list
-        """
-        hols = self.get_holidays(start_date=start_date, end_date=end_date, cal=cal)
-
-        return pd.bdate_range(start=start_date, end=end_date, freq='D', holidays=hols)
-
-    def _get_full_cal(self, cal):
-        holidays_list = []
-
-        # Calendars which have been hardcoded in the parquet file (which users may also edit)
-        if len(cal) == 6:
-            # Eg. EURUSD (load EUR and USD calendars and combine the holidays)
-            holidays_list.append([self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6])])
-        elif len(cal) == 9:
-            holidays_list.append([self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6]), self._get_full_cal(cal[6:9])])
-        else:
-            if cal == 'FX':
-                # Filter for Christmas & New Year's Day
-                for i in range(1999, 2025):
-                    holidays_list.append(pd.Timestamp(str(i) + "-12-25"))
-                    holidays_list.append(pd.Timestamp(str(i) + "-01-01"))
-
-            elif cal == 'NYD' or cal == 'NEWYEARSDAY':
-                # Filter for New Year's Day
-                for i in range(1999, 2025):
-                    holidays_list.append(pd.Timestamp(str(i) + "-01-01"))
-
-            elif cal == 'WDY' or cal == 'WEEKDAY':
-                bday = CustomBusinessDay(weekmask='Sat Sun')
-
-                holidays_list.append([x for x in pd.date_range('01 Jan 1999', '31 Dec 2025', freq=bday)])
-
-            else:
-                label = cal + ".holiday-dates"
-
-                try:
-                    holidays_list = self._holiday_df[label].dropna().tolist()
-                except:
-                    logger = LoggerManager().getLogger(__name__)
-                    logger.warning(cal + " holiday calendar not found.")
-
-        return holidays_list
-
-    def get_holidays(self, start_date=None, end_date=None, cal='FX'):
-        """Gets the holidays for a given calendar
-
-        Parameters
-        ----------
-        start_date : DateTime
-            start date of calendar
-        end_date : DataFrame
-            finish date of calendar
-        cal : str
-            business calendar to use
-
-        Returns
-        -------
-        list
-        """
-        #holidays_list ,  = []
-
-        # TODO use Pandas CustomBusinessDays to get more calendars
-        holidays_list = self._get_full_cal(cal)
-        #.append(lst)
-
-        # Use 'set' so we don't have duplicate dates if we are incorporating multiple calendars
-        holidays_list = np.array(list(set(self.flatten_list_of_lists(holidays_list))))
-        holidays_list = pd.to_datetime(holidays_list).sort_values()
-
-        # Floor start date
-        if start_date is not None:
-            start_date = pd.Timestamp(start_date).floor('D')
-            holidays_list = holidays_list[(holidays_list >= start_date)]
-
-        if end_date is not None:
-            # Ceiling end date
-            end_date = pd.Timestamp(end_date).ceil('D')
-            holidays_list = holidays_list[(holidays_list <= end_date)]
-
-        # Remove all weekends unless it is WEEKDAY calendar
-        if cal != 'WEEKDAY' or cal != 'WKY':
-            holidays_list = holidays_list[holidays_list.dayofweek <= 4]
-
-        return holidays_list.tz_localize('UTC')
-
     def filter_time_series_by_holidays(self, data_frame, cal='FX', holidays_list=[]):
         """Removes holidays from a given time series
 
@@ -202,7 +102,7 @@ class Filter(object):
             return data_frame[data_frame.index.dayofweek <= 4]
 
         # Select only those holidays in the sample
-        holidays_start = self.get_holidays(data_frame.index[0], data_frame.index[-1], cal, holidays_list=holidays_list)
+        holidays_start = self._calendar.get_holidays(data_frame.index[0], data_frame.index[-1], cal, holidays_list=holidays_list)
 
         if (holidays_start.size == 0):
             return data_frame
@@ -649,7 +549,7 @@ class Filter(object):
         for k in keyword:
             columns.append([elem for elem in data_frame.columns if k not in elem])
 
-        columns = self.flatten_list_of_lists(columns)
+        columns = self._calendar.flatten_list_of_lists(columns)
 
         return self.filter_time_series_by_columns(columns, data_frame)
 
@@ -676,34 +576,9 @@ class Filter(object):
         for k in keyword:
             columns.append([elem for elem in data_frame.columns if k in elem])
 
-        columns = self.flatten_list_of_lists(columns)
+        columns = self._calendar.flatten_list_of_lists(columns)
 
         return self.filter_time_series_by_columns(columns, data_frame)
-
-    def flatten_list_of_lists(self, list_of_lists):
-        """Flattens lists of obj, into a single list of strings (rather than characters, which is default behavior).
-
-        Parameters
-        ----------
-        list_of_lists : obj (list)
-            List to be flattened
-
-        Returns
-        -------
-        str (list)
-        """
-
-        if isinstance(list_of_lists, list):
-            rt = []
-            for i in list_of_lists:
-                if isinstance(i, list):
-                    rt.extend(self.flatten_list_of_lists(i))
-                else:
-                    rt.append(i)
-
-            return rt
-
-        return list_of_lists
 
     def filter_time_series_by_minute_freq(self, freq, data_frame):
         """Filter time series where minutes correspond to certain minute filter
@@ -888,7 +763,132 @@ class Calendar(object):
     }
 
     def __init__(self):
-        self._filter = Filter()
+        self._holiday_df = pd.read_parquet(constants.holidays_parquet_table)
+
+    def flatten_list_of_lists(self, list_of_lists):
+        """Flattens lists of obj, into a single list of strings (rather than characters, which is default behavior).
+
+        Parameters
+        ----------
+        list_of_lists : obj (list)
+            List to be flattened
+
+        Returns
+        -------
+        str (list)
+        """
+
+        if isinstance(list_of_lists, list):
+            rt = []
+            for i in list_of_lists:
+                if isinstance(i, list):
+                    rt.extend(self.flatten_list_of_lists(i))
+                else:
+                    rt.append(i)
+
+            return rt
+
+        return list_of_lists
+
+    def _get_full_cal(self, cal):
+        holidays_list = []
+
+        # Calendars which have been hardcoded in the parquet file (which users may also edit)
+        if len(cal) == 6:
+            # Eg. EURUSD (load EUR and USD calendars and combine the holidays)
+            holidays_list.append([self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6])])
+        elif len(cal) == 9:
+            holidays_list.append(
+                [self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6]), self._get_full_cal(cal[6:9])])
+        else:
+            if cal == 'FX':
+                # Filter for Christmas & New Year's Day
+                for i in range(1999, 2025):
+                    holidays_list.append(pd.Timestamp(str(i) + "-12-25"))
+                    holidays_list.append(pd.Timestamp(str(i) + "-01-01"))
+
+            elif cal == 'NYD' or cal == 'NEWYEARSDAY':
+                # Filter for New Year's Day
+                for i in range(1999, 2025):
+                    holidays_list.append(pd.Timestamp(str(i) + "-01-01"))
+
+            elif cal == 'WDY' or cal == 'WEEKDAY':
+                bday = CustomBusinessDay(weekmask='Sat Sun')
+
+                holidays_list.append([x for x in pd.date_range('01 Jan 1999', '31 Dec 2025', freq=bday)])
+
+            else:
+                label = cal + ".holiday-dates"
+
+                try:
+                    holidays_list = self._holiday_df[label].dropna().tolist()
+                except:
+                    logger = LoggerManager().getLogger(__name__)
+                    logger.warning(cal + " holiday calendar not found.")
+
+        return holidays_list
+
+    def create_calendar_bus_days(self, start_date, end_date, cal='FX'):
+        """Creates a calendar of business days
+
+        Parameters
+        ----------
+        start_date : DateTime
+            start date of calendar
+        end_date : DataFrame
+            finish date of calendar
+        cal : str
+            business calendar to use
+
+        Returns
+        -------
+        list
+        """
+        hols = self.get_holidays(start_date=start_date, end_date=end_date, cal=cal)
+
+        return pd.bdate_range(start=start_date, end=end_date, freq='D', holidays=hols)
+
+    def get_holidays(self, start_date=None, end_date=None, cal='FX', holidays_list=[]):
+        """Gets the holidays for a given calendar
+
+        Parameters
+        ----------
+        start_date : DateTime
+            start date of calendar
+        end_date : DataFrame
+            finish date of calendar
+        cal : str
+            business calendar to use
+
+        Returns
+        -------
+        list
+        """
+        # holidays_list ,  = []
+
+        # TODO use Pandas CustomBusinessDays to get more calendars
+        holidays_list = self._get_full_cal(cal)
+        # .append(lst)
+
+        # Use 'set' so we don't have duplicate dates if we are incorporating multiple calendars
+        holidays_list = np.array(list(set(self.flatten_list_of_lists(holidays_list))))
+        holidays_list = pd.to_datetime(holidays_list).sort_values()
+
+        # Floor start date
+        if start_date is not None:
+            start_date = pd.Timestamp(start_date).floor('D')
+            holidays_list = holidays_list[(holidays_list >= start_date)]
+
+        if end_date is not None:
+            # Ceiling end date
+            end_date = pd.Timestamp(end_date).ceil('D')
+            holidays_list = holidays_list[(holidays_list <= end_date)]
+
+        # Remove all weekends unless it is WEEKDAY calendar
+        if cal != 'WEEKDAY' or cal != 'WKY':
+            holidays_list = holidays_list[holidays_list.dayofweek <= 4]
+
+        return holidays_list.tz_localize('UTC')
 
     def get_business_days_tenor(self, tenor):
         if tenor in self._tenor_bus_day_dict.keys():
@@ -907,7 +907,7 @@ class Calendar(object):
     def get_delivery_date_from_horizon_date(self, horizon_date, tenor, cal=None, asset_class='fx'):
         if 'fx' in asset_class:
             tenor_unit = ''.join(re.compile(r'\D+').findall(tenor))
-            asset_holidays = self._filter.get_holidays(cal=cal)
+            asset_holidays = self.get_holidays(cal=cal)
 
             if tenor_unit == 'ON':
                 return horizon_date + CustomBusinessDay(n=1, holidays=asset_holidays)
@@ -982,7 +982,7 @@ class Calendar(object):
 
             tenor_unit = ''.join(re.compile(r'\D+').findall(tenor))
 
-            asset_holidays = self._filter.get_holidays(cal=cal)
+            asset_holidays = self.get_holidays(cal=cal)
 
             if tenor_unit == 'ON':
                 tenor_digit = 1
@@ -1040,7 +1040,7 @@ class Calendar(object):
         settlement_T = self._get_settlement_T(asset)
 
         if asset_holidays is None:
-            asset_holidays = self._filter.get_holidays(cal=asset)
+            asset_holidays = self.get_holidays(cal=asset)
 
         # First adjustment step
         if settlement_T == 2:
@@ -1048,14 +1048,14 @@ class Calendar(object):
                 horizon_date = horizon_date + BDay(1)
             else:
                 if base == 'USD':
-                    horizon_date = horizon_date + CustomBusinessDay(holidays=self._filter.get_holidays(cal=terms))
+                    horizon_date = horizon_date + CustomBusinessDay(holidays=self.get_holidays(cal=terms))
                 elif terms == 'USD':
-                    horizon_date = horizon_date + CustomBusinessDay(holidays=self._filter.get_holidays(cal=base))
+                    horizon_date = horizon_date + CustomBusinessDay(holidays=self.get_holidays(cal=base))
                 else:
                     horizon_date = horizon_date + CustomBusinessDay(holidays=asset_holidays)
 
         if 'USD' not in asset:
-            asset_holidays = self._filter.get_holidays(cal='USD' + asset)
+            asset_holidays = self.get_holidays(cal='USD' + asset)
 
         # Second adjustment step - move forward if horizon_date isn't a good business day in base, terms or USD
         if settlement_T <= 2:
@@ -1075,7 +1075,7 @@ class Calendar(object):
         elif terms == 'USD':
              cal = base
 
-        hols = self._filter.get_holidays(cal=cal + 'NYD')
+        hols = self.get_holidays(cal=cal + 'NYD')
 
         return delivery_date - CustomBusinessDay(self._get_settlement_T(cal), holidays=hols)
 
@@ -1097,7 +1097,7 @@ class Calendar(object):
         if cal is None:
             return pd.bdate_range(start, end)
 
-        return pd.date_range(start, end, hols=self._filter.get_holidays(start_date=start, end_date=end, cal=cal))
+        return pd.date_range(start, end, hols=self.get_holidays(start_date=start, end_date=end, cal=cal))
 
     def get_bus_day_of_month(self, date, cal='FX'):
         """ Returns the business day of the month (ie. 3rd Jan, on a Monday, would be the 1st business day of the month)
@@ -1111,7 +1111,7 @@ class Calendar(object):
         start = pd.to_datetime(datetime.datetime(date.year[0], date.month[0], 1))
         end = datetime.datetime.today()  # pd.to_datetime(datetime.datetime(date.year[-1], date.month[-1], date.day[-1]))
 
-        holidays = self._filter.get_holidays(start_date=start, end_date=end, cal=cal)
+        holidays = self.get_holidays(start_date=start, end_date=end, cal=cal)
 
         # bday = CustomBusinessDay(holidays=holidays, weekmask='Mon Tue Wed Thu Fri')
 
@@ -1135,58 +1135,3 @@ class Calendar(object):
     def set_market_holidays(self, holiday_df):
         self._holiday_df = holiday_df
 
-
-# functions to test class
-if __name__ == '__main__':
-
-    logger = LoggerManager.getLogger(__name__)
-
-    tsf = Filter()
-
-    if True:
-        import pandas as pd
-
-        dates = pd.date_range('01 Jan 2020', '10 Jan 2020', freq='D')
-        data_frame = pd.DataFrame(index=dates)
-
-        start_date = '03 Jan 2020';
-        finish_date = '06 Jan 2020'
-        print(data_frame.loc[start_date:finish_date])
-
-        # Much faster!
-        print(data_frame[(data_frame.index >= start_date) & (data_frame.index <= finish_date)])
-
-    if False:
-        start = pandas.to_datetime('2000-01-01')
-        end = pandas.to_datetime('2020-01-01')
-
-        logger.info('Get FX holidays')
-        hols = tsf.get_holidays(start, end, cal='FX')
-        print(hols)
-
-        logger.info('Get business days, excluding holidays')
-        bus_days = tsf.create_calendar_bus_days(start, end, cal='FX')
-        print(bus_days)
-
-    if False:
-        logger.info('Remove out of hours')
-
-        rng = pandas.date_range('01 Jan 2014', '05 Jan 2014', freq='1min')
-        intraday_vals = pandas.DataFrame(data=pandas.np.random.randn(len(rng)), index=rng)
-
-        intraday_vals = tsf.resample_time_series(intraday_vals, '60min')
-        intraday_vals = tsf.remove_out_FX_out_of_hours(intraday_vals)
-
-        print(intraday_vals)
-
-    if True:
-        logger.info('Remove holiday days')
-
-        rng = pandas.date_range('01 Jan 2007', '05 Jan 2014', freq='1min')
-        intraday_vals = pandas.DataFrame(data=pandas.np.random.randn(len(rng)), index=rng)
-
-        import cProfile
-
-        cProfile.run("intraday_vals = tsf.filter_time_series_by_holidays(intraday_vals, 'FX')")
-
-        print(intraday_vals)
