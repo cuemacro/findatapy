@@ -22,25 +22,26 @@ if __name__ == '__main__':
     import pandas as pd
     import numpy as np
 
-    filter = Filter()
     calendar = Calendar()
+    filter = Filter()
 
     # choose run_example = 0 for everything
     # run_example = 1 - get holidays for FX, EUR and EURUSD, as well as listing weekends
     # run_example = 2 - get FX delivery dates and FX option expiries for various tenors
     # run_example = 3 - get number of days between pandas DatetimeIndex
+    # run_example = 4 - filter time series by EURUSD holidays
 
-    run_example = 3
+    run_example = 0
 
     if run_example == 1 or run_example == 0:
 
         # Get the holidays (which aren't weekends)
-        print(filter.get_holidays(start_date='01 Jan 1999 00:50', end_date='31 Dec 1999', cal='FX'))
-        print(filter.get_holidays(start_date='01 Jan 2000 00:10', end_date='31 Dec 2000', cal='EUR'))
-        print(filter.get_holidays(start_date='01 Jan 2000 00:10', end_date='31 Dec 2000', cal='EURUSD'))
+        print(calendar.get_holidays(start_date='01 Jan 1999 00:50', end_date='31 Dec 1999', cal='FX'))
+        print(calendar.get_holidays(start_date='01 Jan 2000 00:10', end_date='31 Dec 2000', cal='EUR'))
+        print(calendar.get_holidays(start_date='01 Jan 2000 00:10', end_date='31 Dec 2000', cal='EURUSD'))
 
         # Get the holidays (which are weekends)
-        print(filter.get_holidays(start_date='01 Jan 1999 00:50', end_date='31 Dec 1999', cal='WKY'))
+        print(calendar.get_holidays(start_date='01 Jan 1999 00:50', end_date='31 Dec 1999', cal='WKY'))
 
     if run_example == 2 or run_example == 0:
 
@@ -65,5 +66,17 @@ if __name__ == '__main__':
         bus_days_plus = bus_days + pd.Timedelta(days=7)
 
         print(calendar.get_delta_between_dates(bus_days, bus_days_plus))
+
+    if run_example == 4 or run_example == 0:
+        # Filter a time series by EURUSD holidays
+
+        df = pd.DataFrame(index=pd.bdate_range('1 Jan 2020', '31 Dec 2020'))
+        df['Prices'] = 1
+
+        df_filtered = filter.filter_time_series_by_holidays(df, 'EURUSD')
+
+        print(len(df.index))
+        print(len(df_filtered.index))
+
 
 

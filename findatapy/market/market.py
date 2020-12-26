@@ -801,12 +801,12 @@ class RatesFactory(object):
 
         for cr in currencies:
 
-            # Special case for Fed Funds Effective Rate
-            if cr == 'USD':
-                tickers.append("Fed Funds Effective Rate")
-
             for tn in tenor:
                 tickers.append(cr + tn)
+
+        # Special case for Fed Funds Effective Rate
+        if 'USDFedEffectiveRate' not in tickers:
+            tickers.append("USDFedEffectiveRate")
 
         # For depos there usually isn't a 10AM NYC cut available, so just use TOK data
         if cut == '10AM':
