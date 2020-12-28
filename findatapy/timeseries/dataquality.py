@@ -21,8 +21,7 @@ import numpy
 import pandas
 import pandas.tseries.offsets
 
-from findatapy.timeseries.filter import Filter
-from findatapy.timeseries.filter import Calendar
+from findatapy.timeseries.filter import Filter, Calendar
 
 from pandas import compat
 

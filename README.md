@@ -125,6 +125,8 @@ individual data providers)
 
 # Coding log
 
+* 28 Dec 2020
+  * Spun out Calendar into separate Python script
 * 26 Dec 2020
   * Added missing holiday file
   * Refactored Calendar (so is no longer dependent on Filter)
