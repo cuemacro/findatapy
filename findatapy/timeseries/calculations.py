@@ -34,8 +34,7 @@ except:
     except:
         pass
 
-from findatapy.timeseries.filter import Filter
-from findatapy.timeseries.filter import Calendar
+from findatapy.timeseries import Filter, Calendar
 
 from pandas import compat
 
