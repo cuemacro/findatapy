@@ -35,6 +35,9 @@ class Market(object):
                 # NOT CURRENTLY IMPLEMENTED FOR FUTURE USE
                 from finaddpy.market import CachedMarketDataGenerator
                 market_data_generator = CachedMarketDataGenerator()
+            else:
+                from findatapy.market import MarketDataGenerator
+                market_data_generator = MarketDataGenerator()
 
         self.speed_cache = SpeedCache()
         self._market_data_generator = market_data_generator
@@ -804,7 +807,7 @@ class RatesFactory(object):
             for tn in tenor:
                 tickers.append(cr + tn)
 
-        # Special case for Fed Funds Effective Rate
+        # Special case for Fed Funds Effective Rate which we add in all instances
         if 'USDFedEffectiveRate' not in tickers:
             tickers.append("USDFedEffectiveRate")
 
