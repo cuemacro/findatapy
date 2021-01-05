@@ -446,6 +446,13 @@ class MarketDataRequest(object):
                     # self.logger.warning("Attempted to parse date")
                     i = 0
 
+                # format expected '1 June 2005 01:33', '%d %B %Y %H:%M'
+                try:
+                    date1 = datetime.datetime.strptime(date, '%d %B %Y %H:%M')
+                except:
+                    # self.logger.warning("Attempted to parse date")
+                    i = 0
+
                 try:
                     date1 = datetime.datetime.strptime(date, '%b %d %Y')
                 except:
@@ -454,6 +461,18 @@ class MarketDataRequest(object):
 
                 try:
                     date1 = datetime.datetime.strptime(date, '%d %b %Y')
+                except:
+                    # self.logger.warning("Attempted to parse date")
+                    i = 0
+
+                try:
+                    date1 = datetime.datetime.strptime(date, '%B %d %Y')
+                except:
+                    # self.logger.warning("Attempted to parse date")
+                    i = 0
+
+                try:
+                    date1 = datetime.datetime.strptime(date, '%d %B %Y')
                 except:
                     # self.logger.warning("Attempted to parse date")
                     i = 0

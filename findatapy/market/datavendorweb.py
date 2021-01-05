@@ -1590,15 +1590,18 @@ class DataVendorDukasCopy(DataVendor):
         df.drop('temp', axis = 1)
         df.index.name = 'Date'
 
+        # Default FX divisior
         divisor = 100000.0
 
-        # where JPY is the terms currency we have different divisor
+        # Where JPY is the terms currency we have different divisor
         if symbol[3:6] == 'JPY':
             divisor = 1000.0
 
-        # special case!
-        if symbol == 'BRENTCMDUSD':
+        # Special case! You may need to add more here
+        elif symbol == 'BRENTCMDUSD':
             divisor = 1000.0
+        elif len(symbol) > 6:
+            divisor = 1.0
 
         # prices are returned without decimal point (need to divide)
         df['bid'] =  df['bid'] / divisor

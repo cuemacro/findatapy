@@ -176,7 +176,7 @@ base-depos,bloomberg,daily,JPY1Y,NYC,close,JYDR1 CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,JPY2Y,NYC,close,JYDR2 CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,JPY3Y,NYC,close,JYDR3 CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,JPY5Y,NYC,close,JYDR5 CMPN Index,5:00pm NYC
-base-depos,bloomberg,daily,Fed Funds Effective Rate,LDN,close,FEDL01 Index,6:00pm LDN
+base-depos,bloomberg,daily,USDFedEffectiveRate,LDN,close,FEDL01 Index,6:00pm LDN
 base-depos,bloomberg,daily,USDON,LDN,close,USDR1T CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,USDTN,LDN,close,USDR2T CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,USDSN,LDN,close,USDR3T CMPL Index,6:00pm LDN
@@ -353,7 +353,7 @@ base-depos,bloomberg,daily,JPY1Y,LDN,close,JYDR1 CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,JPY2Y,LDN,close,JYDR2 CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,JPY3Y,LDN,close,JYDR3 CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,JPY5Y,LDN,close,JYDR5 CMPL Index,6:00pm LDN
-base-depos,bloomberg,daily,Fed Funds Effective Rate,TOK,close,FEDL01 Index,8:00pm TOK
+base-depos,bloomberg,daily,USDFedEffectiveRate,TOK,close,FEDL01 Index,8:00pm TOK
 base-depos,bloomberg,daily,USDON,TOK,close,USDR1T CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,USDTN,TOK,close,USDR2T CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,USDSN,TOK,close,USDR3T CMPT Index,8:00pm TOK
