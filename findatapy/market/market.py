@@ -812,8 +812,11 @@ class RatesFactory(object):
             tickers.append("USDFedEffectiveRate")
 
         # For depos there usually isn't a 10AM NYC cut available, so just use TOK data
+        # Also no BGN tends to available for deposits, so use NYC
         if cut == '10AM':
             cut = 'TOK'
+        elif cut == 'BGN':
+            cut = 'NYC'
 
         market_data_request = MarketDataRequest(
             start_date=start, finish_date=end,

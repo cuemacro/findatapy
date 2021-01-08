@@ -125,7 +125,9 @@ individual data providers)
 
 # Coding log
 
-* 05 Jan 2020
+* 08 Jan 2021
+  * Added extra calendar example
+* 05 Jan 2021
   * MarketDataRequest accepts parsing of full month names
 * 28 Dec 2020
   * Spun out Calendar into separate Python script
