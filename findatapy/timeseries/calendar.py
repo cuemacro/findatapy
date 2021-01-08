@@ -92,7 +92,7 @@ class Calendar(object):
             holidays_list.append(
                 [self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6]), self._get_full_cal(cal[6:9])])
         else:
-            if cal == 'FX':
+            if cal == 'FX' or cal == 'NYX':
                 # Filter for Christmas & New Year's Day
                 for i in range(1999, 2025):
                     holidays_list.append(pd.Timestamp(str(i) + "-12-25"))
@@ -292,10 +292,10 @@ class Calendar(object):
                 elif tenor_unit == 'Y':
                     tenor_digit = tenor_digit * 12
 
+                cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
+
                 horizon_period_end = horizon_date + CustomBusinessMonthEnd(tenor_digit + 1)
                 horizon_floating = horizon_date + DateOffset(months=tenor_digit)
-
-                cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
 
                 delivery_date = []
 
@@ -368,7 +368,9 @@ class Calendar(object):
 
         hols = self.get_holidays(cal=cal + 'NYD')
 
-        return delivery_date - CustomBusinessDay(self._get_settlement_T(cal), holidays=hols)
+        # cbd = CustomBusinessDay(1, holidays=self.get_holidays(cal=cal))
+
+        return delivery_date - CustomBusinessDay(self._get_settlement_T(cal), holidays=hols) # - cbd + cbd
 
     def align_to_NY_cut_in_UTC(self, date_time, hour_of_day=10):
 

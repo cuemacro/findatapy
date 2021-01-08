@@ -30,8 +30,9 @@ if __name__ == '__main__':
     # run_example = 2 - get FX delivery dates and FX option expiries for various tenors
     # run_example = 3 - get number of days between pandas DatetimeIndex
     # run_example = 4 - filter time series by EURUSD holidays
+    # run_example = 4 - option expiries for USDJPY
 
-    run_example = 0
+    run_example = 5
 
     if run_example == 1 or run_example == 0:
 
@@ -77,6 +78,13 @@ if __name__ == '__main__':
 
         print(len(df.index))
         print(len(df_filtered.index))
+
+    if run_example == 5 or run_example == 0:
+        # Get expiry for USDJPY
+
+        # Get 1M expires for these horizon dates - typically would use to get option expiries
+        print(calendar.get_expiry_date_from_horizon_date(
+            pd.to_datetime([pd.Timestamp('26 Nov 2008')]), '1M', cal='USDJPY'))
 
 
 
