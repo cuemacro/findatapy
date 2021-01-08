@@ -305,6 +305,7 @@ class Calendar(object):
                 if isinstance(horizon_floating, pd.Timestamp):
                     horizon_floating = [horizon_floating]
 
+                # TODO: double check this!
                 for period_end, floating in zip(horizon_period_end, horizon_floating):
                     if floating < period_end:
                         delivery_date.append(floating - cbd + cbd)
