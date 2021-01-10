@@ -107,6 +107,9 @@ class Calendar(object):
                 bday = CustomBusinessDay(weekmask='Sat Sun')
 
                 holidays_list.append([x for x in pd.date_range('01 Jan 1999', '31 Dec 2025', freq=bday)])
+            elif cal == 'NOH': #
+                pass
+                # holidays_list.append()
 
             else:
                 label = cal + ".holiday-dates"

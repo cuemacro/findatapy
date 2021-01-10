@@ -125,6 +125,8 @@ individual data providers)
 
 # Coding log
 
+* 10 Jan 2021
+  * Added Dukascopy non-equities example
 * 08 Jan 2021
   * Added extra calendar example
 * 05 Jan 2021
