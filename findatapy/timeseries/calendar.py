@@ -107,7 +107,7 @@ class Calendar(object):
                 bday = CustomBusinessDay(weekmask='Sat Sun')
 
                 holidays_list.append([x for x in pd.date_range('01 Jan 1999', '31 Dec 2025', freq=bday)])
-            elif cal == 'NOH': #
+            elif cal == 'WKD': #
                 pass
                 # holidays_list.append()
 
@@ -279,7 +279,7 @@ class Calendar(object):
             asset_holidays = self.get_holidays(cal=cal)
 
             if tenor_unit == 'ON':
-                tenor_digit = 1
+                tenor_digit = 1; tenor_unit = 'D'
             else:
                 tenor_digit = int(''.join(re.compile(r'\d+') .findall(tenor)))
 

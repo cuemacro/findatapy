@@ -125,6 +125,8 @@ individual data providers)
 
 # Coding log
 
+* 14 Jan 2021
+  * Fixed ON FX option date expiry
 * 10 Jan 2021
   * Added Dukascopy non-equities example
 * 08 Jan 2021
