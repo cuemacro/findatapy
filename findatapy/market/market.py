@@ -659,9 +659,10 @@ class FXVolFactory(object):
 
             # Create very naive average of LDN and TOK to estimate 10am NY value because we often don't have this data
             # Note, this isn't perfect, particularly on days where you have payrolls data, and we're looking at ON data
+            # You might choose to create your own approximation for 10am NY
             for col in old_cols:
                 data_frame[col] = (1 * data_frame[col + "LDN"] + 3 * data_frame[col + "TOK"]) / 4
-
+                # data_frame[col] = data_frame[col + "LDN"]
                 data_frame.pop(col + "LDN")
                 data_frame.pop(col + "TOK")
 

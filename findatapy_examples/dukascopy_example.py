@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # run_example = 1 - download EURUSD free tick data from DukasCopy example
     # run_example = 2 - download S&P500 free tick data from DukasCopy example
 
-    run_example = 2
+    run_example = 0
 
     if run_example == 1 or run_example == 0:
 
