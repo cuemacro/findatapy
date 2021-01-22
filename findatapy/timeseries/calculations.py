@@ -1322,6 +1322,33 @@ class Calculations(object):
 
         return data_frame
 
+    def average_by_day_of_week_hour_min_of_day_pretty_output(self, data_frame):
+        # years = range(data_frame.index[0].year, data_frame.index[-1].year)
+        #
+        # time_of_day = []
+        #
+        # for year in years:
+        #     temp = data_frame[data_frame.index.year == year]
+        #     time_of_day.append(temp.groupby(temp.index.time).mean())
+        #
+        # data_frame = pd.concat(time_of_day, axis=1, keys = years)
+
+        # Older pd
+        try:
+            data_frame = data_frame. \
+                groupby([data_frame.index.dayofweek.rename('dayofweek'), data_frame.index.hour.rename('hour'),
+                         data_frame.index.minute.rename('minute')]).mean()
+        except:
+            data_frame = data_frame. \
+                groupby([data_frame.index.dayofweek, data_frame.index.hour,
+                         data_frame.index.minute]).mean()
+
+        data_frame = data_frame.unstack(0)
+
+        data_frame.index = data_frame.index.map(lambda t: datetime.time(*t))
+
+        return data_frame
+
     def average_by_annualised_year(self, data_frame, obs_in_year=252):
         data_frame = data_frame. \
                          groupby([data_frame.index.year]).mean() * obs_in_year

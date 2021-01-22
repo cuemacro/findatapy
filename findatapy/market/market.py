@@ -324,7 +324,7 @@ class FXCrossFactory(object):
 
                     # If user only wants 'close' calculate that from the bid/ask fields
                     if fields == ['close']:
-                        cross_vals = cross_vals[[cr + '.bid', cr + '.ask']].mean(axis=1)
+                        cross_vals = pd.DataFrame(cross_vals[[cr + '.bid', cr + '.ask']].mean(axis=1))
                         cross_vals.columns = [cr + '.close']
                     else:
                         filter = Filter()

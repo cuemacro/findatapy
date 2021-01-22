@@ -400,7 +400,7 @@ class IOEngine(object):
                 except:
                     pass
 
-                store = pandas.HDFStore(h5_filename_temp, format=hdf5_format, complib="zlib", complevel=9)
+                store = pandas.HDFStore(h5_filename_temp, complib="zlib", complevel=9)
 
                 if ('intraday' in fname):
                     data_frame = data_frame.astype('float32')
@@ -620,7 +620,7 @@ class IOEngine(object):
                 store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
 
                 # Access the library
-                try:
+                if True: #try:
                     library = store[fname_single]
 
                     if start_date is None and finish_date is None:
@@ -636,9 +636,9 @@ class IOEngine(object):
 
                     data_frame = item.data
 
-                except Exception as e:
-                    logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
-                    data_frame = None
+                #except Exception as e:
+                #    logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
+                #    data_frame = None
 
             elif os.path.isfile(self.get_h5_filename(fname_single)):
                 store = pandas.HDFStore(self.get_h5_filename(fname_single))

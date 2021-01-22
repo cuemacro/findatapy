@@ -125,6 +125,8 @@ individual data providers)
 
 # Coding log
 
+* 22 Jan 2021
+  * Fixed caching for tick
 * 14 Jan 2021
   * Fixed ON FX option date expiry
 * 10 Jan 2021
