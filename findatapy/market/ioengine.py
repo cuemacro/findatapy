@@ -277,23 +277,29 @@ class IOEngine(object):
 
                 if data_frame is not None:
                     if isinstance(data_frame, pandas.DataFrame):
-                        # msgpack/blosc is deprecated
-                        # r.set(fname, data_frame.to_msgpack(compress='blosc'))
+                        mem = data_frame.memory_usage(deep='deep').sum()
+                        mem_float = round(float(mem) / (1024.0 * 1024.0), 3)
 
-                        # now uses pyarrow
-                        context = pa.default_serialization_context()
+                        if mem_float < 500:
+                            # msgpack/blosc is deprecated
+                            # r.set(fname, data_frame.to_msgpack(compress='blosc'))
 
-                        ser = context.serialize(data_frame).to_buffer()
+                            # now uses pyarrow
+                            context = pa.default_serialization_context()
 
-                        if use_cache_compression:
-                            comp = pa.compress(ser, codec='lz4', asbytes=True)
-                            siz = len(ser)  # siz = 3912
+                            ser = context.serialize(data_frame).to_buffer()
 
-                            r.set('comp_' + str(siz) + '_' + fname, comp)
+                            if use_cache_compression:
+                                comp = pa.compress(ser, codec='lz4', asbytes=True)
+                                siz = len(ser)  # siz = 3912
+
+                                r.set('comp_' + str(siz) + '_' + fname, comp)
+                            else:
+                                r.set(fname, ser.to_pybytes())
+
+                            logger.info("Pushed " + fname + " to Redis")
                         else:
-                            r.set(fname, ser.to_pybytes())
-
-                    logger.info("Pushed " + fname + " to Redis")
+                            logger.warn("Did not push " + fname + " to Redis, given size")
                 else:
                     logger.info("Object " + fname + " is empty, not pushed to Redis.")
 
@@ -903,7 +909,7 @@ class SpeedCache(object):
 
             if 'api_key' not in k:
                 # provided the key is not in one of the dropped keys
-                if not (any(a == k for a in key_drop)):
+                if not(any(a == k for a in key_drop)):
                     add = obj.__dict__[k]
 
                     if add is not None:

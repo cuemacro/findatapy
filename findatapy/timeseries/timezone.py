@@ -76,7 +76,11 @@ class Timezone(object):
         return data_frame
 
     def convert_index_aware_to_alt(self, data_frame, time_zone):
-        alt = pytz.timezone(time_zone)
+        try:
+            alt = pytz.timezone(time_zone)
+        except:
+            alt = time_zone
+
         data_frame = data_frame.tz_convert(alt)
 
         return data_frame

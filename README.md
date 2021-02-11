@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.20 - findatapy (11 Feb 2021)
 * 0.1.19 - findatapy (22 Jan 2021)
 * 0.1.18 - findatapy (02 Oct 2020)
 * 0.1.17 - findatapy (01 Oct 2020)
@@ -126,6 +127,12 @@ individual data providers)
 
 # Coding log
 
+* 11 Feb 2021
+  * Fixed timezone issues in Seasonality
+  * Add extra Dukascopy error checking/retry functionality/parameters
+  * Added Parquet to MarketDataRequest
+  * Started to write Numba implementations for join and align
+  * Added fields for downloading eg. FX vol data
 * 22 Jan 2021
   * Fixed caching for tick
 * 14 Jan 2021

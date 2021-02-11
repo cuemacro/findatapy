@@ -166,23 +166,35 @@ class Calendar(object):
 
         # Use 'set' so we don't have duplicate dates if we are incorporating multiple calendars
         holidays_list = np.array(list(set(self.flatten_list_of_lists(holidays_list))))
-        holidays_list = pd.to_datetime(holidays_list).sort_values()
+        holidays_list = pd.to_datetime(holidays_list).sort_values().tz_localize('UTC')
 
         # Floor start date
         if start_date is not None:
             start_date = pd.Timestamp(start_date).floor('D')
+
+            try:
+                start_date = start_date.tz_localize('UTC')
+            except:
+                pass
+
             holidays_list = holidays_list[(holidays_list >= start_date)]
 
         if end_date is not None:
             # Ceiling end date
             end_date = pd.Timestamp(end_date).ceil('D')
+
+            try:
+                end_date = end_date.tz_localize('UTC')
+            except:
+                pass
+
             holidays_list = holidays_list[(holidays_list <= end_date)]
 
         # Remove all weekends unless it is WEEKDAY calendar
         if cal != 'WEEKDAY' or cal != 'WKY':
             holidays_list = holidays_list[holidays_list.dayofweek <= 4]
 
-        return holidays_list.tz_localize('UTC')
+        return holidays_list
 
     def get_business_days_tenor(self, tenor):
         if tenor in self._tenor_bus_day_dict.keys():
@@ -396,7 +408,7 @@ class Calendar(object):
 
         return pd.date_range(start, end, hols=self.get_holidays(start_date=start, end_date=end, cal=cal))
 
-    def get_bus_day_of_month(self, date, cal='FX'):
+    def get_bus_day_of_month(self, date, cal='FX', tz=None):
         """ Returns the business day of the month (ie. 3rd Jan, on a Monday, would be the 1st business day of the month)
         """
 
@@ -406,13 +418,18 @@ class Calendar(object):
             pass
 
         start = pd.to_datetime(datetime.datetime(date.year[0], date.month[0], 1))
-        end = datetime.datetime.today()  # pd.to_datetime(datetime.datetime(date.year[-1], date.month[-1], date.day[-1]))
+        end = pd.Timestamp(datetime.datetime.today())  # pd.to_datetime(datetime.datetime(date.year[-1], date.month[-1], date.day[-1]))
 
         holidays = self.get_holidays(start_date=start, end_date=end, cal=cal)
 
         # bday = CustomBusinessDay(holidays=holidays, weekmask='Mon Tue Wed Thu Fri')
 
-        bus_dates = pd.bdate_range(start, end, holidays=holidays)
+        holidays = holidays.tz_localize(None).date
+
+        bus_dates = pd.bdate_range(start, end)
+
+        # Not most efficient way...
+        bus_dates = pd.to_datetime([x for x in bus_dates if x not in holidays])
 
         month = bus_dates.month
 

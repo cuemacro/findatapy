@@ -1,7 +1,7 @@
 __author__ = 'saeedamen'  # Saeed Amen
 
 #
-# Copyright 2016 Cuemacro
+# Copyright 2021 Cuemacro
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
 # License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # run_example = 4 - filter time series by EURUSD holidays
     # run_example = 4 - option expiries for USDJPY
 
-    run_example = 5
+    run_example = 0
 
     if run_example == 1 or run_example == 0:
 
