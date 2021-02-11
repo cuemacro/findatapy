@@ -115,10 +115,14 @@ class DataConstants(object):
                                      'dukascopy'   : 8,
                                      'fxcm'        : 4}
 
-    # seconds for timeout
-    timeout_downloader = {'dukascopy' : 20}
+    # Seconds for timeout
+    timeout_downloader = {'dukascopy' : 120}
 
-    dukascopy_multithreading = True
+    # Dukascopy specific settings
+    dukascopy_mini_timeout_seconds = 10
+    dukascopy_multithreading = True # Can get rejected connections when threading with Dukascopy
+    dukascopy_try_time = 0 # Usually values of 0-1/8-1/4-1 are reasonable
+    # smaller values => quicker retry, but don't want to poll server too much
 
     # we can override the thread count and drop back to single thread for certain market data downloads, as can have issues with
     # quite large daily datasets from Bloomberg (and other data vendors) when doing multi-threading, so can override and use
@@ -134,7 +138,7 @@ class DataConstants(object):
     bbg_server_port = 8194
 
     # Dukascopy settings
-    dukascopy_base_url = "http://www.dukascopy.com/datafeed/"
+    dukascopy_base_url = "https://www.dukascopy.com/datafeed/"
     dukascopy_write_temp_tick_disk = False
 
     # FXCM settings

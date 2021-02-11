@@ -12,7 +12,6 @@ __author__ = 'saeedamen'  # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-
 if __name__ == '__main__':
     ###### below line CRUCIAL when running Windows, otherwise multiprocessing doesn't work! (not necessary on Linux)
     from findatapy.util import SwimPool; SwimPool()
@@ -34,7 +33,7 @@ if __name__ == '__main__':
         market = Market(market_data_generator=MarketDataGenerator())
 
         # first we can do it by defining all the vendor fields, tickers etc. so we bypass the configuration file
-        md_request = MarketDataRequest(start_date='14 Jun 2016', finish_date='15 Jun 2016',
+        md_request = MarketDataRequest(start_date='14 Jun 2016', finish_date='20 Jun 2016',
                                        fields=['bid'], vendor_fields=['bid'],
                                        freq='tick', data_source='dukascopy',
                                        tickers=['EURUSD'], vendor_tickers=['EURUSD'])

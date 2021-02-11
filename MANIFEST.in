@@ -1,3 +1,5 @@
 recursive-include findatapy/ *.*
 include findatapy/conf/*
 recursive-include findatapy_examples/ *.*
+
+global-exclude *.py[cod] __pycache__ *.so *.pdf ~$*

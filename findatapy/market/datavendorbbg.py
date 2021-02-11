@@ -500,7 +500,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
         if data_frame_cols == [] and data_frame_list != []:  # intraday case
             data_frame = pandas.concat(data_frame_list)
         else:  # daily frequencies
-            data_frame = Calculations().pandas_outer_join(data_frame_list)
+            data_frame = Calculations().join(data_frame_list, how='outer')
 
         # make sure we do not have any duplicates in the time series
         if data_frame is not None:

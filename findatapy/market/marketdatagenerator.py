@@ -16,6 +16,9 @@ import copy
 
 import pandas
 
+import datetime
+from datetime import timedelta
+
 from findatapy.market.ioengine import IOEngine
 from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Filter, Calculations
@@ -32,7 +35,6 @@ class MarketDataGenerator(object):
 
     def __init__(self):
         self.config = ConfigManager().get_instance()
-        self.logger = LoggerManager().getLogger(__name__)
         self.filter = Filter()
         self.calculations = Calculations()
         self.io_engine = IOEngine()
@@ -57,13 +59,14 @@ class MarketDataGenerator(object):
         -------
         DataVendor
         """
+        logger = LoggerManager().getLogger(__name__)
 
         data_vendor = None
 
         try:
             source = source.split("-")[0]
         except:
-            self.logger.error("Was data source specified?")
+            logger.error("Was data source specified?")
 
             return None
 
@@ -72,7 +75,7 @@ class MarketDataGenerator(object):
                 from findatapy.market.datavendorbbg import DataVendorBBGOpen
                 data_vendor = DataVendorBBGOpen()
             except:
-                self.logger.warn("Bloomberg needs to be installed")
+                logger.warn("Bloomberg needs to be installed")
 
         elif source == 'quandl':
             from findatapy.market.datavendorweb import DataVendorQuandl
@@ -131,7 +134,7 @@ class MarketDataGenerator(object):
         elif source == 'bitmex':
             from findatapy.market.datavendorweb import DataVendorBitmex
             data_vendor = DataVendorBitmex()
-        elif '.csv' in source or '.h5' in source:
+        elif '.csv' in source or '.h5' in source or '.parquet' in source:
             from findatapy.market.datavendorweb import DataVendorFlatFile
             data_vendor = DataVendorFlatFile()
         elif source == 'alphavantage':
@@ -157,6 +160,7 @@ class MarketDataGenerator(object):
         -------
         pandas.DataFrame
         """
+        logger = LoggerManager().getLogger(__name__)
 
         # data_vendor = self.get_data_vendor(market_data_request.data_source)
 
@@ -190,13 +194,13 @@ class MarketDataGenerator(object):
             data_frame_agg = self.download_daily(market_data_request)
 
         if('internet_load' in market_data_request.cache_algo):
-            self.logger.debug("Internet loading.. ")
+            logger.debug("Internet loading.. ")
 
             # Signal to data_vendor template to exit session
             # if data_vendor is not None and kill_session == True: data_vendor.kill_session()
 
         if(market_data_request.cache_algo == 'cache_algo'):
-            self.logger.debug("Only caching data in memory, do not return any time series."); return
+            logger.debug("Only caching data in memory, do not return any time series."); return
 
         # Only return time series if specified in the algo
         if 'return' in market_data_request.cache_algo:
@@ -223,7 +227,7 @@ class MarketDataGenerator(object):
                         if 'dropna' in market_data_request.resample_how:
                             data_frame_agg = data_frame_agg.dropna(how='all')
                 else:
-                    self.logger.warn("No data returned for " + str(market_data_request.tickers))
+                    logger.warn("No data returned for " + str(market_data_request.tickers))
 
                 return data_frame_agg
             except Exception as e:
@@ -233,7 +237,7 @@ class MarketDataGenerator(object):
 
                 import traceback
 
-                self.logger.warn("No data returned for " + str(market_data_request.tickers))
+                logger.warn("No data returned for " + str(market_data_request.tickers))
 
                 return None
 
@@ -321,10 +325,9 @@ class MarketDataGenerator(object):
                 # fname = self.create_cache_file_name(key)
                 # self._time_series_cache[fname] = data_frame_agg  # cache in memory (disable for intraday)
 
-
             # If you call for returning multiple tickers, be careful with memory considerations!
             if data_frame_group is not None:
-                data_frame_agg = calcuations.pandas_outer_join(data_frame_group)
+                data_frame_agg = calcuations.join(data_frame_group, how='outer')
 
             return data_frame_agg
 
@@ -345,17 +348,13 @@ class MarketDataGenerator(object):
             return self.fetch_group_time_series(market_data_request_list)
 
     def fetch_single_time_series(self, market_data_request):
-
+        logger = LoggerManager().getLogger(__name__)
         market_data_request = MarketDataRequest(md_request=market_data_request)
 
         # Only includes those tickers have not expired yet!
         start_date = pandas.Timestamp(market_data_request.start_date).date()
 
-        import datetime
-
         current_date = datetime.datetime.utcnow().date()
-
-        from datetime import timedelta
 
         tickers = market_data_request.tickers
         vendor_tickers = market_data_request.vendor_tickers
@@ -411,7 +410,7 @@ class MarketDataGenerator(object):
                 try:
                     data_frame_single = data_frame_single.astype('float32')
                 except:
-                    self.logger.warning('Could not convert to float')
+                    logger.warning('Could not convert to float')
 
                 if market_data_request.freq == "second":
                     data_frame_single = data_frame_single.resample("1s")
@@ -419,6 +418,8 @@ class MarketDataGenerator(object):
         return data_frame_single
 
     def fetch_group_time_series(self, market_data_request_list):
+
+        logger = LoggerManager().getLogger(__name__)
 
         data_frame_agg = None
 
@@ -456,12 +457,12 @@ class MarketDataGenerator(object):
 
             if data_frame_group is not None:
                 try:
-                    data_frame_agg = self.calculations.pandas_outer_join(data_frame_group)
+                    data_frame_agg = self.calculations.join(data_frame_group, how='outer')
 
                     # Force ordering to be the same!
                     # data_frame_agg = data_frame_agg[columns]
                 except Exception as e:
-                    self.logger.warning('Possible overlap of columns? Have you specifed same ticker several times: ' + str(e))
+                    logger.warning('Possible overlap of columns? Have you specifed same ticker several times: ' + str(e))
 
         return data_frame_agg
 
@@ -524,7 +525,7 @@ class MarketDataGenerator(object):
                 for md in market_data_request_list:
                     data_frame_list.append(self.fetch_single_time_series(md))
 
-                data_frame_agg = self.calculations.pandas_outer_join(data_frame_list)
+                data_frame_agg = self.calculations.join(data_frame_list, how='outer')
             else:
                 data_frame_agg = self.fetch_group_time_series(market_data_request_list)
 

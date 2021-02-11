@@ -88,7 +88,7 @@ class FXCLSVolume(object):
             df = df.sort_index()
             df_list.append(df)
 
-        data_frame_new = Calculations().pandas_outer_join(df_list)
+        data_frame_new = Calculations().join(df_list, how='outer')
         import pytz
 
         data_frame_new = data_frame_new.tz_localize(pytz.utc)

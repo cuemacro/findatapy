@@ -68,7 +68,7 @@ class MarketDataRequest(object):
 
         return SpeedCache().generate_key(self, ['logger', '_MarketDataRequest__abstract_curve',
                                                 '_MarketDataRequest__cache_algo',
-                                                '_MarketDataRequest__overrides'])
+                                                '_MarketDataRequest__overrides']) + "_df"
 
     def __init__(self, data_source=None,
                  start_date='year', finish_date=datetime.datetime.utcnow(),

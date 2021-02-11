@@ -34,7 +34,7 @@ except:
     except:
         pass
 
-from findatapy.timeseries import Filter, Calendar
+from findatapy.timeseries import Filter, Calendar, Timezone
 
 from pandas import compat
 
@@ -1008,24 +1008,6 @@ class Calculations(object):
             data=numpy.multiply(numpy.transpose(override_matrix), signal_df.values),
             index=signal_df.index, columns=signal_df.columns)
 
-    # several types of outer join (TODO finalise which one should appear!)
-    def pandas_outer_join(self, df_list):
-        if df_list is None: return None
-
-        # remove any None elements (which can't be joined!)
-        df_list = [i for i in df_list if i is not None]
-
-        if len(df_list) == 0:
-            return None
-        elif len(df_list) == 1:
-            return df_list[0]
-
-        # df_list = [dd.from_pd(df) for df in df_list]
-
-        return df_list[0].join(df_list[1:], how="outer")
-
-    # several types of outer join (TODO finalise which one should appear!)
-
     def join_left_fill_right(self, df_left, df_right):
 
         # say our right series is a signal
@@ -1041,6 +1023,27 @@ class Calculations(object):
         df_left, df_right = df_left.align(df_right, join='left', axis=0)
 
         return df_left, df_right
+
+    ####################################################################################################################
+
+    # DEPRECATED: several types of outer join, use "join" function later in class
+    def pandas_outer_join(self, df_list):
+        if df_list is None: return None
+
+        if not (isinstance(df_list, list)):
+            df_list = [df_list]
+
+        # remove any None elements (which can't be joined!)
+        df_list = [i for i in df_list if i is not None]
+
+        if len(df_list) == 0:
+            return None
+        elif len(df_list) == 1:
+            return df_list[0]
+
+        # df_list = [dd.from_pd(df) for df in df_list]
+
+        return df_list[0].join(df_list[1:], how="outer")
 
     def functional_outer_join(self, df_list):
         def join_dfs(ldf, rdf):
@@ -1086,7 +1089,7 @@ class Calculations(object):
             pool = Pool(4)
 
         if (len(df_list) < 3):
-            return self.pandas_outer_join(df_list)
+            return self.join(df_list, how='outer')
 
         while (True):
             # split into two
@@ -1109,6 +1112,8 @@ class Calculations(object):
         if i == len(df_list) - 1: return df_list[i]
 
         return df_list[i].join(df_list[i + 1], how="outer")
+
+    ####################################################################################################################
 
     def concat_dataframe_list(self, df_list, sort=True):
         """Concatenates a list of DataFrames into a single DataFrame and sorts them. Removes any empty or None elements
@@ -1152,6 +1157,129 @@ class Calculations(object):
                 return df_list[old_cols]
 
         return None
+
+    ## Numba/Pandas based implementations ##############################################################################
+
+    # Note: Numba implementations not finished yet
+    def join(self, df_list, engine='pandas', how='outer'):
+        if df_list is None: return None
+
+        if not(isinstance(df_list, list)):
+            df_list = [df_list]
+
+        # remove any None elements (which can't be joined!)
+        df_list = [i for i in df_list if i is not None]
+
+        if len(df_list) == 0:
+            return None
+        elif len(df_list) == 1:
+            return df_list[0]
+
+        # df_list = [dd.from_pd(df) for df in df_list]
+
+        if engine == 'pandas':
+            return df_list[0].join(df_list[1:], how=how)
+
+        elif engine == 'numba':
+            raise Exception('Numba join not implemented')
+
+    def align(self, df_left, df_right, engine='pandas', join='outer', axis=0):
+        if engine == 'pandas':
+            return df_left.align(df_right, join=join, axis=axis)
+
+        elif engine == 'numba':
+            raise Exception('Numba align not implemented')
+
+    # Note: Numba implementations not finished yet
+    def join_intraday_daily(self, df_intraday_list, df_daily_list, engine='pandas', intraday_how='outer', daily_how='outer', daily_time_of_day='10:00',
+                            daily_time_zone='Americas/New_York'):
+        """Join together intraday and daily dataframes. Any columns in the intraday dataframe will overwrite those of the
+        data dataframe.
+
+        Parameters
+        ----------
+        df_intraday_list : list(pd.DataFrame)
+            A number of intraday dataframes
+
+        df_daily_list : list(pd.DataFrame)
+            A number of daily dataframes
+
+        engine : str
+            'pandas' - default
+            'numba'
+
+        intraday_how : str
+            how to join intraday dataframe
+
+        daily_how : str
+            how to join daily dataframe
+
+        daily_time_of_day : str
+            time of day to apply to daily dataframes
+            '10:00' - default
+
+        daily_time_zone : str
+            timezone of the daily dataframe to apply
+
+        Returns
+        -------
+        pd.DataFrame
+        """
+        if df_daily_list is None: return None
+        if df_intraday_list is None: return None
+
+        df_intraday = self.join(df_intraday_list, engine=engine, how=intraday_how)
+
+        if not(isinstance(df_daily_list, list)):
+            df_daily_list = [df_daily_list]
+
+        # remove any None elements (which can't be joined!)
+        df_list = [i for i in df_daily_list if i is not None]
+
+        if len(df_list) == 0:
+            return None
+
+        # df_list = [dd.from_pd(df) for df in df_list]
+
+        if engine == 'pandas':
+            if len(df_list) == 1:
+                df_daily = df_list[0]
+            else:
+                df_daily = df_list[0].join(df_list[1:], how=daily_how)
+
+            common_cols = [x for x in df_intraday.columns if x in df_daily.columns]
+
+            if len(common_cols) > 0:
+                df_daily = df_daily.drop(common_cols, axis=1)
+
+            tz = Timezone()
+
+            if not(df_daily.empty) and not(df_intraday.empty):
+                try:
+                    df_daily = tz.localize_index_as_UTC(df_daily)
+                except:
+                    pass
+
+                df_daily.index = pd.to_datetime(df_daily.index)
+                df_daily = tz.convert_index_aware_to_alt(df_daily, daily_time_zone)
+                df_daily.index = df_daily.index + pd.Timedelta(hours=int(daily_time_of_day[0:2]), minutes=int(daily_time_of_day[3:4]))
+                df_daily = tz.convert_index_aware_to_alt(df_daily, df_intraday.index.tz)
+
+                return df_intraday.join(df_daily, how='left')
+            elif df_daily.empty and not(df_intraday.empty):
+                return df_intraday
+            elif not(df_daily.empty) and df_intraday.empty:
+                return df_daily
+            else:
+                return None
+
+        elif engine == 'numba':
+            raise Exception('Numba join not implemented')
+
+    ####################################################################################################################
+
+    def amalgamate_intraday_daily_data(self, intraday_df_dict, daily_df_dict):
+        pass
 
     def linear_regression(self, df_y, df_x):
         return pd.stats.api.ols(y=df_y, x=df_x)
@@ -1274,10 +1402,10 @@ class Calculations(object):
         # Older pd
         try:
             data_frame = data_frame. \
-                groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute'), data_frame.index.minute.rename('second')]).mean()
+                groupby([data_frame.index.hour.rename('hour'), data_frame.index.minute.rename('minute'), data_frame.index.second.rename('second')]).mean()
         except:
             data_frame = data_frame. \
-                groupby([data_frame.index.hour, data_frame.index.minute, data_frame.index.minute]).mean()
+                groupby([data_frame.index.hour, data_frame.index.minute, data_frame.index.second]).mean()
 
         data_frame.index = data_frame.index.map(lambda t: datetime.time(*t))
 
@@ -1379,12 +1507,12 @@ class Calculations(object):
         try:
             return data_frame. \
                 groupby([date_index.month.rename('month'),
-                         Calendar().get_bus_day_of_month(date_index, cal).rename('day'),
+                         Calendar().get_bus_day_of_month(date_index, cal, tz=data_frame.index.tz).rename('day'),
                          date_index.hour.rename('hour'), date_index.minute.rename('minute')]).mean()
         except:
             return data_frame. \
                 groupby([date_index.month,
-                         Calendar().get_bus_day_of_month(date_index, cal),
+                         Calendar().get_bus_day_of_month(date_index, cal, tz=data_frame.index.tz),
                          date_index.hour, date_index.minute]).mean()
 
     def average_by_month_day_by_bus_day(self, data_frame, cal="FX"):
@@ -1394,11 +1522,11 @@ class Calculations(object):
         try:
             return data_frame. \
                 groupby([date_index.month.rename('month'),
-                         Calendar().get_bus_day_of_month(date_index, cal).rename('day')]).mean()
+                         Calendar().get_bus_day_of_month(date_index, cal, tz=data_frame.index.tz).rename('day')]).mean()
         except:
             return data_frame. \
                 groupby([date_index.month,
-                         Calendar().get_bus_day_of_month(date_index, cal)]).mean()
+                         Calendar().get_bus_day_of_month(date_index, cal, tz=data_frame.index.tz)]).mean()
     def average_by_month_day_by_day(self, data_frame):
         date_index = data_frame.index
 

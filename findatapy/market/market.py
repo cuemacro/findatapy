@@ -111,7 +111,7 @@ class Market(object):
                 elif md_request.category == 'fx-tot-forwards':
                     type = 'tot-forwards'
 
-                if (md_request.freq != 'tick' and md_request.fields == ['close']) or \
+                if (md_request.freq != 'tick' and (md_request.fields == ['close'] or md_request.fields == ['open'])) or \
                         (md_request.freq == 'tick' and md_request.data_source in ['dukascopy', 'fxcm']):
                     data_frame = fxcf.get_fx_cross(md_request.start_date, md_request.finish_date, md_request.tickers,
                                                    cut=md_request.cut, data_source=md_request.data_source,
@@ -132,10 +132,11 @@ class Market(object):
                                 fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, md_request.fx_vol_tenor,
                                                         cut=md_request.cut, data_source=md_request.data_source,
                                                         part=md_request.fx_vol_part,
-                                                        cache_algo=md_request.cache_algo))
+                                                        cache_algo=md_request.cache_algo,
+                                                        field=md_request.fields))
 
                     if df != []:
-                        data_frame = Calculations().pandas_outer_join(df)
+                        data_frame = Calculations().join(df, how='outer')
 
             # For FX vol market return all the market data necessary for pricing options
             # which includes FX spot, volatility surface, forward points, deposit rates
@@ -157,31 +158,33 @@ class Market(object):
                                                   freq=md_request.freq,
                                                   cache_algo=md_request.cache_algo, type='spot',
                                                   environment=md_request.environment,
-                                                  fields=['close']))
+                                                  fields=md_request.fields))
 
                             # Entire FX vol surface
                             df.append(
                                 fxvf.get_fx_implied_vol(md_request.start_date, md_request.finish_date, t, md_request.fx_vol_tenor,
                                                         cut=md_request.cut, data_source=md_request.data_source,
                                                         part=md_request.fx_vol_part,
-                                                        cache_algo=md_request.cache_algo))
+                                                        cache_algo=md_request.cache_algo,
+                                                        field=md_request.fields))
 
                             # FX forward points for every point on curve
                             df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t,
                                                                   md_request.fx_forwards_tenor,
                                                                   cut=md_request.cut,
                                                                   data_source=md_request.data_source,
-                                                                  cache_algo=md_request.cache_algo))
+                                                                  cache_algo=md_request.cache_algo,
+                                                                  field=md_request.fields))
 
                     # Lastly fetch the base depos
                     df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date,
                                                    self._get_base_depo_currencies(md_request.tickers), md_request.base_depos_tenor,
                                                    cut=md_request.cut, data_source=md_request.data_source,
-                                                   cache_algo=md_request.cache_algo
+                                                   cache_algo=md_request.cache_algo, field=md_request.fields
                                                    ))
 
                     if df != []:
-                        data_frame = Calculations().pandas_outer_join(df)
+                        data_frame = Calculations().join(df, how='outer')
 
             if (md_request.category == 'fx-forwards-market'):
                 if md_request.tickers is not None:
@@ -200,24 +203,26 @@ class Market(object):
                                                   freq=md_request.freq,
                                                   cache_algo=md_request.cache_algo, type='spot',
                                                   environment=md_request.environment,
-                                                  fields=['close']))
+                                                  fields=md_request.fields))
 
                             # FX forward points for every point on curve
                             df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t,
                                                                   md_request.fx_forwards_tenor,
                                                                   cut=md_request.cut,
                                                                   data_source=md_request.data_source,
-                                                                  cache_algo=md_request.cache_algo))
+                                                                  cache_algo=md_request.cache_algo,
+                                                                  field=md_request.fields))
 
                     # Lastly fetch the base depos
                     df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date,
                                                    self._get_base_depo_currencies(md_request.tickers), md_request.base_depos_tenor,
                                                    cut=md_request.cut, data_source=md_request.data_source,
-                                                   cache_algo=md_request.cache_algo
+                                                   cache_algo=md_request.cache_algo,
+                                                   field=md_request.fields
                                                    ))
 
                     if df != []:
-                        data_frame = Calculations().pandas_outer_join(df)
+                        data_frame = Calculations().join(df, how='outer')
 
             # eg. for calculating total return indices from first principles (rather than downloading them
             # from a data vendor
@@ -363,7 +368,7 @@ class FXCrossFactory(object):
         for cr in cross:
             market_data_request = MarketDataRequest(freq_mult=1,
                                                     cut=cut,
-                                                    fields=['close'],
+                                                    fields=fields,
                                                     freq=freq,
                                                     cache_algo=cache_algo,
                                                     start_date=start,
@@ -375,10 +380,10 @@ class FXCrossFactory(object):
             market_data_request.cross = cr
 
             if freq == 'intraday':
-                market_data_request.gran_freq = "minute"  # intraday
+                market_data_request.gran_freq = "minute" # intraday
 
             elif freq == 'daily':
-                market_data_request.gran_freq = "daily"  # daily
+                market_data_request.gran_freq = "daily" # daily
 
             market_data_request_list.append(market_data_request)
 
@@ -409,7 +414,7 @@ class FXCrossFactory(object):
             # Open the market data downloads in their own threads and return the results
             df_list = pool.map_async(self._get_individual_fx_cross, market_data_request_list).get()
 
-            data_frame_agg = self._calculations.iterative_outer_join(df_list)
+            data_frame_agg = self._calculations.join(df_list, how='outer')
 
             # data_frame_agg = self._calculations.pandas_outer_join(result.get())
 
@@ -422,7 +427,7 @@ class FXCrossFactory(object):
             for md_request in market_data_request_list:
                 data_frame_agg.append(self._get_individual_fx_cross(md_request))
 
-            data_frame_agg = self._calculations.pandas_outer_join(data_frame_agg)
+            data_frame_agg = self._calculations.join(data_frame_agg, how='outer')
 
         # Strip the nan elements
         data_frame_agg = data_frame_agg.dropna(how='all')
@@ -471,10 +476,10 @@ class FXCrossFactory(object):
                 terms_vals.columns = ['temp']
 
                 cross_vals = base_vals.div(terms_vals, axis='index')
-                cross_vals.columns = [cr + '.close']
+                cross_vals.columns = [cr + '.' +  market_data_request.fields[0]]
 
-                base_vals.columns = [base_USD + '.close']
-                terms_vals.columns = [terms_USD + '.close']
+                base_vals.columns = [base_USD + '.' + market_data_request.fields[0]]
+                terms_vals.columns = [terms_USD + '.' + market_data_request.fields[0]]
             else:
                 # if base == 'USD': non_USD = terms
                 # if terms == 'USD': non_USD = base
@@ -498,7 +503,7 @@ class FXCrossFactory(object):
                         cross_vals = 1 / cross_vals
 
                 # cross_vals = self._market_data_generator.harvest_time_series(market_data_request)
-                cross_vals.columns = [cr + '.close']
+                cross_vals.columns = [cr + '.' + market_data_request.fields[0]]
 
         elif type[0:3] == "tot":
             if freq == 'daily':
@@ -537,14 +542,13 @@ class FXCrossFactory(object):
                 cross_rets.iloc[0] = 0
 
                 cross_vals = self._calculations.create_mult_index(cross_rets)
-                cross_vals.columns = [cr + '-' + type + '.close']
+                cross_vals.columns = [cr + '-' + type + '.' +  market_data_request.fields[0]]
 
             elif freq == 'intraday':
                 LoggerManager().getLogger(__name__).info('Total calculated returns for intraday not implemented yet')
                 return None
 
         return cross_vals
-
 
 #######################################################################################################################
 
@@ -572,7 +576,7 @@ class FXVolFactory(object):
         return
 
     def get_fx_implied_vol(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg", part="V",
-                           cache_algo="internet_load_return", environment='backtest'):
+                           cache_algo="internet_load_return", environment='backtest', field='close'):
         """Get implied vol for specified cross, tenor and part of surface. By default we use Bloomberg, but we could
         use any data provider for which we have vol tickers.
 
@@ -618,7 +622,7 @@ class FXVolFactory(object):
             freq='daily',
             cut=cut,
             tickers=tickers,
-            fields=['close'],
+            fields=field,
             cache_algo=cache_algo,
             environment=environment
         )
@@ -641,11 +645,11 @@ class FXVolFactory(object):
             # Now get LDN and TOK vol data to fill any gaps
             vol_data_LDN = self.get_fx_implied_vol(start=start, end=end, cross=cross, tenor=tenor,
                                                                        data_source=data_source, cut='LDN', part=part,
-                                                                       cache_algo=cache_algo)
+                                                                       cache_algo=cache_algo, field=field)
 
             vol_data_TOK = self.get_fx_implied_vol(start=start, end=end, cross=cross, tenor=tenor,
                                                                        data_source=data_source, cut='TOK', part=part,
-                                                                       cache_algo=cache_algo)
+                                                                       cache_algo=cache_algo, field=field)
 
             # vol_data_LDN.index = pandas.DatetimeIndex(vol_data_LDN.index)
             # vol_data_TOK.index = pandas.DatetimeIndex(vol_data_TOK.index)
@@ -693,7 +697,7 @@ class FXVolFactory(object):
 
         return tickers
 
-    def extract_vol_surface_for_date(self, df, cross, date_index, delta=constants.fx_vol_delta, tenor=constants.fx_vol_tenor):
+    def extract_vol_surface_for_date(self, df, cross, date_index, delta=constants.fx_vol_delta, tenor=constants.fx_vol_tenor, field='close'):
         """Get's the vol surface in delta space without any interpolation
 
         Parameters
@@ -737,15 +741,15 @@ class FXVolFactory(object):
 
         for ten in tenor:
             for d in delta:
-                df_surf[ten][str(d) + "DP"] = df[cross + "V" + ten + ".close"][date_index] \
-                                          - (df[cross + str(d) +"R" + ten + ".close"][date_index] / 2.0) \
-                                          + (df[cross + str(d) + "B" + ten + ".close"][date_index])
+                df_surf[ten][str(d) + "DP"] = df[cross + "V" + ten + "."+ field][date_index] \
+                                          - (df[cross + str(d) +"R" + ten + "." + field][date_index] / 2.0) \
+                                          + (df[cross + str(d) + "B" + ten + "." + field][date_index])
 
-                df_surf[ten][str(d) + "DC"] = df[cross + "V" + ten + ".close"][date_index] \
-                                          + (df[cross + str(d) + "R" + ten + ".close"][date_index] / 2.0) \
-                                          + (df[cross + str(d) + "B" + ten + ".close"][date_index])
+                df_surf[ten][str(d) + "DC"] = df[cross + "V" + ten + "." + field][date_index] \
+                                          + (df[cross + str(d) + "R" + ten + "." + field][date_index] / 2.0) \
+                                          + (df[cross + str(d) + "B" + ten + "." + field][date_index])
 
-            df_surf[ten]["ATM"] = df[cross + "V" + ten + ".close"][date_index]
+            df_surf[ten]["ATM"] = df[cross + "V" + ten + "." + field][date_index]
 
         return df_surf
 
@@ -767,7 +771,7 @@ class RatesFactory(object):
         return
 
     def get_base_depos(self, start, end, currencies, tenor, cut="NYC", data_source="bloomberg",
-                       cache_algo="internet_load_return"):
+                       cache_algo="internet_load_return", field='close'):
         """Gets the deposit rates for a particular tenor and part of surface
 
         Parameter
@@ -826,7 +830,7 @@ class RatesFactory(object):
             freq='daily',
             cut=cut,
             tickers=tickers,
-            fields=['close'],
+            fields=field,
             cache_algo=cache_algo,
             environment='backtest'
         )
@@ -837,7 +841,7 @@ class RatesFactory(object):
         return data_frame
 
     def get_fx_forward_points(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg",
-                              cache_algo="internet_load_return"):
+                              cache_algo="internet_load_return", field='close'):
         """Gets the forward points for a particular tenor and currency
 
         Parameter
@@ -892,7 +896,7 @@ class RatesFactory(object):
             freq='daily',
             cut=cut,
             tickers=tickers,
-            fields=['close'],
+            fields=field,
             cache_algo=cache_algo,
             environment='backtest'
         )
