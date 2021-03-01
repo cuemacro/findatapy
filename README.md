@@ -54,7 +54,7 @@ To appear
 # Requirements
 
 Major requirements
-* Required: Python 3.7
+* Required: Python 3.7 (Python 2 is not supported)
 * Required: pandas, numpy etc.
 * Recommended: blpapi - Bloomberg Python Open API
 * Recommended: chartpy - for funky interactive plots ([https://github.com/cuemacro/chartpy](https://github.com/cuemacro/chartpy)) and
