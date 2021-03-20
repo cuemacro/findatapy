@@ -494,8 +494,9 @@ class MarketDataGenerator(object):
         if market_data_request.data_source in constants.market_thread_no:
             thread_no = constants.market_thread_no[market_data_request.data_source]
 
-        # daily data does not include ticker in the key, as multiple tickers in the same file
-        if thread_no == 1:
+        # Daily data does not include ticker in the key, as multiple tickers in the same file
+        if thread_no == 1 or '.csv' in market_data_request.data_source or \
+            '.h5' in market_data_request.data_source or '.parquet' in market_data_request.data_source:
             # data_frame_agg = data_vendor.load_ticker(market_data_request)
             data_frame_agg = self.fetch_single_time_series(market_data_request)
         else:

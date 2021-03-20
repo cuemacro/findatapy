@@ -47,7 +47,7 @@ class DataConstants(object):
     temp_folder = root_folder + "temp"
 
     ###### FOR FUTURE VERSIONS (which include caching)
-    # folders for holding market data
+    # Folders for holding market data
     folder_historic_CSV = "x:/"
     folder_time_series_data = "x:/"
 
@@ -63,29 +63,28 @@ class DataConstants(object):
     use_cache_compression = True
 
     ###### FOR ALIAS TICKERS
-    # config file for time series categories
-    config_root_folder = root_folder
+    # Config file for time series categories
+    config_root_folder = root_folder + "/conf/"
 
     time_series_categories_fields = \
-        root_folder + "conf/time_series_categories_fields.csv"
+        config_root_folder + "conf/time_series_categories_fields.csv;"
 
-    # we can have multiple tickers files (separated by ";")
-    time_series_tickers_list = root_folder + "conf/time_series_tickers_list.csv;" + \
-                               root_folder + "conf/fx_vol_tickers.csv;" + \
-                               root_folder + "conf/fx_forwards_tickers.csv;" + \
-                               root_folder + "conf/base_depos_tickers_list.csv"
+    # We can have multiple tickers files (separated by ";")
+    time_series_tickers_list = config_root_folder + "time_series_tickers_list.csv;" + \
+                               config_root_folder + "fx_vol_tickers.csv;" + \
+                               config_root_folder + "fx_forwards_tickers.csv;" + \
+                               config_root_folder + "base_depos_tickers_list.csv;"
 
+    time_series_fields_list = config_root_folder + "time_series_fields_list.csv;"
 
-    time_series_fields_list = root_folder + "conf/time_series_fields_list.csv"
+    # Config file for long term econ data
+    all_econ_tickers = config_root_folder + "all_econ_tickers.csv"
+    econ_country_codes = config_root_folder + "econ_country_codes.csv"
+    econ_country_groups = config_root_folder + "econ_country_groups.csv"
 
-    # config file for long term econ data
-    all_econ_tickers = root_folder + "conf/all_econ_tickers.csv"
-    econ_country_codes = root_folder + "conf/econ_country_codes.csv"
-    econ_country_groups = root_folder + "conf/econ_country_groups.csv"
+    holidays_parquet_table = config_root_folder + 'holidays_table.parquet'
 
-    holidays_parquet_table = config_root_folder + '/conf/holidays_table.parquet'
-
-    # for events filtering
+    # For events filtering
     events_category = 'events'
     events_category_dt = 'events_dt'
 
@@ -96,7 +95,7 @@ class DataConstants(object):
     #        cachedmarketdatagenerator is only for proprietary version at present
     default_market_data_generator = "marketdatagenerator"
 
-    # in Python threading does not offer true parallisation, but can be useful when downloading data, because
+    # In Python threading does not offer true parallisation, but can be useful when downloading data, because
     # a lot of the time is spend waiting on data, multiprocessing library addresses this problem by spawning new Python
     # instances, but this has greater overhead (maybe more advisable when downloading very long time series)
 
@@ -105,7 +104,7 @@ class DataConstants(object):
 
     multiprocessing_library = 'multiprocess' # 'multiprocessing_on_dill' or 'multiprocess' or 'multiprocessing'
 
-    # how many threads to use for loading external data (don't do too many on slow machines!)
+    # How many threads to use for loading external data (don't do too many on slow machines!)
     # also some data sources will complain if you start too many parallel threads to call data!
     # for some data providers might get better performance from 1 thread only!
     market_thread_no = {             'quandl'      : 4,
@@ -124,13 +123,13 @@ class DataConstants(object):
     dukascopy_try_time = 0 # Usually values of 0-1/8-1/4-1 are reasonable
     # smaller values => quicker retry, but don't want to poll server too much
 
-    # we can override the thread count and drop back to single thread for certain market data downloads, as can have issues with
+    # We can override the thread count and drop back to single thread for certain market data downloads, as can have issues with
     # quite large daily datasets from Bloomberg (and other data vendors) when doing multi-threading, so can override and use
     # single threading on these (and also split into several chunks)
     #
     override_multi_threading_for_categories = []
 
-    # log config file
+    # Log config file
     logging_conf = root_folder + "conf/logging.conf"
 
     # Bloomberg settings
@@ -187,8 +186,8 @@ class DataConstants(object):
     # All the tenors on our forwards
     fx_forwards_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
-    # overwrite field variables with those listed in DataCred
-    def __init__(self):
+    # Overwrite field variables with those listed in DataCred or user provided dictionary
+    def __init__(self, override_fields={}):
         try:
             from findatapy.util.datacred import DataCred
             cred_keys = DataCred.__dict__.keys()
@@ -198,6 +197,10 @@ class DataConstants(object):
                     setattr(DataConstants, k, getattr(DataCred, k))
         except:
             pass
+
+        for k in override_fields.keys():
+            if '__' not in k:
+                setattr(DataConstants, k, override_fields[k])
 
     @staticmethod
     def reset_api_key(service_name, api_key):
