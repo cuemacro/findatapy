@@ -184,6 +184,7 @@ class Filter(object):
 
         finish_date = datetime.datetime.utcnow()
         start_date = finish_date - timedelta(days=days)
+
         return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
 
     def filter_time_series_by_date_exc(self, start_date, finish_date, data_frame):
@@ -257,10 +258,16 @@ class Filter(object):
             else:
                 # Otherwise remove timezone from start_date/finish_date
                 if not (isinstance(start_date, str)):
-                    start_date = start_date.replace(tzinfo=None)
+                    try:
+                        start_date = start_date.replace(tzinfo=None)
+                    except:
+                        pass
 
                 if not (isinstance(finish_date, str)):
-                    finish_date = finish_date.replace(tzinfo=None)
+                    try:
+                        finish_date = finish_date.replace(tzinfo=None)
+                    except:
+                        pass
 
         if 'int' in str(data_frame.index.dtype):
             return data_frame

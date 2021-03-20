@@ -127,6 +127,10 @@ individual data providers)
 
 # Coding log
 
+
+* 20 Mar 2021
+  * Improved Redis caching
+  * Can now fetch multiple MarketDataRequests
 * 11 Feb 2021
   * Fixed timezone issues in Seasonality
   * Add extra Dukascopy error checking/retry functionality/parameters

@@ -77,6 +77,10 @@ class MarketDataRequest(object):
                  fields=['close'], cache_algo="internet_load_return",
                  vendor_tickers=None, vendor_fields=None,
                  environment="backtest", trade_side='trade', expiry_date=None, resample=None, resample_how='last',
+
+                 split_request_chunks=0,
+                 list_threads=1,
+
                  fx_vol_part=data_constants.fx_vol_part, fx_vol_tenor=data_constants.fx_vol_tenor,
                  fx_forwards_tenor=data_constants.fx_forwards_tenor,
                  base_depos_currencies=data_constants.base_depos_currencies,
@@ -123,6 +127,9 @@ class MarketDataRequest(object):
                 self.resample = copy.deepcopy(md_request.resample)
                 self.resample_how = copy.deepcopy(md_request.resample_how)
 
+                self.split_request_chunks = copy.deepcopy(md_request.split_request_chunks)
+                self.list_threads = copy.deepcopy(md_request.list_threads)
+
                 self.fx_vol_part = copy.deepcopy(md_request.fx_vol_part)
                 self.fx_vol_tenor = copy.deepcopy(md_request.fx_vol_tenor)
                 self.fx_forwards_tenor = copy.deepcopy(md_request.fx_forwards_tenor)
@@ -162,6 +169,9 @@ class MarketDataRequest(object):
             self.expiry_date = expiry_date
             self.resample = resample
             self.resample_how = resample_how
+            
+            self.split_request_chunks = split_request_chunks
+            self.list_threads = list_threads
 
             self.fx_vol_part = fx_vol_part
             self.fx_vol_tenor = fx_vol_tenor
@@ -411,6 +421,22 @@ class MarketDataRequest(object):
     @resample_how.setter
     def resample_how(self, resample_how):
         self.__resample_how = resample_how
+        
+    @property
+    def split_request_chunks(self):
+        return self.__split_request_chunks
+
+    @split_request_chunks.setter
+    def split_request_chunks(self, split_request_chunks):
+        self.__split_request_chunks = split_request_chunks
+        
+    @property
+    def list_threads(self):
+        return self.__list_threads
+
+    @list_threads.setter
+    def list_threads(self, list_threads):
+        self.__list_threads = list_threads
 
     def date_parser(self, date):
         if isinstance(date, str):

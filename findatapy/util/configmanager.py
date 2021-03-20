@@ -52,21 +52,28 @@ class ConfigManager(object):
     def __init__(self, *args, **kwargs):
         pass
 
-    def get_instance(cls):
+    def get_instance(cls, data_constants=None):
         if not ConfigManager.__instance:
             with ConfigManager.__lock:
                 if not ConfigManager.__instance:
-                    ConfigManager.__instance = super(ConfigManager,cls).__new__(ConfigManager)
-                    ConfigManager.__instance.populate_time_series_dictionaries()
+                    ConfigManager.__instance = super(ConfigManager, cls).__new__(ConfigManager)
+
+                    if data_constants is None:
+                        data_constants = DataConstants()
+
+                    ConfigManager.__instance.populate_time_series_dictionaries(data_constants=data_constants)
 
         return ConfigManager.__instance
 
 
     ### time series ticker manipulators
     @staticmethod
-    def populate_time_series_dictionaries():
+    def populate_time_series_dictionaries(data_constants=None):
 
-        # there are several CSV files which contain data on the tickers
+        if data_constants is None:
+            data_constants = DataConstants()
+
+        # There are several CSV files which contain data on the tickers
 
         # time_series_tickers_list - contains every ticker (findatapy tickers => vendor tickers)
         # category,	source,	freq, ticker, cut, fields, sourceticker (from your data provider)
@@ -82,8 +89,8 @@ class ConfigManager(object):
 
         # eg. bloomberg / close / PX_LAST
 
-        ## populate tickers list (allow for multiple files)
-        time_series_tickers_list_file = DataConstants().time_series_tickers_list.split(';')
+        ## Populate tickers list (allow for multiple files)
+        time_series_tickers_list_file = data_constants.time_series_tickers_list.split(';')
 
         import os
 
@@ -148,22 +155,22 @@ class ConfigManager(object):
                             else:
                                 ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [ticker]
 
-        ## populate fields conversions
-        reader = csv.DictReader(open(DataConstants().time_series_fields_list))
+        ## Populate fields conversions
+        reader = csv.DictReader(open(data_constants.time_series_fields_list))
 
         for line in reader:
             source = line["source"]
             field = line["field"]
             sourcefield = line["sourcefield"]
 
-            # conversion from vendor sourcefield to library field
+            # Conversion from vendor sourcefield to library field
             ConfigManager._dict_time_series_fields_list_vendor_to_library[source + '.' + sourcefield] = field
 
-            # conversion from library ticker to vendor sourcefield
+            # Conversion from library ticker to vendor sourcefield
             ConfigManager._dict_time_series_fields_list_library_to_vendor[source + '.' + field] = sourcefield
 
-        ## populate categories field list
-        reader = csv.DictReader(open(DataConstants().time_series_categories_fields))
+        ## Populate categories field list
+        reader = csv.DictReader(open(data_constants.time_series_categories_fields))
 
         for line in reader:
             category = line["category"]
@@ -181,7 +188,6 @@ class ConfigManager(object):
                 # conversion from library category to library startdate
                 ConfigManager._dict_time_series_category_startdate_library_to_library[
                         category + '.' + source + '.' + freq + '.' + cut] = parse(startdate).date()
-
 
     @staticmethod
     def get_categories_from_fields():
@@ -294,19 +300,25 @@ class ConfigManager(object):
 if __name__ == '__main__':
     logger = LoggerManager().getLogger(__name__)
 
-    categories = ConfigManager().get_categories_from_fields()
+    data_constants = DataConstants(override_fields={'use_cache_compression' : False})
+
+    print(data_constants.use_cache_compression)
+
+    cm = ConfigManager().get_instance()
+
+    categories = cm.get_categories_from_fields()
 
     logger.info("Categories from fields list")
     print(categories)
 
-    categories = ConfigManager().get_categories_from_tickers()
+    categories = cm.get_categories_from_tickers()
 
     logger.info("Categories from tickers list")
     print(categories)
 
     filter = 'events'
 
-    categories_filtered = ConfigManager().get_categories_from_tickers_selective_filter(filter)
+    categories_filtered = cm.get_categories_from_tickers_selective_filter(filter)
     logger.info("Categories from tickers list, filtered by events")
     print(categories_filtered)
 
@@ -320,37 +332,36 @@ if __name__ == '__main__':
         cut = split_sing[3]
 
         logger.info("tickers for " + sing)
-        tickers = ConfigManager().get_tickers_list_for_category(category, source, freq, cut)
+        tickers = cm.get_tickers_list_for_category(category, source, freq, cut)
 
         print(tickers)
 
         logger.info("fields for " + sing)
-        fields = ConfigManager().get_fields_list_for_category(category, source, freq, cut)
+        fields = cm.get_fields_list_for_category(category, source, freq, cut)
 
         print(fields)
 
     # test the various converter mechanisms
-    output = ConfigManager().convert_library_to_vendor_ticker(
-        category='fx',source='bloomberg', freq='daily', cut='TOK', ticker='USDJPY')
+    output = cm.convert_library_to_vendor_ticker(category='fx', source='bloomberg', freq='daily', cut='TOK', ticker='USDJPY')
 
     print(output)
 
-    output = ConfigManager().convert_vendor_to_library_ticker(
+    output = cm.convert_vendor_to_library_ticker(
         source='bloomberg', sourceticker='EURUSD CMPT Curncy')
 
     print(output)
 
-    output = ConfigManager().convert_vendor_to_library_field(
+    output = cm.convert_vendor_to_library_field(
         source='bloomberg', sourcefield='PX_LAST')
 
     print(output)
 
-    output = ConfigManager().convert_library_to_vendor_field(
+    output = cm.convert_library_to_vendor_field(
         source='bloomberg', field='close')
 
     print(output)
 
-    x = 5
+    print(DataConstants().use_cache_compression)
 
 
 

@@ -12,8 +12,11 @@ __author__ = 'saeedamen'  # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
+import copy
 from findatapy.util import DataConstants
 from findatapy.market.ioengine import SpeedCache
+
+import concurrent.futures
 
 constants = DataConstants()
 
@@ -42,6 +45,7 @@ class Market(object):
         self.speed_cache = SpeedCache()
         self._market_data_generator = market_data_generator
         self._filter = Filter()
+        self._calculations = Calculations()
         self.md_request = md_request
 
     def fetch_market(self, md_request=None):
@@ -74,9 +78,42 @@ class Market(object):
         if self.md_request is not None:
             md_request = self.md_request
 
-        key = md_request.generate_key()
-
         data_frame = None
+
+        if isinstance(md_request, list):
+            if len(md_request) == 1:
+                md_request = md_request[0]
+
+        # If we've got a list MarketDataRequest objects, use threading to independently call them
+        if isinstance(md_request, list):
+            if len(md_request) > 0:
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=md_request[0].list_threads) as executor:
+                    df_list = list(executor.map(self.fetch_market, md_request))
+
+                df_filtered_list = []
+
+                for md, df in zip(md_request, df_list):
+
+                    columns = []
+
+                    for tick in md.tickers:
+                        for fiel in md.fields:
+                            columns.append(tick + "." + fiel)
+
+                    if df is not None:
+                        if df.empty:
+                            df = pd.DataFrame(columns=columns)
+                    else:
+                        df = pd.DataFrame(columns=columns)
+
+                    df_filtered_list.append(df)
+
+                return self._calculations.join(df_filtered_list)
+            else:
+                return None
+
+        key = md_request.generate_key()
 
         # If internet_load has been specified don't bother going to cache (might end up calling lower level cache though
         # through MarketDataGenerator)
@@ -85,6 +122,24 @@ class Market(object):
 
         if data_frame is not None:
             return data_frame
+
+        if md_request.split_request_chunks > 0:
+            md_request_list = []
+
+            if md_request.vendor_tickers is not None:
+
+                tickers = copy.copy(md_request.tickers)
+                vendor_tickers = copy.copy(md_request.vendor_tickers)
+
+                for t, v in zip(tickers, vendor_tickers):
+                    md = MarketDataRequest(md_request=md_request)
+                    md.tickers = t
+                    md.vendor_tickers = v
+                    md.split_request_chunks = 0
+
+                    md_request_list.append(md)
+
+            return self.fetch_market(md_request_list)
 
         # Special cases when a predefined category has been asked
         if md_request.category is not None:
