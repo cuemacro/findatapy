@@ -129,6 +129,8 @@ class DataConstants(object):
     #
     override_multi_threading_for_categories = []
 
+    always_numeric_column = ['close', 'open', 'high', 'low', 'tot']
+
     # Log config file
     logging_conf = root_folder + "conf/logging.conf"
 
