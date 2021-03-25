@@ -127,7 +127,8 @@ individual data providers)
 
 # Coding log
 
-
+* 25 Mar 2021
+  * Fixed empty column download from data vendor downloading as object (rather than NaN)
 * 20 Mar 2021
   * Improved Redis caching
   * Can now fetch multiple MarketDataRequests

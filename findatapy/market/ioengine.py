@@ -271,37 +271,43 @@ class IOEngine(object):
 
             fname = os.path.basename(fname).replace('.', '_')
 
+            # Will fail if Redis is not installed
             try:
                 r = redis.StrictRedis(host=db_server, port=db_port, db=0, socket_timeout=timeout,
                                       socket_connect_timeout=timeout)
 
-                if data_frame is not None:
-                    if isinstance(data_frame, pandas.DataFrame):
-                        mem = data_frame.memory_usage(deep='deep').sum()
-                        mem_float = round(float(mem) / (1024.0 * 1024.0), 3)
+                ping = r.ping()
 
-                        if mem_float < 500:
-                            # msgpack/blosc is deprecated
-                            # r.set(fname, data_frame.to_msgpack(compress='blosc'))
+                if ping:
+                    if data_frame is not None:
+                        if isinstance(data_frame, pandas.DataFrame):
+                            mem = data_frame.memory_usage(deep='deep').sum()
+                            mem_float = round(float(mem) / (1024.0 * 1024.0), 3)
 
-                            # now uses pyarrow
-                            context = pa.default_serialization_context()
+                            if mem_float < 500:
+                                # msgpack/blosc is deprecated
+                                # r.set(fname, data_frame.to_msgpack(compress='blosc'))
 
-                            ser = context.serialize(data_frame).to_buffer()
+                                # now uses pyarrow
+                                context = pa.default_serialization_context()
 
-                            if use_cache_compression:
-                                comp = pa.compress(ser, codec='lz4', asbytes=True)
-                                siz = len(ser)  # siz = 3912
+                                ser = context.serialize(data_frame).to_buffer()
 
-                                r.set('comp_' + str(siz) + '_' + fname, comp)
+                                if use_cache_compression:
+                                    comp = pa.compress(ser, codec='lz4', asbytes=True)
+                                    siz = len(ser)  # siz = 3912
+
+                                    r.set('comp_' + str(siz) + '_' + fname, comp)
+                                else:
+                                    r.set(fname, ser.to_pybytes())
+
+                                logger.info("Pushed " + fname + " to Redis")
                             else:
-                                r.set(fname, ser.to_pybytes())
-
-                            logger.info("Pushed " + fname + " to Redis")
-                        else:
-                            logger.warn("Did not push " + fname + " to Redis, given size")
+                                logger.warn("Did not push " + fname + " to Redis, given size")
+                    else:
+                        logger.info("Object " + fname + " is empty, not pushed to Redis.")
                 else:
-                    logger.info("Object " + fname + " is empty, not pushed to Redis.")
+                    logger.warning("Didn't push " + fname + " to Redis given not running")
 
             except Exception as e:
                 logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
@@ -626,7 +632,7 @@ class IOEngine(object):
                 store = Arctic(c, socketTimeoutMS=socketTimeoutMS, serverSelectionTimeoutMS=socketTimeoutMS)
 
                 # Access the library
-                if True: #try:
+                try:
                     library = store[fname_single]
 
                     if start_date is None and finish_date is None:
@@ -642,9 +648,9 @@ class IOEngine(object):
 
                     data_frame = item.data
 
-                #except Exception as e:
-                #    logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
-                #    data_frame = None
+                except Exception as e:
+                    logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
+                    data_frame = None
 
             elif os.path.isfile(self.get_h5_filename(fname_single)):
                 store = pandas.HDFStore(self.get_h5_filename(fname_single))

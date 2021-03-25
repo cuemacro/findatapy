@@ -16,6 +16,8 @@ import copy
 
 import pandas
 
+import numpy as np
+
 import datetime
 from datetime import timedelta
 
@@ -214,8 +216,8 @@ class MarketDataGenerator(object):
             # TODO only do this for not daily data?
             try:
                 if data_frame_agg is not None:
-                    data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)\
-                        .dropna(how = 'all')
+                    data_frame_agg = self.filter.filter_time_series(market_data_request, data_frame_agg, pad_columns=True)
+                    data_frame_agg = data_frame_agg.dropna(how='all')
 
                     # Resample data using pandas if specified in the MarketDataRequest
                     if market_data_request.resample is not None:
@@ -407,10 +409,7 @@ class MarketDataGenerator(object):
                 data_frame_single.index.name = 'Date'
 
                 # Will fail for DataFrames which includes dates/strings (eg. futures contract names)
-                try:
-                    data_frame_single = data_frame_single.astype('float32')
-                except:
-                    logger.warning('Could not convert to float')
+                data_frame_single = self.convert_to_numeric_dataframe(data_frame_single)
 
                 if market_data_request.freq == "second":
                     data_frame_single = data_frame_single.resample("1s")
@@ -465,6 +464,35 @@ class MarketDataGenerator(object):
                     logger.warning('Possible overlap of columns? Have you specifed same ticker several times: ' + str(e))
 
         return data_frame_agg
+
+    def convert_to_numeric_dataframe(self, data_frame):
+
+        logger = LoggerManager().getLogger(__name__)
+
+        failed_conversion_cols = []
+
+        for c in data_frame.columns:
+            if 'release-date-time-full' not in c:
+                try:
+                    data_frame[c] = data_frame[c].astype('float32')
+                except:
+                    if '.' in c:
+                        if c.split('.')[1] in constants.always_numeric_column:
+                            data_frame[c] = data_frame[c].astype('float32', errors='coerce')
+                        else:
+                            failed_conversion_cols.append(c)
+                    else:
+                        failed_conversion_cols.append(c)
+
+                try:
+                    data_frame[c] = data_frame[c].fillna(value=np.nan)
+                except:
+                    pass
+
+        if failed_conversion_cols != []:
+            logger.warning('Could not convert to float for ' + str(failed_conversion_cols))
+
+        return data_frame
 
     def download_daily(self, market_data_request):
         """Loads daily time series from specified data provider

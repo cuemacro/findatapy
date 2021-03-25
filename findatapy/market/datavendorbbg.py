@@ -138,7 +138,7 @@ class DataVendorBBG(DataVendor):
                 data_frame = self.get_daily_data(market_data_request, market_data_request_vendor)
 
                 try:
-                    # convert fields with release-dt to dates (special case!)
+                    # Convert fields with release-dt to dates (special case!)
                     for c in data_frame.columns:
                         if 'release-dt' in c:
                             data_frame[c] = (data_frame[c]).astype('int').astype(str).apply(
