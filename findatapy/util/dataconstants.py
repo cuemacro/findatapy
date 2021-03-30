@@ -67,22 +67,22 @@ class DataConstants(object):
     config_root_folder = root_folder + "/conf/"
 
     time_series_categories_fields = \
-        config_root_folder + "conf/time_series_categories_fields.csv;"
+        os.path.join(config_root_folder, "conf/time_series_categories_fields.csv")
 
     # We can have multiple tickers files (separated by ";")
-    time_series_tickers_list = config_root_folder + "time_series_tickers_list.csv;" + \
-                               config_root_folder + "fx_vol_tickers.csv;" + \
-                               config_root_folder + "fx_forwards_tickers.csv;" + \
-                               config_root_folder + "base_depos_tickers_list.csv;"
+    time_series_tickers_list = os.path.join(config_root_folder, "time_series_tickers_list.csv") +";" + \
+                               os.path.join(config_root_folder, "fx_vol_tickers.csv")+";" + \
+                               os.path.join(config_root_folder, "fx_forwards_tickers.csv")+";" + \
+                               os.path.join(config_root_folder, "base_depos_tickers_list.csv")+";"
 
-    time_series_fields_list = config_root_folder + "time_series_fields_list.csv;"
+    time_series_fields_list = os.path.join(config_root_folder, "time_series_fields_list.csv")
 
     # Config file for long term econ data
-    all_econ_tickers = config_root_folder + "all_econ_tickers.csv"
-    econ_country_codes = config_root_folder + "econ_country_codes.csv"
-    econ_country_groups = config_root_folder + "econ_country_groups.csv"
+    all_econ_tickers =  os.path.join(config_root_folder, "all_econ_tickers.csv")
+    econ_country_codes =  os.path.join(config_root_folder, "econ_country_codes.csv")
+    econ_country_groups =  os.path.join(config_root_folder, "econ_country_groups.csv")
 
-    holidays_parquet_table = config_root_folder + 'holidays_table.parquet'
+    holidays_parquet_table =  os.path.join(config_root_folder, "holidays_table.parquet")
 
     # For events filtering
     events_category = 'events'
