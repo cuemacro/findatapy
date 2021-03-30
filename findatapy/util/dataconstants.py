@@ -67,7 +67,7 @@ class DataConstants(object):
     config_root_folder = root_folder + "/conf/"
 
     time_series_categories_fields = \
-        os.path.join(config_root_folder, "conf/time_series_categories_fields.csv")
+        os.path.join(config_root_folder, "time_series_categories_fields.csv")
 
     # We can have multiple tickers files (separated by ";")
     time_series_tickers_list = os.path.join(config_root_folder, "time_series_tickers_list.csv") +";" + \
