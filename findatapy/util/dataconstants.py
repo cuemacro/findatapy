@@ -129,44 +129,65 @@ class DataConstants(object):
     #
     override_multi_threading_for_categories = []
 
+    # These fields should always be converted to numbers (for every data vendor in MarketDataGenerator)
     always_numeric_column = ['close', 'open', 'high', 'low', 'tot']
+
+    # These fields will be forcibly be converted to datetime64 (only for Bloomberg)
+    always_date_columns = ['release-date-time-full', 'last-tradeable-day',
+                          'futures-chain-last-trade-dates', 'first-notice-date', 'first-tradeable-day',
+                          'cal-non-settle-dates']
+
+    # These are string/object fields which do not need to be converted
+    always_str_fields = ['futures-chain-tickers']
 
     # Log config file
     logging_conf = root_folder + "conf/logging.conf"
 
-    # Bloomberg settings
+    ####### Bloomberg settings
     bbg_server = "localhost"       # needs changing if you use Bloomberg Server API
     bbg_server_port = 8194
 
-    # Dukascopy settings
+    # These fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
+    # You may need to add to this list
+    bbg_ref_fields =     {'release-date-time-full' : 'ECO_FUTURE_RELEASE_DATE_LIST',
+                          'last-tradeable-day' : 'LAST_TRADEABLE_DT',
+                          'futures-chain-tickers' :  'FUT_CHAIN',
+                          'futures-chain-last-trade-dates' :'FUT_CHAIN_LAST_TRADE_DATES',
+                          'first-notice-date' : 'FUT_NOTICE_FIRST',
+                          'first-tradeable-day' : 'FUT_FIRST_TRADE_DT',
+                          'cal-non-settle-dates': 'CALENDAR_NON_SETTLEMENT_DATES'
+    }
+
+    #######  Dukascopy settings
     dukascopy_base_url = "https://www.dukascopy.com/datafeed/"
     dukascopy_write_temp_tick_disk = False
 
-    # FXCM settings
+    #######  FXCM settings
     fxcm_base_url = 'https://tickdata.fxcorporate.com/'
     fxcm_write_temp_tick_disk = False
 
-    # Quandl settings
+    #######  Quandl settings
     quandl_api_key = key_store("Quandl")
 
-    # Alpha Vantage settings
+    #######  Alpha Vantage settings
     alpha_vantage_api_key = key_store("AlphaVantage")
 
-    # FXCM API (contact FXCM to get this)
+    #######  FXCM API (contact FXCM to get this)
     fxcm_api_key = "x"
 
-    # Eikon settings
+    #######  Eikon settings
     eikon_api_key = key_store("Eikon")
 
-    # Twitter settings (you need to set these up on Twitter)
+    #######  Twitter settings (you need to set these up on Twitter)
     TWITTER_APP_KEY             = key_store("Twitter App Key")
     TWITTER_APP_SECRET          = key_store("Twitter App Secret")
     TWITTER_OAUTH_TOKEN	        = key_store("Twitter OAUTH token")
     TWITTER_OAUTH_TOKEN_SECRET	= key_store("Twitter OAUTH token Secret")
 
-    # FRED (Federal Reserve of St Louis data) settings
+    ####### FRED (Federal Reserve of St Louis data) settings
     fred_api_key = key_store("FRED")
 
+    ####### FX vol fields
     # Default download for FX vol surfaces etc.
     # types of quotation on vol surface
     # ATM, 25d riskies, 10d riskies, 25d strangles/butterflies, 10d strangles/butterflies
@@ -188,7 +209,7 @@ class DataConstants(object):
     # All the tenors on our forwards
     fx_forwards_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
-    # Overwrite field variables with those listed in DataCred or user provided dictionary
+    # Overwrite field variables with those listed in DataCred or user provided dictionary override_fields
     def __init__(self, override_fields={}):
         try:
             from findatapy.util.datacred import DataCred

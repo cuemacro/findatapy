@@ -55,9 +55,9 @@ class SwimPool(object):
         if not(force_new) and self._pool is not None:
             return self._pool
 
-        if thread_technique is "thread" or run_in_parallel == False:
+        if thread_technique == "thread" or run_in_parallel == False:
             from multiprocessing.dummy import Pool
-        elif thread_technique is "multiprocessing":
+        elif thread_technique == "multiprocessing":
             # most of the time is spend waiting for Bloomberg to return, so can use threads rather than multiprocessing
             # must use the multiprocessing_on_dill library otherwise can't pickle objects correctly
             # note: currently not very stable

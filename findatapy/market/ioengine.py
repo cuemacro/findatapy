@@ -706,10 +706,10 @@ class IOEngine(object):
             if dateparse is None:
                 dateparse = lambda x: datetime.datetime(*map(int, [x[6:10], x[3:5], x[0:2],
                                                                    x[11:13], x[14:16], x[17:19]]))
-            elif dateparse is 'dukascopy':
+            elif dateparse == 'dukascopy':
                 dateparse = lambda x: datetime.datetime(*map(int, [x[0:4], x[5:7], x[8:10],
                                                                    x[11:13], x[14:16], x[17:19]]))
-            elif dateparse is 'c':
+            elif dateparse == 'c':
                 # use C library for parsing dates, several hundred times quicker
                 # requires compilation of library to install
                 import ciso8601

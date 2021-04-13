@@ -191,7 +191,7 @@ class MarketDataGenerator(object):
             data_frame_agg = self.download_intraday_tick(market_data_request)
      #       return data_frame_agg
 
-        # daily: multiple tickers per cache file - assume we make one API call to vendor library
+        # Daily: multiple tickers per cache file - assume we make one API call to vendor library
         else:
             data_frame_agg = self.download_daily(market_data_request)
 
@@ -469,10 +469,23 @@ class MarketDataGenerator(object):
 
         logger = LoggerManager().getLogger(__name__)
 
+        constants = DataConstants()
+
         failed_conversion_cols = []
 
         for c in data_frame.columns:
-            if 'release-date-time-full' not in c:
+            is_date = False
+
+            # If it's a date column don't append to convert to a float
+            for d in constants.always_date_columns:
+                if d in c:
+                    is_date = True
+                    break
+
+            if is_date:
+                # TODO maybe force conversion?
+                pass
+            else:
                 try:
                     data_frame[c] = data_frame[c].astype('float32')
                 except:
