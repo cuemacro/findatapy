@@ -278,6 +278,7 @@ class IOEngine(object):
 
                 ping = r.ping()
 
+                # If Redis is alive, try pushing to it
                 if ping:
                     if data_frame is not None:
                         if isinstance(data_frame, pandas.DataFrame):
