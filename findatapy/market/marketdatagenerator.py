@@ -21,6 +21,8 @@ import numpy as np
 import datetime
 from datetime import timedelta
 
+import pandas as pd
+
 from findatapy.market.ioengine import IOEngine
 from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Filter, Calculations
@@ -354,14 +356,14 @@ class MarketDataGenerator(object):
         market_data_request = MarketDataRequest(md_request=market_data_request)
 
         # Only includes those tickers have not expired yet!
-        start_date = pandas.Timestamp(market_data_request.start_date).date()
+        start_date = pd.Timestamp(market_data_request.start_date).date()
 
-        current_date = datetime.datetime.utcnow().date()
+        current_date = pd.Timestamp(datetime.datetime.utcnow().date())
 
         tickers = market_data_request.tickers
         vendor_tickers = market_data_request.vendor_tickers
 
-        expiry_date = market_data_request.expiry_date
+        expiry_date = pd.Timestamp(market_data_request.expiry_date)
 
         config = ConfigManager().get_instance()
 
@@ -373,25 +375,26 @@ class MarketDataGenerator(object):
                 pass
 
             if expiry_date is not None:
-                expiry_date = pandas.Timestamp(expiry_date).date()
+                expiry_date = pd.Timestamp(expiry_date)
 
-                # Use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
-                # if the expiry is before the start date of our download don't bother downloading this ticker
-                if expiry_date < start_date:
-                    tickers[i] = None
-
-                # Special case for futures-contracts which are intraday
-                # avoid downloading if the expiry date is very far in the past
-                # (we need this before there might be odd situations where we run on an expiry date, but still want to get
-                # data right till expiry time)
-                if market_data_request.category == 'futures-contracts' and market_data_request.freq == 'intraday' \
-                        and self.days_expired_intraday_contract_download > 0:
-
-                    if expiry_date + timedelta(days=self.days_expired_intraday_contract_download) < current_date:
+                if not(pd.isna(expiry_date)):
+                    # Use pandas Timestamp, a bit more robust with weird dates (can fail if comparing date vs datetime)
+                    # if the expiry is before the start date of our download don't bother downloading this ticker
+                    if expiry_date < start_date:
                         tickers[i] = None
 
-                if vendor_tickers is not None and tickers[i] is None:
-                    vendor_tickers[i] = None
+                    # Special case for futures-contracts which are intraday
+                    # avoid downloading if the expiry date is very far in the past
+                    # (we need this before there might be odd situations where we run on an expiry date, but still want to get
+                    # data right till expiry time)
+                    if market_data_request.category == 'futures-contracts' and market_data_request.freq == 'intraday' \
+                            and self.days_expired_intraday_contract_download > 0:
+
+                        if expiry_date + pd.Timedelta(days=self.days_expired_intraday_contract_download) < current_date:
+                            tickers[i] = None
+
+                    if vendor_tickers is not None and tickers[i] is None:
+                        vendor_tickers[i] = None
 
         market_data_request.tickers = [e for e in tickers if e != None]
 
