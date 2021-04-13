@@ -11,6 +11,7 @@ __author__ = 'saeedamen'  # Saeed Amen
 #
 # See the License for the specific language governing permissions and limitations under the License.
 #
+import pandas as pd
 
 from findatapy.market.datavendor import DataVendor
 from findatapy.market.marketdatarequest import MarketDataRequest
@@ -29,21 +30,12 @@ class DataVendorBBG(DataVendor):
         DataVendorBBGOpen - Adapted version of new Bloomberg Open API for Python which is recommended. Note that this
         requires compilation, via installed C++ compiler. For Python 3.5, this is Microsoft Visual Studio 2015.
 
-        Or it is easier to install blpapi via conda
+        Or it is easier to install blpapi via conda, which deals with installing the DLL, adding the environment path etc.
 
         Note: no longer supports COM API, which is slower and only 32 bit
 
     """
 
-    # These fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
-    # You may need to add to this list
-    list_of_ref_fields = ['release-date-time-full', 'last-tradeable-day', 'futures-chain-tickers',
-                          'futures-chain-last-trade-dates', 'first-notice-date', 'first-tradeable-day',
-                          'cal-non-settle-dates']
-
-    list_of_ref_vendor_fields = ['ECO_FUTURE_RELEASE_DATE_LIST', 'LAST_TRADEABLE_DT', 'FUT_CHAIN',
-                                 'FUT_CHAIN_LAST_TRADE_DATES', 'FUT_NOTICE_FIRST', 'FUT_FIRST_TRADE_DT',
-                                 'CALENDAR_NON_SETTLEMENT_DATES']
 
     def __init__(self):
         super(DataVendorBBG, self).__init__()
@@ -61,6 +53,8 @@ class DataVendorBBG(DataVendor):
         -------
         DataFrame
         """
+        constants = DataConstants()
+
         market_data_request = MarketDataRequest(md_request=market_data_request)
         market_data_request_vendor = self.construct_vendor_market_data_request(market_data_request)
 
@@ -69,17 +63,21 @@ class DataVendorBBG(DataVendor):
         logger = LoggerManager().getLogger(__name__)
         logger.info("Request Bloomberg data")
 
-        # do we need daily or intraday data?
+        # Do we need daily or intraday data?
         if (market_data_request.freq in ['daily', 'weekly', 'monthly', 'quarterly', 'yearly']):
 
-            # work out the fields which need to be downloaded via Bloomberg ref request (BDP) and
+            # Work out the fields which need to be downloaded via Bloomberg ref request (BDP) and
             # those that can be downloaded via Historical request (BDH)
             ref_fields = []
             ref_vendor_fields = []
 
+            # Get user defined list of BBG fields/vendor fields which need to be downloaded by BDP
+            bbg_ref_fields = list(constants.bbg_ref_fields.keys())
+            bbg_ref_vendor_fields = list(constants.bbg_ref_fields.values())
+
             for i in range(0, len(market_data_request.fields)):
-                if market_data_request.fields[i] in self.list_of_ref_fields \
-                        or market_data_request_vendor.fields[i] in self.list_of_ref_vendor_fields:
+                if market_data_request.fields[i] in bbg_ref_fields \
+                        or market_data_request_vendor.fields[i] in bbg_ref_vendor_fields:
                     ref_fields.append(market_data_request.fields[i])
                     ref_vendor_fields.append(market_data_request_vendor.fields[i])
 
@@ -87,8 +85,8 @@ class DataVendorBBG(DataVendor):
             non_ref_vendor_fields = []
 
             for i in range(0, len(market_data_request.fields)):
-                if market_data_request.fields[i] not in self.list_of_ref_fields \
-                        and market_data_request_vendor.fields[i] not in self.list_of_ref_vendor_fields:
+                if market_data_request.fields[i] not in bbg_ref_fields \
+                        and market_data_request_vendor.fields[i] not in bbg_ref_vendor_fields:
                     non_ref_fields.append(market_data_request.fields[i])
                     non_ref_vendor_fields.append(market_data_request_vendor.fields[i])
 
@@ -137,14 +135,16 @@ class DataVendorBBG(DataVendor):
             else:
                 data_frame = self.get_daily_data(market_data_request, market_data_request_vendor)
 
-                try:
-                    # Convert fields with release-dt to dates (special case!)
-                    for c in data_frame.columns:
+                # Convert fields with release-dt to dates (special case!) and assume everything else numerical
+                for c in data_frame.columns:
+                    try:
                         if 'release-dt' in c:
                             data_frame[c] = (data_frame[c]).astype('int').astype(str).apply(
-                                lambda x: pandas.to_datetime(x, format='%Y%m%d'))
-                except:
-                    pass
+                                    lambda x: pandas.to_datetime(x, format='%Y%m%d'))
+                        else:
+                            data_frame[c] = pandas.to_numeric(data_frame[c])
+                    except:
+                        pass
 
         # Assume one ticker only for intraday data and use IntradayDataRequest to Bloomberg
         if (market_data_request.freq in ['tick', 'intraday', 'second', 'minute', 'hourly']):
@@ -185,7 +185,7 @@ class DataVendorBBG(DataVendor):
 
         data_frame = self.download_daily(market_data_request_vendor)
 
-        # convert from vendor to findatapy tickers/fields
+        # Convert from vendor to findatapy tickers/fields
         if data_frame is not None:
             if data_frame.empty:
                 logger.info("No tickers returned for...")
@@ -221,6 +221,8 @@ class DataVendorBBG(DataVendor):
     def get_reference_data(self, market_data_request_vendor, market_data_request):
         logger = LoggerManager().getLogger(__name__)
 
+        constants = DataConstants()
+
         end = datetime.utcnow()
 
         from datetime import timedelta
@@ -235,7 +237,7 @@ class DataVendorBBG(DataVendor):
 
         logger.debug("Waiting for ref...")
 
-        # convert from vendor to findatapy tickers/fields
+        # Convert from vendor to findatapy tickers/fields
         if data_frame is not None:
             if data_frame.empty:
                 return None
@@ -255,9 +257,31 @@ class DataVendorBBG(DataVendor):
 
             data_frame.columns = ticker_combined
 
-            # need to convert numerical and datetime columns separately post pandas 0.23
-            data_frame = data_frame.apply(pandas.to_numeric, errors='ignore')
-            data_frame = data_frame.apply(pandas.to_datetime, errors='ignore')
+            # Need to convert numerical and datetime columns separately post pandas 0.23
+            for c in data_frame.columns:
+                is_date = False
+
+                # Only convert those Bloomberg reference fields to dates which have been listed explicitly
+                for d in constants.always_date_columns:
+                    if d in c:
+                        try:
+                            data_frame[c] = pd.to_datetime(data_frame[c], errors='coerce')
+
+                            is_date = True
+                            break
+                        except:
+                            pass
+
+                # Otherwise this is not a date field so attempt to convert into numbers
+                if not(is_date):
+                    try:
+                        data_frame[c] = pd.to_numeric(data_frame[c], errors='ignore')
+                    except:
+                        pass
+
+
+            # data_frame = data_frame.apply(pandas.to_datetime, errors='ignore')
+            # data_frame = data_frame.apply(pandas.to_numeric, errors='ignore')
 
             # TODO coerce will be deprecated from pandas 0.23.0 onwards) so remove!
             # data_frame = data_frame.convert_objects(convert_dates = 'coerce', convert_numeric= 'coerce')
@@ -305,7 +329,6 @@ from findatapy.util.dataconstants import DataConstants
 from findatapy.market.datavendorbbg import DataVendorBBG
 
 from collections import defaultdict
-
 
 class DataVendorBBGOpen(DataVendorBBG):
     """Calls the Bloomberg Open API to download market data: daily, intraday and reference data (needs blpapi).
@@ -548,6 +571,8 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
 
     # Create a session for Bloomberg with appropriate server & port
     def start_bloomberg_session(self):
+
+        constants = DataConstants()
         tries = 0
 
         session = None
@@ -559,8 +584,8 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
             try:
                 # fill SessionOptions
                 sessionOptions = blpapi.SessionOptions()
-                sessionOptions.setServerHost(DataConstants().bbg_server)
-                sessionOptions.setServerPort(DataConstants().bbg_server_port)
+                sessionOptions.setServerHost(constants.bbg_server)
+                sessionOptions.setServerPort(constants.bbg_server_port)
 
                 logger.info("Starting Bloomberg session...")
 

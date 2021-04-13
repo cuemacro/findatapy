@@ -127,6 +127,8 @@ individual data providers)
 
 # Coding log
 
+* 13 Apr 2021
+  * Fix issue when conversion of date/time releases for certain Bloomberg economic events
 * 25 Mar 2021
   * Fixed empty column download from data vendor downloading as object (rather than NaN)
 * 20 Mar 2021
