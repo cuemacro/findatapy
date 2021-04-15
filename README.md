@@ -127,6 +127,8 @@ individual data providers)
 
 # Coding log
 
+* 15 Apr 2021
+  * Constant overrides now persist
 * 13 Apr 2021
   * Fix issue when conversion of date/time releases for certain Bloomberg economic events
 * 25 Mar 2021

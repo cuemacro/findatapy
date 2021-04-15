@@ -117,7 +117,7 @@ class Market(object):
 
         # If internet_load has been specified don't bother going to cache (might end up calling lower level cache though
         # through MarketDataGenerator)
-        if 'cache_algo' in md_request.cache_algo:
+        if 'cache_algo' in md_request.cache_algo and md_request.push_to_cache:
             data_frame = self.speed_cache.get_dataframe(key)
 
         if data_frame is not None:

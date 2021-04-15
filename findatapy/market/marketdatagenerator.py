@@ -472,8 +472,6 @@ class MarketDataGenerator(object):
 
         logger = LoggerManager().getLogger(__name__)
 
-        constants = DataConstants()
-
         failed_conversion_cols = []
 
         for c in data_frame.columns:
