@@ -55,7 +55,7 @@ class DataConstants(object):
     db_server = '127.0.0.1'
     db_port = '27017'
 
-    ###### FOR TEMPORARY IN-MEMRORY CACHE (Redis)
+    ###### FOR TEMPORARY IN-MEMORY CACHE (Redis)
     db_cache_server = '127.0.0.1'
     db_cache_port = '6379'
     write_cache_engine = 'redis'  # 'redis' or 'no_cache' means we don't use cache
@@ -78,11 +78,11 @@ class DataConstants(object):
     time_series_fields_list = os.path.join(config_root_folder, "time_series_fields_list.csv")
 
     # Config file for long term econ data
-    all_econ_tickers =  os.path.join(config_root_folder, "all_econ_tickers.csv")
-    econ_country_codes =  os.path.join(config_root_folder, "econ_country_codes.csv")
-    econ_country_groups =  os.path.join(config_root_folder, "econ_country_groups.csv")
+    all_econ_tickers = os.path.join(config_root_folder, "all_econ_tickers.csv")
+    econ_country_codes = os.path.join(config_root_folder, "econ_country_codes.csv")
+    econ_country_groups = os.path.join(config_root_folder, "econ_country_groups.csv")
 
-    holidays_parquet_table =  os.path.join(config_root_folder, "holidays_table.parquet")
+    holidays_parquet_table = os.path.join(config_root_folder, "holidays_table.parquet")
 
     # For events filtering
     events_category = 'events'
@@ -209,6 +209,8 @@ class DataConstants(object):
     # All the tenors on our forwards
     fx_forwards_tenor = ["ON", "TN", "SN", "1W", "2W", "3W", "1M", "2M", "3M", "4M", "6M", "9M", "1Y", "2Y", "3Y", "5Y"]
 
+    override_fields = {}
+
     # Overwrite field variables with those listed in DataCred or user provided dictionary override_fields
     def __init__(self, override_fields={}):
         try:
@@ -220,6 +222,12 @@ class DataConstants(object):
                     setattr(DataConstants, k, getattr(DataCred, k))
         except:
             pass
+
+        # Store overrided fields
+        if override_fields == {}:
+            override_fields = DataConstants.override_fields
+        else:
+            DataConstants.override_fields = override_fields
 
         for k in override_fields.keys():
             if '__' not in k:

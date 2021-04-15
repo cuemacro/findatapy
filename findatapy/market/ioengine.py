@@ -63,6 +63,7 @@ _invalid_chars = ['&',
                   '=',
                   ' ']
 
+constants = DataConstants()
 
 class IOEngine(object):
     """Write and reads time series data to disk in various formats, CSV, HDF5 (fixed and table formats) and MongoDB/Arctic.
@@ -220,10 +221,10 @@ class IOEngine(object):
 
     ### functions to handle HDF5 on disk, arctic etc.
     def write_time_series_cache_to_disk(self, fname, data_frame,
-                                        engine='hdf5_fixed', append_data=False, db_server=DataConstants().db_server,
-                                        db_port=DataConstants().db_port, username=None, password=None,
+                                        engine='hdf5_fixed', append_data=False, db_server=constants.db_server,
+                                        db_port=constants.db_port, username=None, password=None,
                                         filter_out_matching=None, timeout=10,
-                                        use_cache_compression=DataConstants().use_cache_compression,
+                                        use_cache_compression=constants.use_cache_compression,
                                         parquet_compression='gzip'):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
@@ -517,8 +518,8 @@ class IOEngine(object):
         store_export.close()
 
     def read_time_series_cache_from_disk(self, fname, engine='hdf5', start_date=None, finish_date=None,
-                                         db_server=DataConstants().db_server,
-                                         db_port=DataConstants().db_port, username=None, password=None):
+                                         db_server=constants.db_server,
+                                         db_port=constants.db_port, username=None, password=None):
         """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
@@ -528,7 +529,8 @@ class IOEngine(object):
         engine : str (optional)
             'hd5' - reads HDF5 files (default)
             'arctic' - reads from Arctic/MongoDB database
-            'bcolz' = reads from bcolz file (not fully implemented)
+            'bcolz' - reads from bcolz file (not fully implemented)
+            'parquet' - reads from Parquet
         start_date : str/datetime (optional)
             Start date
         finish_date : str/datetime (optional)
@@ -553,6 +555,9 @@ class IOEngine(object):
 
         for fname_single in fname:
             logger.debug("Reading " + fname_single + "..")
+
+            if engine == 'parquet' and '.gzip' not in fname_single and '.parquet'  not in fname_single:
+                fname_single = fname_single + '.parquet'
 
             if (engine == 'bcolz'):
                 try:
@@ -832,7 +837,7 @@ class IOEngine(object):
                 shutil.move(f_name + '.tmp', f_name)
 
     def create_cache_file_name(self, filename):
-        return DataConstants().folder_time_series_data + "/" + filename
+        return constants.folder_time_series_data + "/" + filename
 
     # TODO refactor IOEngine so that each database is implemented in a subclass of DBEngine
 
@@ -850,12 +855,12 @@ class SpeedCache(object):
     """
 
     def __init__(self, db_cache_server=None, db_cache_port=None, engine='redis'):
-        from findatapy.util import DataConstants
+
         if db_cache_server is None:
-            self.db_cache_server = DataConstants().db_cache_server
+            self.db_cache_server = constants.db_cache_server
 
         if db_cache_port is None:
-            self.db_cache_port = DataConstants().db_cache_port
+            self.db_cache_port = constants.db_cache_port
 
         self.engine = engine
         self.io_engine = IOEngine()
