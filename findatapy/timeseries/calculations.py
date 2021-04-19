@@ -1178,6 +1178,17 @@ class Calculations(object):
         # df_list = [dd.from_pd(df) for df in df_list]
 
         if engine == 'pandas':
+            df_new_list = []
+
+            # Convert any Series to DataFrames
+            for d in df_list:
+                if isinstance(d, pd.Series):
+                    d = pd.DataFrame(d)
+
+                df_new_list.append(d)
+
+            df_list = df_new_list
+
             return df_list[0].join(df_list[1:], how=how)
 
         elif engine == 'numba':
