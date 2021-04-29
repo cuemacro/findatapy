@@ -1568,7 +1568,7 @@ class DataVendorDukasCopy(DataVendor):
         return tick
 
     def fetch_tick(self, tick_url, try_time):
-        i = 0
+        download_counter = 0
 
         tick_request_content = None
 
@@ -1579,26 +1579,36 @@ class DataVendorDukasCopy(DataVendor):
         time_library.sleep(constants.dukascopy_try_time * try_time / 2.0)  # constants.market_thread_no['dukascopy'])
 
         # Try up to 20 times to download
-        while i < 20:
+        while download_counter < constants.dukascopy_retries:
             try:
                 tick_request = requests.get(tick_url, timeout=constants.dukascopy_mini_timeout_seconds)
 
-                tick_request_content = tick_request.content
-                tick_request.close()
+                # If URL has not been found try again
+                if tick_request.status_code == 404:
+                    logger.warning("Error downloading.. " + tick_url + " returned 404 URL not found message! Are you sure Dukascopy has this asset?")
 
-                content_text = tick_request_content.decode("latin1")
+                    tick_request_content = None
+                    tick_request.close()
 
-                # Can sometimes get back an error HTML page, in which case retry
-                if 'error' not in str(content_text):
                     break
                 else:
-                    logger.warning("Error downloading.. " + tick_url + " " + content_text + " will try again "
-                                   + str(i) + " occasion")
+                    # Otherwise attempt to parse it and extract content
+                    tick_request_content = tick_request.content
+                    tick_request.close()
+
+                    content_text = tick_request_content.decode("latin1")
+
+                    # Can sometimes get back an error HTML page, in which case retry
+                    if 'error' not in str(content_text):
+                        break
+                    else:
+                        logger.warning("Error downloading.. " + tick_url + " " + content_text + " will try again "
+                                       + str(download_counter) + " occasion")
             except Exception as e:
                 logger.warning(
-                    "Problem downloading.. " + tick_url + " " + str(e) + ".. will try again " + str(i) + " occasion")
+                    "Problem downloading.. " + tick_url + " " + str(e) + ".. will try again " + str(download_counter) + " occasion")
 
-            i = i + 1
+            download_counter = download_counter + 1
 
             # Sleep a bit, so don't overload server with retries
             time_library.sleep((try_time / 2.0))

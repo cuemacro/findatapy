@@ -127,6 +127,10 @@ individual data providers)
 
 # Coding log
 
+* 29 Apr 2021
+  * Bug fix when getting empty ticker from Bloomberg
+* 22 Apr 2021
+  * Added 404 error for downloading from Dukascopy
 * 15 Apr 2021
   * Constant overrides now persist
 * 13 Apr 2021
