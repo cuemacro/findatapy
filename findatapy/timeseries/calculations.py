@@ -213,10 +213,6 @@ class Calculations(object):
         ----------
         signal_data_frame : DataFrame
             trading signals
-        strategy_returns_data_frame: DataFrame
-            returns of strategy to be tested
-        period_shift : int
-            number of periods to shift signal
 
         Returns
         -------
@@ -255,20 +251,16 @@ class Calculations(object):
         ----------
         signal_data_frame : DataFrame
             trading signals
-        strategy_returns_data_frame: DataFrame
-            returns of strategy to be tested
-        period_shift : int
-            number of periods to shift signal
 
         Returns
         -------
         DataFrame
         """
 
-        # signal need to be aligned to NEXT period for returns
+        # Signal need to be aligned to NEXT period for returns
         signal_data_frame_pushed = signal_data_frame.shift(1)
 
-        # find all the trade points
+        # Find all the trade points
         reset_points = ((signal_data_frame_pushed - signal_data_frame_pushed.shift(1)).abs())
 
         reset_points = reset_points.cumsum()
@@ -277,7 +269,7 @@ class Calculations(object):
                                            data=numpy.ones(
                                                [len(signal_data_frame.index), len(signal_data_frame.columns)]))
 
-        # make sure they have the same column names (otherwise issues around pd calc - assume same ordering for cols)
+        # Make sure they have the same column names (otherwise issues around pd calc - assume same ordering for cols)
         old_cols = time_data_frame.columns
         time_data_frame.columns = signal_data_frame_pushed.columns
 

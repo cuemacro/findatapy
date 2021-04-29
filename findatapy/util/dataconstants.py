@@ -118,6 +118,7 @@ class DataConstants(object):
     timeout_downloader = {'dukascopy' : 120}
 
     # Dukascopy specific settings
+    dukascopy_retries = 20
     dukascopy_mini_timeout_seconds = 10
     dukascopy_multithreading = True # Can get rejected connections when threading with Dukascopy
     dukascopy_try_time = 0 # Usually values of 0-1/8-1/4-1 are reasonable
