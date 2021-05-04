@@ -246,6 +246,10 @@ class ConfigManager(object):
                 category + '.' + source + '.' + freq + '.' + cut]
 
     @staticmethod
+    def get_fields_list_for_category_str(category):
+        return ConfigManager._dict_time_series_category_fields_library_to_library[category]
+
+    @staticmethod
     def get_startdate_for_category(category, source, freq, cut):
         return ConfigManager._dict_time_series_category_startdate_library_to_library[
                 category + '.' + source + '.' + freq + '.' + cut]
@@ -270,16 +274,39 @@ class ConfigManager(object):
 
     @staticmethod
     def get_tickers_list_for_category(category, source, freq, cut):
-        x = ConfigManager._dict_time_series_category_tickers_library_to_library[
+        return ConfigManager._dict_time_series_category_tickers_library_to_library[
                 category + '.' + source + '.' + freq + '.' + cut]
 
-        return x
+    @staticmethod
+    def get_vendor_tickers_list_for_category(category, source, freq, cut):
+        category_source_freq_cut = category + '.' + source + '.' + freq + '.' + cut
+
+        return ConfigManager.get_vendor_tickers_list_for_category_str(category_source_freq_cut)
+
+    @staticmethod
+    def get_tickers_list_for_category_str(category_source_freq_cut):
+        return ConfigManager._dict_time_series_category_tickers_library_to_library[category_source_freq_cut]
+
+    @staticmethod
+    def get_vendor_tickers_list_for_category_str(category_source_freq_cut):
+        tickers = ConfigManager._dict_time_series_category_tickers_library_to_library[category_source_freq_cut]
+
+        vendor_tickers = []
+
+        for t in tickers:
+            vendor_tickers.append(ConfigManager.convert_library_to_vendor_ticker_str(category_source_freq_cut + "." + t))
+
+        return ConfigManager.flatten_list_of_lists(vendor_tickers)
 
     @staticmethod
     def convert_library_to_vendor_ticker(category, source, freq, cut, ticker):
         return ConfigManager._dict_time_series_tickers_list_library_to_vendor[
 
-            category + '.' + source + '.'+ freq + '.' + cut + '.' + ticker]
+            category + '.' + source + '.' + freq + '.' + cut + '.' + ticker]
+
+    @staticmethod
+    def convert_library_to_vendor_ticker_str(category_source_freq_cut_ticker):
+        return ConfigManager._dict_time_series_tickers_list_library_to_vendor[category_source_freq_cut_ticker]
 
     @staticmethod
     def convert_vendor_to_library_ticker(source, sourceticker):
@@ -295,6 +322,33 @@ class ConfigManager(object):
     def convert_library_to_vendor_field(source, field):
         return ConfigManager._dict_time_series_fields_list_library_to_vendor[
             source + '.' + field]
+
+    @staticmethod
+    def flatten_list_of_lists(list_of_lists):
+        """Flattens lists of obj, into a single list of strings (rather than characters, which is default behavior).
+
+        Parameters
+        ----------
+        list_of_lists : obj (list)
+            List to be flattened
+
+        Returns
+        -------
+        str (list)
+        """
+
+        if isinstance(list_of_lists, list):
+            rt = []
+            for i in list_of_lists:
+                if isinstance(i, list):
+                    rt.extend(self.flatten_list_of_lists(i))
+                else:
+                    rt.append(i)
+
+            return rt
+
+        return list_of_lists
+
 
 ## test function
 if __name__ == '__main__':

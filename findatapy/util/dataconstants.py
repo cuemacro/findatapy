@@ -212,6 +212,10 @@ class DataConstants(object):
 
     override_fields = {}
 
+    ### What data environments are there
+    default_data_environment = 'backtest'
+    possible_data_environment = ['backtest', 'prod']
+
     # Overwrite field variables with those listed in DataCred or user provided dictionary override_fields
     def __init__(self, override_fields={}):
         try:

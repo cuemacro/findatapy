@@ -48,7 +48,7 @@ class Market(object):
         self._calculations = Calculations()
         self.md_request = md_request
 
-    def fetch_market(self, md_request=None):
+    def fetch_market(self, md_request=None, md_request_str=None, start_date=None, finish_date=None):
         """Fetches market data for specific tickers
 
         The user does not need to know to the low level API for each data provider works. The MarketDataRequest
@@ -75,8 +75,20 @@ class Market(object):
             Contains the requested market data
 
         """
+
         if self.md_request is not None:
             md_request = self.md_request
+
+        # When we have specified a string
+        if md_request_str is not None:
+            md_request = self.create_md_request_from_str(md_request_str, md_request=md_request, start_date=start_date, finish_date=finish_date)
+
+            return self.fetch_market(md_request)
+
+        if isinstance(md_request, str):
+            md_request = self.create_md_request_from_str(md_request, start_date=start_date, finish_date=finish_date)
+
+            return self.fetch_market(md_request)
 
         data_frame = None
 
@@ -306,6 +318,197 @@ class Market(object):
 
         return data_frame
 
+    def create_md_request_from_str(self, md_request_str, md_request=None, start_date=None, finish_date=None):
+        md_request_params = md_request_str.split('.')
+
+        environment = md_request_params[0]
+
+        # The user can omit the environment
+        if environment in constants.possible_data_environment:
+            i = 0
+
+        elif environment == 'raw':
+            # Here the user can specify any tickers/fields etc. they want, they don't have to be predefined
+            # eg. raw.data_source.bloomberg.tickers.EURUSD.vendor_tickers.EURUSD Curncy
+            if md_request is None:
+                md_request = MarketDataRequest()
+
+            freeform_md_request = {}
+
+            for c in range(1, len(md_request_params), 2):
+                f = md_request_params[c + 1]
+
+                if ',' in f:
+                    f = f.split(',')
+
+                freeform_md_request[md_request_params[c]] = f
+
+            md_request.freeform_md_request = freeform_md_request
+
+            if start_date is not None: md_request.start_date = start_date
+            if finish_date is not None: md_request.finish_date = finish_date
+
+            return self.create_md_request_from_freeform(md_request)
+
+        else:
+            i = -1
+            environment = None
+
+        category = md_request_params[i + 1]
+        data_source = md_request_params[i + 2]
+
+        cut = None
+        freq = None
+        tickers = None
+        fields = None
+
+        # The freq, cut, tickers, fields are optional (in which case defaults will be used)
+        try:
+            freq = md_request_params[i + 3]
+        except:
+            pass
+
+        try:
+            cut = md_request_params[i + 4]
+        except:
+            pass
+
+        # We can have multiple tickers and fields separately by a ticker
+        try:
+            tickers = md_request_params[i + 5]
+
+            if ',' in tickers:
+                tickers = tickers.split(',')
+        except:
+            pass
+
+        try:
+            fields = md_request_params[i + 6]
+
+            if ',' in fields:
+                fields = fields.split(',')
+        except:
+            pass
+
+        if md_request is None:
+            md_request = MarketDataRequest(category=category, data_source=data_source)
+        else:
+            md_request.category = category
+            md_request.data_source = data_source
+
+        if environment is not None: md_request.environment = environment
+        if start_date is not None: md_request.start_date = start_date
+        if finish_date is not None: md_request.finish_date = finish_date
+        if freq is not None: md_request.freq = freq
+        if cut is not None: md_request.cut = cut
+        if tickers is not None: md_request.tickers = tickers
+        if fields is not None: md_request.fields = fields
+
+        return md_request
+
+    def create_md_request_from_freeform(self, md_request, freeform_md_request=None, return_df=False):
+
+        if freeform_md_request is None:
+            freeform_md_request = md_request.freeform_md_request
+
+        if freeform_md_request is None:
+            return md_request
+
+        if isinstance(freeform_md_request, pd.DataFrame):
+            pass
+        else:
+            if not(isinstance(freeform_md_request, list)):
+                freeform_md_request = [freeform_md_request]
+
+            df = pd.DataFrame.from_dict(freeform_md_request)
+
+        group_columns = [x for x in df.columns if x not in ['tickers', 'vendor_tickers']]
+
+        # Group by everything but the tickers, vendor_tickers (which are concatenated)
+        # Make sure we remove any duplicated tickers
+        if group_columns == []:
+            if 'tickers' in df.columns and 'vendor_tickers' not in df.columns:
+                df['tickers'] = self.remove_duplicates_and_flatten_list(df['tickers'].values.tolist())
+                freeform_md_request = [{'tickers' : df['tickers'].values.tolist()}]
+            elif 'tickers' in df.columns and 'vendor_tickers' in df.columns:
+                df['tickers'] = self.remove_duplicates_and_flatten_list(df['tickers'].values.tolist())
+                df['vendor_tickers'] = self.remove_duplicates_and_flatten_list(df['vendor_tickers'].values.tolist())
+                freeform_md_request = [{'tickers': df['tickers'].values.tolist(), 'vendor_tickers' : df['vendor_tickers'].values.tolist()}]
+        else:
+            if 'tickers' in df.columns and 'vendor_tickers' not in df.columns:
+                df = df.groupby(group_columns, as_index=False).agg({'tickers': list})
+
+                for i in range(0, len(df.index)):
+                    df.at[i, 'tickers'] = self.remove_duplicates_and_flatten_list(df.iloc[i]['tickers'])
+
+            elif 'tickers' in df.columns and 'vendor_tickers' in df.columns:
+                df = df.groupby(group_columns, as_index=False).agg({'tickers': list, 'vendor_tickers' : list})
+
+                for i in range(0, len(df.index)):
+                    df.at[i, 'tickers'] = self.remove_duplicates_and_flatten_list(df.iloc[i]['tickers'])
+                    df.at[i, 'vendor_tickers'] = self.remove_duplicates_and_flatten_list(df.iloc[i]['vendor_tickers'])
+
+            freeform_md_request = df.to_dict('records')
+
+        md_request_copy = MarketDataRequest(md_request=md_request)
+        md_request_copy.freeform_md_request = None
+
+        md_request_list = []
+
+        for f in freeform_md_request:
+            md_request_temp = MarketDataRequest(md_request=md_request_copy)
+
+            for k in f.keys():
+                lst = f[k]
+
+                if isinstance(f[k], list):
+
+                    # Make sure we don't have duplicated tickers requested (or indeed any other values)
+                    lst = self.remove_duplicates_and_flatten_list(f[k])
+
+                getattr(type(md_request_temp), k).fset(md_request_temp, lst)
+
+            md_request_list.append(md_request_temp)
+
+        if len(md_request_list) == 1:
+            md_request_list = md_request_list[0]
+
+        if return_df:
+            return md_request_list, df
+
+        return md_request_list
+
+    def remove_list_duplicates(self, lst):
+        return list(dict.fromkeys(lst))
+
+    def remove_duplicates_and_flatten_list(self, lst):
+        return list(dict.fromkeys(self.flatten_list_of_lists(lst)))
+
+    def flatten_list_of_lists(self, list_of_lists):
+        """Flattens lists of obj, into a single list of strings (rather than characters, which is default behavior).
+
+        Parameters
+        ----------
+        list_of_lists : obj (list)
+            List to be flattened
+
+        Returns
+        -------
+        str (list)
+        """
+
+        if isinstance(list_of_lists, list):
+            rt = []
+            for i in list_of_lists:
+                if isinstance(i, list):
+                    rt.extend(self.flatten_list_of_lists(i))
+                else:
+                    rt.append(i)
+
+            return rt
+
+        return list_of_lists
+
     def _get_base_depo_currencies(self, cross):
 
         if not(isinstance(cross, list)):
@@ -351,7 +554,7 @@ class FXCrossFactory(object):
 
     def get_fx_cross_tick(self, start, end, cross,
                           cut="NYC", data_source="dukascopy", cache_algo='internet_load_return', type='spot',
-                          environment='backtest', fields=['bid', 'ask']):
+                          environment=constants.default_data_environment, fields=['bid', 'ask']):
 
         if isinstance(cross, str):
             cross = [cross]
@@ -406,7 +609,7 @@ class FXCrossFactory(object):
     def get_fx_cross(self, start, end, cross,
                      cut="NYC", data_source="bloomberg", freq="intraday", cache_algo='internet_load_return',
                      type='spot',
-                     environment='backtest', fields=['close']):
+                     environment=constants.default_data_environment, fields=['close']):
 
         if data_source == "gain" or data_source == 'dukascopy' or freq == 'tick':
             return self.get_fx_cross_tick(start, end, cross,
@@ -631,7 +834,7 @@ class FXVolFactory(object):
         return
 
     def get_fx_implied_vol(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg", part="V",
-                           cache_algo="internet_load_return", environment='backtest', field='close'):
+                           cache_algo="internet_load_return", environment=constants.default_data_environment, field='close'):
         """Get implied vol for specified cross, tenor and part of surface. By default we use Bloomberg, but we could
         use any data provider for which we have vol tickers.
 
@@ -887,7 +1090,7 @@ class RatesFactory(object):
             tickers=tickers,
             fields=field,
             cache_algo=cache_algo,
-            environment='backtest'
+            environment=constants.default_data_environment
         )
 
         data_frame = market_data_generator.fetch_market_data(market_data_request)
@@ -953,7 +1156,7 @@ class RatesFactory(object):
             tickers=tickers,
             fields=field,
             cache_algo=cache_algo,
-            environment='backtest'
+            environment=constants.default_data_environment
         )
 
         data_frame = market_data_generator.fetch_market_data(market_data_request)

@@ -76,7 +76,7 @@ class MarketDataRequest(object):
                  gran_freq=None, cut="NYC",
                  fields=['close'], cache_algo="internet_load_return",
                  vendor_tickers=None, vendor_fields=None,
-                 environment="backtest", trade_side='trade', expiry_date=None, resample=None, resample_how='last',
+                 environment=data_constants.default_data_environment, trade_side='trade', expiry_date=None, resample=None, resample_how='last',
 
                  split_request_chunks=0,
                  list_threads=1,
@@ -89,7 +89,8 @@ class MarketDataRequest(object):
                  fred_api_key=data_constants.fred_api_key, alpha_vantage_api_key=data_constants.alpha_vantage_api_key,
                  eikon_api_key=data_constants.eikon_api_key,
                  push_to_cache=True,
-                 overrides={}
+                 overrides={},
+                 freeform_md_request={}
                  ):
 
         # Can deep copy MarketDataRequest (use a lock, so can be used with threading when downloading time series)
@@ -143,6 +144,7 @@ class MarketDataRequest(object):
                 self.eikon_api_key = copy.deepcopy(md_request.eikon_api_key)
                 self.overrides = copy.deepcopy(md_request.overrides)
                 self.push_to_cache = copy.deepcopy(md_request.push_to_cache)
+                self.freeform_md_request = copy.deepcopy(md_request.freeform_md_request)
 
                 self.tickers = copy.deepcopy(md_request.tickers)  # Need this after category in case have wildcard
         else:
@@ -188,6 +190,8 @@ class MarketDataRequest(object):
 
             self.overrides = overrides
             self.push_to_cache = push_to_cache
+
+            self.freeform_md_request = freeform_md_request
 
             self.tickers = tickers
 
@@ -532,7 +536,7 @@ class MarketDataRequest(object):
     def environment(self, environment):
         environment = environment.lower()
 
-        valid_environment = ['prod', 'backtest']
+        valid_environment = data_constants.possible_data_environment
 
         if not environment in valid_environment:
             LoggerManager().getLogger(__name__).warning(environment + " is not a defined environment.")
@@ -664,6 +668,14 @@ class MarketDataRequest(object):
     @push_to_cache.setter
     def push_to_cache(self, push_to_cache):
         self.__push_to_cache = push_to_cache
+        
+    @property
+    def freeform_md_request(self):
+        return self.__freeform_md_request
+
+    @freeform_md_request.setter
+    def freeform_md_request(self, freeform_md_request):
+        self.__freeform_md_request = freeform_md_request
 
     def _flatten_list(self, list_of_lists):
         """Flattens list, particularly useful for combining baskets
