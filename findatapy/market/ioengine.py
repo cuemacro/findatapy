@@ -24,6 +24,12 @@ try:
 except:
     pass
 
+# Needs this for AWS S3 bucket support
+try:
+    from s3fs import S3FileSystem
+except:
+    pass
+
 # pyarrow necessary for caching
 try:
     import pyarrow as pa
@@ -96,7 +102,7 @@ class IOEngine(object):
         if (create_new):
             writer = pandas.ExcelWriter(fname, engine='xlsxwriter')
         else:
-            if os.path.isfile(fname):
+            if self.path_exists(fname):
                 book = load_workbook(fname)
                 writer = pandas.ExcelWriter(fname, engine='xlsxwriter')
                 writer.book = book
@@ -658,7 +664,7 @@ class IOEngine(object):
                     logger.warning('Library may not exist or another error: ' + fname_single + ' & message is ' + str(e))
                     data_frame = None
 
-            elif os.path.isfile(self.get_h5_filename(fname_single)):
+            elif self.path_exists(self.get_h5_filename(fname_single)):
                 store = pandas.HDFStore(self.get_h5_filename(fname_single))
                 data_frame = store.select("data")
 
@@ -667,7 +673,7 @@ class IOEngine(object):
 
                 store.close()
 
-            elif os.path.isfile(fname_single):
+            elif self.path_exists(fname_single):
                 data_frame = pandas.read_parquet(fname_single)
 
             data_frame_list.append(data_frame)
@@ -843,6 +849,14 @@ class IOEngine(object):
 
     def get_engine(self, engine='hdf5_fixed'):
         pass
+
+    def path_exists(self, path):
+        if 's3://' in path:
+            path_in_s3 = path.replace("s3://", "")
+
+            return S3FileSystem(anon=False).exists(path_in_s3)
+        else:
+            return os.path.exists(path)
 
 
 #######################################################################################################################
