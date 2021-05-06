@@ -128,6 +128,8 @@ individual data providers)
 
 # Coding log
 
+* 06 May 2021
+  * Fixed bug when querying from files with dot in them for parquet
 * 04 May 2021
   * Made fetching market data more flexible (can use a string for tickers which are not predefined)
   * Added ability to call predefined tickers with a string

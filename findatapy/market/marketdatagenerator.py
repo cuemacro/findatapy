@@ -67,86 +67,88 @@ class MarketDataGenerator(object):
 
         data_vendor = None
 
-        try:
-            source = source.split("-")[0]
-        except:
-            logger.error("Was data source specified?")
-
-            return None
-
-        if source == 'bloomberg':
-            try:
-                from findatapy.market.datavendorbbg import DataVendorBBGOpen
-                data_vendor = DataVendorBBGOpen()
-            except:
-                logger.warn("Bloomberg needs to be installed")
-
-        elif source == 'quandl':
-            from findatapy.market.datavendorweb import DataVendorQuandl
-            data_vendor = DataVendorQuandl()
-
-        elif source == 'eikon':
-            from findatapy.market.datavendorweb import DataVendorEikon
-            data_vendor = DataVendorEikon()
-
-        elif source == 'ons':
-            from findatapy.market.datavendorweb import DataVendorONS
-            data_vendor = DataVendorONS()
-
-        elif source == 'boe':
-            from findatapy.market.datavendorweb import DataVendorBOE
-            data_vendor = DataVendorBOE()
-
-        elif source == 'dukascopy':
-            from findatapy.market.datavendorweb  import DataVendorDukasCopy
-            data_vendor = DataVendorDukasCopy()
-
-        elif source == 'fxcm':
-            from findatapy.market.datavendorweb  import DataVendorFXCM
-            data_vendor = DataVendorFXCM()
-
-        elif source == 'alfred':
-            from findatapy.market.datavendorweb  import DataVendorALFRED
-            data_vendor = DataVendorALFRED()
-
-        elif source == 'yahoo':
-            from findatapy.market.datavendorweb  import DataVendorYahoo
-            data_vendor = DataVendorYahoo()
-
-        elif source in ['google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
-            from findatapy.market.datavendorweb  import DataVendorPandasWeb
-            data_vendor = DataVendorPandasWeb()
-
-        elif source == 'bitcoincharts':
-            from findatapy.market.datavendorweb import DataVendorBitcoincharts
-            data_vendor = DataVendorBitcoincharts()
-        elif source == 'poloniex':
-            from findatapy.market.datavendorweb import DataVendorPoloniex
-            data_vendor = DataVendorPoloniex()
-        elif source == 'binance':
-            from findatapy.market.datavendorweb import DataVendorBinance
-            data_vendor = DataVendorBinance()
-        elif source == 'bitfinex':
-            from findatapy.market.datavendorweb import DataVendorBitfinex
-            data_vendor = DataVendorBitfinex()
-        elif source == 'gdax':
-            from findatapy.market.datavendorweb import DataVendorGdax
-            data_vendor = DataVendorGdax()
-        elif source == 'kraken':
-            from findatapy.market.datavendorweb import DataVendorKraken
-            data_vendor = DataVendorKraken()
-        elif source == 'bitmex':
-            from findatapy.market.datavendorweb import DataVendorBitmex
-            data_vendor = DataVendorBitmex()
-        elif '.csv' in source or '.h5' in source or '.parquet' in source:
+        # Special case for files
+        if '.csv' in source or '.h5' in source or '.parquet' in source:
             from findatapy.market.datavendorweb import DataVendorFlatFile
             data_vendor = DataVendorFlatFile()
-        elif source == 'alphavantage':
-            from findatapy.market.datavendorweb import DataVendorAlphaVantage
-            data_vendor = DataVendorAlphaVantage()
-        elif source == 'huobi':
-            from findatapy.market.datavendorweb import DataVendorHuobi
-            data_vendor = DataVendorHuobi()
+        else:
+            try:
+                source = source.split("-")[0]
+            except:
+                logger.error("Was data source specified?")
+
+                return None
+
+            if source == 'bloomberg':
+                try:
+                    from findatapy.market.datavendorbbg import DataVendorBBGOpen
+                    data_vendor = DataVendorBBGOpen()
+                except:
+                    logger.warn("Bloomberg needs to be installed")
+
+            elif source == 'quandl':
+                from findatapy.market.datavendorweb import DataVendorQuandl
+                data_vendor = DataVendorQuandl()
+
+            elif source == 'eikon':
+                from findatapy.market.datavendorweb import DataVendorEikon
+                data_vendor = DataVendorEikon()
+
+            elif source == 'ons':
+                from findatapy.market.datavendorweb import DataVendorONS
+                data_vendor = DataVendorONS()
+
+            elif source == 'boe':
+                from findatapy.market.datavendorweb import DataVendorBOE
+                data_vendor = DataVendorBOE()
+
+            elif source == 'dukascopy':
+                from findatapy.market.datavendorweb  import DataVendorDukasCopy
+                data_vendor = DataVendorDukasCopy()
+
+            elif source == 'fxcm':
+                from findatapy.market.datavendorweb  import DataVendorFXCM
+                data_vendor = DataVendorFXCM()
+
+            elif source == 'alfred':
+                from findatapy.market.datavendorweb  import DataVendorALFRED
+                data_vendor = DataVendorALFRED()
+
+            elif source == 'yahoo':
+                from findatapy.market.datavendorweb  import DataVendorYahoo
+                data_vendor = DataVendorYahoo()
+
+            elif source in ['google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
+                from findatapy.market.datavendorweb  import DataVendorPandasWeb
+                data_vendor = DataVendorPandasWeb()
+
+            elif source == 'bitcoincharts':
+                from findatapy.market.datavendorweb import DataVendorBitcoincharts
+                data_vendor = DataVendorBitcoincharts()
+            elif source == 'poloniex':
+                from findatapy.market.datavendorweb import DataVendorPoloniex
+                data_vendor = DataVendorPoloniex()
+            elif source == 'binance':
+                from findatapy.market.datavendorweb import DataVendorBinance
+                data_vendor = DataVendorBinance()
+            elif source == 'bitfinex':
+                from findatapy.market.datavendorweb import DataVendorBitfinex
+                data_vendor = DataVendorBitfinex()
+            elif source == 'gdax':
+                from findatapy.market.datavendorweb import DataVendorGdax
+                data_vendor = DataVendorGdax()
+            elif source == 'kraken':
+                from findatapy.market.datavendorweb import DataVendorKraken
+                data_vendor = DataVendorKraken()
+            elif source == 'bitmex':
+                from findatapy.market.datavendorweb import DataVendorBitmex
+                data_vendor = DataVendorBitmex()
+            elif source == 'alphavantage':
+                from findatapy.market.datavendorweb import DataVendorAlphaVantage
+                data_vendor = DataVendorAlphaVantage()
+            elif source == 'huobi':
+                from findatapy.market.datavendorweb import DataVendorHuobi
+                data_vendor = DataVendorHuobi()
 
         # TODO add support for other data sources (like Reuters)
 
