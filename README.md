@@ -128,6 +128,10 @@ individual data providers)
 
 # Coding log
 
+* 08 May 2021
+  * Added more ways to create a market data request
+* 07 May 2021
+  * Fixed freeform market data requests when contain different file formats
 * 06 May 2021
   * Fixed bug when querying from files with dot in them for parquet
 * 04 May 2021
