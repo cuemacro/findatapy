@@ -18,7 +18,10 @@ from findatapy.market.ioengine import SpeedCache
 
 import concurrent.futures
 
+import json
+
 constants = DataConstants()
+
 
 # from deco import *
 
@@ -85,8 +88,15 @@ class Market(object):
 
             return self.fetch_market(md_request)
 
+        # Or directly as a string
         if isinstance(md_request, str):
             md_request = self.create_md_request_from_str(md_request, start_date=start_date, finish_date=finish_date)
+
+            return self.fetch_market(md_request)
+
+        # Or directly as a dict
+        if isinstance(md_request, dict):
+            md_request = self.create_md_request_from_dict(md_request, start_date=start_date, finish_date=finish_date)
 
             return self.fetch_market(md_request)
 
@@ -318,91 +328,149 @@ class Market(object):
 
         return data_frame
 
+    def create_md_request_from_dict(self, md_request_dict, md_request=None, start_date=None, finish_date=None):
+
+        if md_request is None:
+            md_request = MarketDataRequest()
+
+        for k in md_request_dict.keys():
+            getattr(type(md_request), k).fset(md_request, md_request_dict[k])
+
+        if start_date is not None: md_request.start_date = start_date
+        if finish_date is not None: md_request.finish_date = finish_date
+
+        return md_request
+
     def create_md_request_from_str(self, md_request_str, md_request=None, start_date=None, finish_date=None):
-        md_request_params = md_request_str.split('.')
 
-        environment = md_request_params[0]
+        json_md_request = None
 
-        # The user can omit the environment
-        if environment in constants.possible_data_environment:
-            i = 0
+        # Try to parse str as JSON if that fails, then try as a str
+        try:
+            json_md_request = json.loads(md_request_str)
 
-        elif environment == 'raw':
-            # Here the user can specify any tickers/fields etc. they want, they don't have to be predefined
-            # eg. raw.data_source.bloomberg.tickers.EURUSD.vendor_tickers.EURUSD Curncy
             if md_request is None:
                 md_request = MarketDataRequest()
 
-            freeform_md_request = {}
-
-            for c in range(1, len(md_request_params), 2):
-                f = md_request_params[c + 1]
-
-                if ',' in f:
-                    f = f.split(',')
-
-                freeform_md_request[md_request_params[c]] = f
-
-            md_request.freeform_md_request = freeform_md_request
+            for k in json_md_request.keys():
+                getattr(type(md_request), k).fset(md_request, json_md_request[k])
 
             if start_date is not None: md_request.start_date = start_date
             if finish_date is not None: md_request.finish_date = finish_date
 
-            return self.create_md_request_from_freeform(md_request)
-
-        else:
-            i = -1
-            environment = None
-
-        category = md_request_params[i + 1]
-        data_source = md_request_params[i + 2]
-
-        cut = None
-        freq = None
-        tickers = None
-        fields = None
-
-        # The freq, cut, tickers, fields are optional (in which case defaults will be used)
-        try:
-            freq = md_request_params[i + 3]
+            return md_request
         except:
             pass
 
-        try:
-            cut = md_request_params[i + 4]
-        except:
-            pass
+        if json_md_request is None:
+            split_lst = []
 
-        # We can have multiple tickers and fields separately by a ticker
-        try:
-            tickers = md_request_params[i + 5]
+            word = ''
+            ignore_dot = False
 
-            if ',' in tickers:
-                tickers = tickers.split(',')
-        except:
-            pass
+            for c in md_request_str:
+                if c == '{':
+                    ignore_dot = True
 
-        try:
-            fields = md_request_params[i + 6]
+                elif c == '}':
+                    ignore_dot = False
 
-            if ',' in fields:
-                fields = fields.split(',')
-        except:
-            pass
+                elif c == '.' and not(ignore_dot):
+                    split_lst.append(word)
+                    word = ''
+                    ignore_dot = False
+                else:
+                    word = word + c
 
-        if md_request is None:
-            md_request = MarketDataRequest(category=category, data_source=data_source)
-        else:
-            md_request.category = category
-            md_request.data_source = data_source
+            split_lst.append(word)
 
-        if environment is not None: md_request.environment = environment
-        if start_date is not None: md_request.start_date = start_date
-        if finish_date is not None: md_request.finish_date = finish_date
-        if freq is not None: md_request.freq = freq
-        if cut is not None: md_request.cut = cut
-        if tickers is not None: md_request.tickers = tickers
-        if fields is not None: md_request.fields = fields
+            md_request_params = split_lst
+
+            environment = md_request_params[0]
+
+            # The user can omit the environment
+            if environment in constants.possible_data_environment:
+                i = 0
+
+            elif environment == 'raw':
+                # Here the user can specify any tickers/fields etc. they want, they don't have to be predefined
+                # eg. raw.data_source.bloomberg.tickers.EURUSD.vendor_tickers.EURUSD Curncy
+                if md_request is None:
+                    md_request = MarketDataRequest()
+
+                freeform_md_request = {}
+
+                for c in range(1, len(md_request_params), 2):
+                    f = md_request_params[c + 1]
+
+                    if ',' in f:
+                        f = f.split(',')
+
+                    freeform_md_request[md_request_params[c]] = f
+
+                md_request.freeform_md_request = freeform_md_request
+
+                if start_date is not None: md_request.start_date = start_date
+                if finish_date is not None: md_request.finish_date = finish_date
+
+                return self.create_md_request_from_freeform(md_request)
+
+            else:
+                i = -1
+                environment = None
+
+            category = md_request_params[i + 1]
+            data_source = md_request_params[i + 2]
+
+            #for f in fileformat_reverse.keys():
+            #    md_request_str = md_request_str.replace(f, fileformat_reverse[f])
+
+            cut = None
+            freq = None
+            tickers = None
+            fields = None
+
+            # The freq, cut, tickers, fields are optional (in which case defaults will be used)
+            try:
+                freq = md_request_params[i + 3]
+            except:
+                pass
+
+            try:
+                cut = md_request_params[i + 4]
+            except:
+                pass
+
+            # We can have multiple tickers and fields separately by a ticker
+            try:
+                tickers = md_request_params[i + 5]
+
+                if ',' in tickers:
+                    tickers = tickers.split(',')
+            except:
+                pass
+
+            try:
+                fields = md_request_params[i + 6]
+
+                if ',' in fields:
+                    fields = fields.split(',')
+            except:
+                pass
+
+            if md_request is None:
+                md_request = MarketDataRequest(category=category, data_source=data_source)
+            else:
+                md_request.category = category
+                md_request.data_source = data_source
+
+            if environment is not None: md_request.environment = environment
+            if start_date is not None: md_request.start_date = start_date
+            if finish_date is not None: md_request.finish_date = finish_date
+            if freq is not None: md_request.freq = freq
+            if cut is not None: md_request.cut = cut
+            if tickers is not None: md_request.tickers = tickers
+            if fields is not None: md_request.fields = fields
 
         return md_request
 

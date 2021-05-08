@@ -111,7 +111,7 @@ class DataVendor(object):
 
         return fields_converted
 
-    # translate findatapy ticker to vendor ticker
+    # Translate findatapy ticker to vendor ticker
     def translate_to_vendor_ticker(self, market_data_request):
         """Converts all the tickers from findatapy tickers to vendor tickers
 
@@ -176,7 +176,7 @@ class DataVendor(object):
 
         fields_converted = []
 
-        # if we haven't set the configuration files for automatic configuration
+        # If we haven't set the configuration files for automatic configuration
         if market_data_request.vendor_fields is not None:
 
             dictionary = dict(zip(self.get_lower_case_list(market_data_request.vendor_fields), market_data_request.fields))
@@ -187,7 +187,7 @@ class DataVendor(object):
                 except:
                     fields_converted.append(vendor_field)
 
-        # otherwise used stored configuration files (every field needs to be defined!)
+        # Otherwise used stored configuration files (every field needs to be defined!)
         else:
             for vendor_field in vendor_fields_list:
                 try:
@@ -202,7 +202,7 @@ class DataVendor(object):
 
         return fields_converted
 
-    # translate findatapy ticker to vendor ticker
+    # Translate findatapy ticker to vendor ticker
     def translate_from_vendor_ticker(self, vendor_tickers_list, market_data_request):
         """Converts all the fields from vendor tickers to findatapy tickers
 
