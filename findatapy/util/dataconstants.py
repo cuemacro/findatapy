@@ -136,7 +136,7 @@ class DataConstants(object):
     # These fields will be forcibly be converted to datetime64 (only for Bloomberg)
     always_date_columns = ['release-date-time-full', 'last-tradeable-day',
                           'futures-chain-last-trade-dates', 'first-notice-date', 'first-tradeable-day',
-                          'cal-non-settle-dates']
+                          'cal-non-settle-dates', 'first-revision-date']
 
     # These are string/object fields which do not need to be converted
     always_str_fields = ['futures-chain-tickers']

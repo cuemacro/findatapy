@@ -753,6 +753,23 @@ class Calculations(object):
         return (data_frame - data_frame.rolling(center=False, window=periods).mean()) / data_frame.rolling(center=False,
                                                                                                            window=periods).std()
 
+    def expanding_z_score(self, data_frame, min_periods):
+        """Calculates the exp z score for a time series
+
+        Parameters
+        ----------
+        data_frame : DataFrame
+            asset prices
+        min_periods : int
+            minimum window for z score computation
+
+        Returns
+        -------
+        DataFrame
+        """
+        return (data_frame - data_frame.expanding(center=False, min_periods=min_periods).mean()) / data_frame.expanding(center=False,
+                                                                                                           min_periods=min_periods).std()
+
     def rolling_volatility(self, data_frame, periods, obs_in_year=252):
         """
         rolling_volatility - Calculates the annualised rolling volatility

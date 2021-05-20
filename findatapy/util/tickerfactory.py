@@ -12,12 +12,7 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-"""
-TickerFactory
 
-Creating lists of tickers from a shortcuts.
-
-"""
 
 import pandas
 import numpy
@@ -25,6 +20,8 @@ import numpy
 from findatapy.util.loggermanager import LoggerManager
 
 class TickerFactory(object):
+    """Creating lists of tickers from a shortcuts.
+    """
 
     def create_ticker(self, csv_file, out_csv_file):
         # reader = csv.DictReader(open(csv_file))
@@ -32,17 +29,17 @@ class TickerFactory(object):
         data_frame = pandas.read_csv(csv_file, dtype=object)
 
         rows = 100000
-        # category	source	freq	ticker	cut	fields	sourceticker
+        # category	data_source	freq	ticker	cut	fields	vendor_tickers
 
         data_frame_out = pandas.DataFrame(index=numpy.arange(0, rows),
-                                          columns=('category', 'source', 'freq', 'ticker', 'cut', 'fields', 'sourceticker'))
+                                          columns=('category', 'data_source', 'freq', 'tickers', 'cut', 'fields', 'vendor_tickers'))
         i = 0
 
-        for category_source_freq_fields in data_frame['category.source.freq.fields']:
+        for category_source_freq_fields in data_frame['category.data_source.freq.fields']:
             if isinstance(category_source_freq_fields, str):
                 spl = category_source_freq_fields.split('.')
                 category = spl[0]
-                source = spl[1]
+                data_source = spl[1]
                 freq = spl[2]
                 fields = spl[3]
 
@@ -51,7 +48,7 @@ class TickerFactory(object):
                         spl1 = cut_postfix.split('.')
                         cut = spl1[0]
                         postfix = spl1[1]
-                        for ticker, st in zip(data_frame['ticker'], data_frame['sourceticker']):
+                        for ticker, st in zip(data_frame['tickers'], data_frame['vendor_tickers']):
                             if isinstance(ticker, str):
                                 if 'midfix' in data_frame.columns:
                                     for midfix in data_frame['midfix']:
@@ -59,18 +56,18 @@ class TickerFactory(object):
                                             for postmidfix in data_frame['postmidfix']:
                                                 if isinstance(postmidfix, str):
                                                     ticker_ext = ticker + midfix + postmidfix
-                                                    sourceticker = st + midfix + postmidfix + ' ' + postfix
-                                                    data_frame_out.loc[i] = [category, source, freq, ticker_ext,
-                                                                             cut, fields, sourceticker]
+                                                    vendor_tickers = st + midfix + postmidfix + ' ' + postfix
+                                                    data_frame_out.loc[i] = [category, data_source, freq, ticker_ext,
+                                                                             cut, fields, vendor_tickers]
 
                                                     i = i + 1
                                 else:
                                     for postmidfix in data_frame['postmidfix']:
                                         if isinstance(postmidfix, str):
                                             ticker_ext = ticker + postmidfix
-                                            sourceticker = st + postmidfix + ' ' + postfix
-                                            data_frame_out.loc[i] = [category, source, freq, ticker_ext, cut, fields,
-                                                                     sourceticker]
+                                            vendor_tickers = st + postmidfix + ' ' + postfix
+                                            data_frame_out.loc[i] = [category, data_source, freq, ticker_ext, cut, fields,
+                                                                     vendor_tickers]
 
                                             i = i + 1
 
@@ -81,11 +78,11 @@ class TickerFactory(object):
 
         # for line in reader:
         #     category = line["category"]
-        #     source = line["source"]
+        #     data_source = line["data_source"]
         #     freq = line["freq"]
         #     ticker = line["ticker"]
         #     cut = line["cut"]
-        #     sourceticker = line["sourceticker"]
+        #     vendor_tickers = line["vendor_tickers"]
 
 
 if __name__ == '__main__':

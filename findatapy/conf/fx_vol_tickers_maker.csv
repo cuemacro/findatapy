@@ -1,4 +1,4 @@
-category.source.freq.fields,ticker,cut.postfix,sourceticker,midfix,postmidfix
+category.data_source.freq.fields,tickers,cut.postfix,vendor_tickers,midfix,postmidfix
 fx-implied-vol.bloomberg.daily.close,EURUSD,NYC.CMPN Curncy,EURUSD,V,ON
 ,GBPUSD,BGN.BGN Curncy,GBPUSD,25R,1W
 ,AUDUSD,LDN.CMPL Curncy,AUDUSD,10R,2W

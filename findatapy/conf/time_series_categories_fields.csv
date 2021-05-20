@@ -1,4 +1,4 @@
-category,source,freq,cut,fields,startdate
+category,data_source,freq,cut,fields,startdate
 fx,quandl,daily,NYC,close,1-Jan-70
 fx,dukascopy,tick,NYC,"bid,ask,bidv,askv,volume",1-Jan-03
 fx,fxcm,tick,NYC,"bid,ask",1-Jan-15

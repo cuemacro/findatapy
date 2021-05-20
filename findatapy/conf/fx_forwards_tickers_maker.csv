@@ -1,4 +1,4 @@
-category.source.freq.fields,ticker,cut.postfix,sourceticker,postmidfix,,,,,
+category.data_source.freq.fields,tickers,cut.postfix,vendor_tickers,postmidfix,,,,,
 fx-forwards.bloomberg.daily.close,EURUSD,NYC.CMPN Curncy,EUR,ON,,,,,
 ,GBPUSD,BGN.BGN Curncy,GBP,TN,,,,,
 ,AUDUSD,LDN.CMPL Curncy,AUD,SN,,,,,

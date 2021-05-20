@@ -1,4 +1,4 @@
-,category,source,freq,ticker,cut,fields,sourceticker
+,category,data_source,freq,tickers,cut,fields,vendor_tickers
 0,fx-forwards,bloomberg,daily,EURUSDON,NYC,close,EURON CMPN Curncy
 1,fx-forwards,bloomberg,daily,EURUSDTN,NYC,close,EURTN CMPN Curncy
 2,fx-forwards,bloomberg,daily,EURUSDSN,NYC,close,EURSN CMPN Curncy

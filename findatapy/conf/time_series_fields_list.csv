@@ -1,4 +1,4 @@
-source,field,sourcefield
+data_source,fields,vendor_fields
 quandl,close,close
 quandl,open,open
 quandl,high,high
