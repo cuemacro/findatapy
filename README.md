@@ -128,6 +128,10 @@ individual data providers)
 
 # Coding log
 
+* 20 May 2021
+  * Added ability to query stored tickers by regular expressions
+* 17 May 2021
+  * Changed named conventions for CSV conf ticker files to be consistent with MarketDataRequest
 * 08 May 2021
   * Added more ways to create a market data request
 * 07 May 2021

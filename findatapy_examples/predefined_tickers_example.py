@@ -53,7 +53,31 @@ if __name__ == '__main__':
     # We don't need to add the environment (eg. backtest)
     print("For category " + quandl_category[0] + ", tickers = " + str(tickers) + ", fields = " + str(fields))
 
+    # Do a more complicated query, get any combinations
+    df = cm.free_form_tickers_regex_query(category='fx/*|equities/*', ret_fields=['category', 'freq'])
+
+    print(df.head(min(5, len(df.index))))
+
+    # Let's search for all the category.data_source.freq.cut.tickers.fields combinations
+    # where the category matches the regular expression for which has 'fx' or 'equities' in it
+    df = cm.free_form_tickers_regex_query(category='fx/*|equities/*', ret_fields=['category', 'data_source', 'freq', 'cut', 'tickers', 'fields'],
+                                          smart_group=True)
+
+    print(df.head(min(5, len(df.index))))
+
+    # We'll do the same query again, but this time, we'll convert it into a DataFrame which can use to create
+    # a MarketDataRequest
+    df_ungrouped = cm.free_form_tickers_regex_query(category='fx/*|equities/*', ret_fields=['category', 'data_source', 'freq', 'cut', 'tickers', 'fields'])
+
     market = Market(market_data_generator=MarketDataGenerator())
+
+    md_request_list = market.create_md_request_from_dataframe(df_ungrouped)
+
+    print(md_request_list)
+
+    df_tickers = ConfigManager.get_dataframe_tickers()
+
+    print(df_tickers)
 
     from findatapy.util import DataConstants
 
@@ -62,5 +86,20 @@ if __name__ == '__main__':
     # You will likely need to put your own Quandl API key (free from Quandl's website!)
     quandl_api_key = constants.quandl_api_key
     print(market.fetch_market(md_request_str=categories[0], md_request=MarketDataRequest(quandl_api_key=quandl_api_key)))
+
+    # Or we could create this download of FX Quandl data with a more free form query
+    df_quandl_tickers = cm.free_form_tickers_regex_query(category='fx/*', data_source='quandl', cut='NYC')
+    print(market.fetch_market(md_request_df=df_quandl_tickers, md_request=MarketDataRequest(quandl_api_key=quandl_api_key)))
+
+    # Now lets get all Bloomberg data and Quandl FX data in our predefined tickers for the past week
+    # we use ^fx$ as a regular expression, so it will only match with fx, and not any variations like fx-implied-vol
+    md_request = MarketDataRequest(start_date='week', quandl_api_key=quandl_api_key)
+
+    md_request_list = market.create_md_request_from_dataframe(cm.free_form_tickers_regex_query(category='^fx$', freq='daily', data_source='quandl|bloomberg', cut='NYC'),
+                                                              md_request=md_request)
+
+    for m in md_request_list:
+        print(market.fetch_market(m))
+
 
 

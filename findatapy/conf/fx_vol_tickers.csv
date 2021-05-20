@@ -1,4 +1,4 @@
-,category,source,freq,ticker,cut,fields,sourceticker
+,category,data_source,freq,tickers,cut,fields,vendor_tickers
 0,fx-implied-vol,bloomberg,daily,EURUSDVON,NYC,close,EURUSDVON CMPN Curncy
 1,fx-implied-vol,bloomberg,daily,EURUSDV1W,NYC,close,EURUSDV1W CMPN Curncy
 2,fx-implied-vol,bloomberg,daily,EURUSDV2W,NYC,close,EURUSDV2W CMPN Curncy

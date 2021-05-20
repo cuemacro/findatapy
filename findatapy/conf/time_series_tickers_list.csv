@@ -1,4 +1,4 @@
-category,source,freq,ticker,cut,fields,sourceticker,local-close,ldn-close,,
+category,data_source,freq,tickers,cut,fields,vendor_tickers,local-close,ldn-close,,
 fx,quandl,daily,EURUSD,NYC,close,FRED/DEXUSEU,5:00pm NYC,,,
 fx,quandl,daily,GBPUSD,NYC,close,FRED/DEXUSUK,5:00pm NYC,,,
 fx,quandl,daily,AUDUSD,NYC,close,FRED/DEXUSAL,5:00pm NYC,,,

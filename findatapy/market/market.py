@@ -13,6 +13,7 @@ __author__ = 'saeedamen'  # Saeed Amen
 #
 
 import copy
+from findatapy.util import ConfigManager
 from findatapy.util import DataConstants
 from findatapy.market.ioengine import SpeedCache
 
@@ -21,7 +22,6 @@ import concurrent.futures
 import json
 
 constants = DataConstants()
-
 
 # from deco import *
 
@@ -51,7 +51,7 @@ class Market(object):
         self._calculations = Calculations()
         self.md_request = md_request
 
-    def fetch_market(self, md_request=None, md_request_str=None, start_date=None, finish_date=None):
+    def fetch_market(self, md_request=None, md_request_df=None, md_request_str=None, start_date=None, finish_date=None):
         """Fetches market data for specific tickers
 
         The user does not need to know to the low level API for each data provider works. The MarketDataRequest
@@ -67,10 +67,19 @@ class Market(object):
             vendor_ticker eg. EURUSD Curncy
             vendor_field eg. PX_LAST
 
+        We can also create MarketDataRequest objects, using strings eg. fx.quandl.daily.NYC.EURUSD (category.data_source.freq.cut.ticker),
+        as Python dict, as DataFrame with various properties (like ticker, category etc.)
+
         Parameters
         ----------
-        md_request : MarketDataRequest
+        md_request : MarketDataRequest (or shorthand str/DataFrame/dict)
             Describing what market data to fetch
+
+        md_request_df : DataFrame
+            Another way to specify some of the data request properties
+
+        md_request_str : str
+            We can specify part of the MarketDataRequest as a string, which gets converted later (or a JSON object)
 
         Returns
         -------
@@ -84,7 +93,15 @@ class Market(object):
 
         # When we have specified a string
         if md_request_str is not None:
-            md_request = self.create_md_request_from_str(md_request_str, md_request=md_request, start_date=start_date, finish_date=finish_date)
+            md_request = self.create_md_request_from_str(md_request_str, md_request=md_request,
+                                                         start_date=start_date, finish_date=finish_date)
+
+            return self.fetch_market(md_request)
+
+        # When we have specified a DataFrame with tickers
+        if md_request_df is not None:
+            md_request = self.create_md_request_from_dataframe(md_request_df, md_request=md_request,
+                                                               start_date=start_date, finish_date=finish_date)
 
             return self.fetch_market(md_request)
 
@@ -97,6 +114,12 @@ class Market(object):
         # Or directly as a dict
         if isinstance(md_request, dict):
             md_request = self.create_md_request_from_dict(md_request, start_date=start_date, finish_date=finish_date)
+
+            return self.fetch_market(md_request)
+
+        # Or directly as a DataFrame
+        if isinstance(md_request, pd.DataFrame):
+            md_request = self.create_md_request_from_dataframe(md_request, start_date=start_date, finish_date=finish_date)
 
             return self.fetch_market(md_request)
 
@@ -327,6 +350,34 @@ class Market(object):
             self.speed_cache.put_dataframe(key, data_frame)
 
         return data_frame
+
+    def create_md_request_from_dataframe(self, md_request_df, md_request=None, start_date=None, finish_date=None):
+
+        md_list = []
+
+        # Aggregate/shrink dataframe grouping it by common attributes
+        # tickers, vendor_tickers, fields, vendor_fields
+        md_request_df = ConfigManager().get_instance().smart_group_dataframe_tickers(md_request_df, ret_fields=md_request_df.columns.tolist())
+
+        # Now populate MarketDataRequests based on the DataFrame
+        for index, row in md_request_df.iterrows():
+            if md_request is None:
+                md_request_copy = MarketDataRequest()
+            else:
+                md_request_copy = MarketDataRequest(md_request=md_request)
+
+            for col, val in row.items():
+                try:
+                    getattr(type(md_request_copy), col).fset(md_request_copy, val)
+                except:
+                    pass
+
+            if start_date is not None: md_request_copy.start_date = start_date
+            if finish_date is not None: md_request_copy.finish_date = finish_date
+
+            md_list.append(md_request_copy)
+
+        return md_list
 
     def create_md_request_from_dict(self, md_request_dict, md_request=None, start_date=None, finish_date=None):
 

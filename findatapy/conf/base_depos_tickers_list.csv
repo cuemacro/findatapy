@@ -1,4 +1,4 @@
-category,source,freq,ticker,cut,fields,sourceticker,local-close
+category,data_source,freq,tickers,cut,fields,vendor_tickers,local-close
 base-depos,bloomberg,daily,USDFedEffectiveRate,NYC,close,FEDL01 Index,5:00pm NYC
 base-depos,bloomberg,daily,USDON,NYC,close,USDR1T CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,USDTN,NYC,close,USDR2T CMPN Index,5:00pm NYC

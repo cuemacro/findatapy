@@ -12,7 +12,11 @@ __author__ = 'saeedamen' # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
+import os
+
 import csv
+import pandas as pd
+
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.singleton import Singleton
 from findatapy.util.loggermanager import LoggerManager
@@ -28,21 +32,24 @@ class ConfigManager(object):
     """
     __metaclass__ = Singleton
 
-    # tickers and fields
+    # Tickers and fields
     _dict_time_series_tickers_list_library_to_vendor = {}
     _dict_time_series_tickers_list_vendor_to_library = {}
     _dict_time_series_fields_list_vendor_to_library = {}
     _dict_time_series_fields_list_library_to_vendor = {}
 
-    # store expiry date
+    # Store expiry date
     _dict_time_series_ticker_expiry_date_library_to_library = {}
 
-    # store categories -> fields
+    # Store categories -> fields
     _dict_time_series_category_fields_library_to_library = {}
     _dict_time_series_category_startdate_library_to_library = {}
     _dict_time_series_category_tickers_library_to_library = {}
 
-    # store categories ->
+    # category, source, freq, ticker, cut, fields, sourceticker, local-close, expiry, ldn_clo
+    _data_frame_time_series_tickers = None
+
+    # Store categories ->
     _dict_time_series_tickers_list_library = {}
 
     __lock = threading.Lock()
@@ -75,16 +82,16 @@ class ConfigManager(object):
 
         # There are several CSV files which contain data on the tickers
 
-        # time_series_tickers_list - contains every ticker (findatapy tickers => vendor tickers)
-        # category,	source,	freq, ticker, cut, fields, sourceticker (from your data provider)
+        # time_series_tickers_list - contains every tickers (findatapy tickers => vendor tickers)
+        # category,	data_source,	freq, tickers, cut, fields, vendor_tickers (from your data provider)
         # eg. fx / bloomberg / daily / EURUSD / TOK / close,open,high,low / EURUSD CMPT Curncy
 
-        # time_series_fields_list - translate findatapy field name to vendor field names
+        # time_series_fields_list - translate findatapy fields name to vendor fields names
         # findatapy fields => vendor fields
-        # source, field, sourcefield
+        # data_source, fields, vendor_fields
 
         # time_series_categories_fields - for each category specific generic properties
-        # category,	freq, source, fields, startdate
+        # category,	freq, data_source, fields, startdate
         # eg. fx / daily / bloomberg / close,high,low,open / 01-Jan-70
 
         # eg. bloomberg / close / PX_LAST
@@ -92,25 +99,26 @@ class ConfigManager(object):
         ## Populate tickers list (allow for multiple files)
         time_series_tickers_list_file = data_constants.time_series_tickers_list.split(';')
 
-        import os
+        df_tickers = []
 
         for tickers_list_file in time_series_tickers_list_file:
 
             if os.path.isfile(tickers_list_file):
                 reader = csv.DictReader(open(tickers_list_file))
+                df_tickers.append(pd.read_csv(tickers_list_file))
 
                 for line in reader:
                     category = line["category"]
-                    source = line["source"]
+                    data_source = line["data_source"]
                     freq_list = line["freq"].split(',')
 
                     if isinstance(freq_list, str):
                         freq_list = [freq_list]
 
                     for freq in freq_list:
-                        ticker = line["ticker"]
+                        tickers = line["tickers"]
                         cut = line["cut"]
-                        sourceticker = line["sourceticker"]
+                        vendor_tickers = line["vendor_tickers"]
                         expiry = None
 
                         try:
@@ -120,74 +128,149 @@ class ConfigManager(object):
 
                         if category != "":
                             # print("stop" + category + '.' +
-                            #                                                  source + '.' +
+                            #                                                  data_source + '.' +
                             #                                                  freq + '.' +
                             #                                                  cut + '.' +
-                            #                                                  ticker)
+                            #                                                  tickers)
 
-                            # conversion from library ticker to vendor sourceticker
+                            # Conversion from library tickers to vendor vendor_tickers
                             ConfigManager._dict_time_series_tickers_list_library_to_vendor[category + '.' +
-                                                                                 source + '.' +
+                                                                                 data_source + '.' +
                                                                                  freq + '.' +
                                                                                  cut + '.' +
-                                                                                 ticker] = sourceticker
+                                                                                 tickers] = vendor_tickers
 
                             try:
                                 if expiry != '':
                                     expiry = parse(expiry)
-                                else: expiry = None
+                                else:
+                                    expiry = None
                             except:
                                 pass
 
-                            # conversion from library ticker to library expiry date
+                            # Conversion from library tickers to library expiry date
                             ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
-                                                                                           source + '.' +
-                                                                                           ticker] = expiry
+                                                                                           data_source + '.' +
+                                                                                           tickers] = expiry
 
-                            # conversion from vendor sourceticker to library ticker
-                            ConfigManager._dict_time_series_tickers_list_vendor_to_library[source + '.' + sourceticker] = ticker
+                            # Conversion from vendor vendor_tickers to library tickers
+                            ConfigManager._dict_time_series_tickers_list_vendor_to_library[data_source + '.' + vendor_tickers] = tickers
 
-                            # library of tickers by category
-                            key = category + '.' + source + '.' + freq + '.' + cut
+                            # Library of tickers by category
+                            key = category + '.' + data_source + '.' + freq + '.' + cut
 
                             if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
-                                ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(ticker)
+                                ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(tickers)
                             else:
-                                ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [ticker]
+                                ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [tickers]
+
+        ConfigManager._data_frame_time_series_tickers = pd.concat(df_tickers)
 
         ## Populate fields conversions
         reader = csv.DictReader(open(data_constants.time_series_fields_list))
 
         for line in reader:
-            source = line["source"]
-            field = line["field"]
-            sourcefield = line["sourcefield"]
+            data_source = line["data_source"]
+            fields = line["fields"]
+            vendor_fields = line["vendor_fields"]
 
-            # Conversion from vendor sourcefield to library field
-            ConfigManager._dict_time_series_fields_list_vendor_to_library[source + '.' + sourcefield] = field
+            # Conversion from vendor vendor_fields to library fields
+            ConfigManager._dict_time_series_fields_list_vendor_to_library[data_source + '.' + vendor_fields] = fields
 
-            # Conversion from library ticker to vendor sourcefield
-            ConfigManager._dict_time_series_fields_list_library_to_vendor[source + '.' + field] = sourcefield
+            # Conversion from library tickers to vendor vendor_fields
+            ConfigManager._dict_time_series_fields_list_library_to_vendor[data_source + '.' + fields] = vendor_fields
 
-        ## Populate categories field list
+        ## Populate categories fields list
         reader = csv.DictReader(open(data_constants.time_series_categories_fields))
 
         for line in reader:
             category = line["category"]
-            source = line["source"]
+            data_source = line["data_source"]
             freq = line["freq"]
             cut = line["cut"]
-            fields = line["fields"].split(',') # can have multiple fields
+            fields = line["fields"].split(',') # Can have multiple fields
             startdate = line["startdate"]
 
             if category != "":
-                # conversion from library category to library fields list
+                # Conversion from library category to library fields list
                 ConfigManager._dict_time_series_category_fields_library_to_library[
-                    category + '.' + source + '.' + freq + '.' + cut] = fields
+                    category + '.' + data_source + '.' + freq + '.' + cut] = fields
 
-                # conversion from library category to library startdate
+                # Conversion from library category to library startdate
                 ConfigManager._dict_time_series_category_startdate_library_to_library[
-                        category + '.' + source + '.' + freq + '.' + cut] = parse(startdate).date()
+                        category + '.' + data_source + '.' + freq + '.' + cut] = parse(startdate).date()
+
+    def free_form_tickers_regex_query(self, category=None, data_source=None, freq=None, cut=None, tickers=None, dict_filter={},
+                                      ret_fields=['category', 'data_source', 'freq', 'cut'], smart_group=False):
+
+        df = ConfigManager._data_frame_time_series_tickers
+
+        if category is not None and not(df.empty):
+            df = df[df['category'].str.match(category) == True]
+
+        if data_source is not None and not(df.empty):
+            df = df[df['data_source'].str.match(data_source) == True]
+
+        if freq is not None and not(df.empty):
+            df = df[df['freq'].str.match(freq) == True]
+
+        if cut is not None and not(df.empty):
+            df = df[df['cut'].str.match(cut) == True]
+
+        if tickers is not None and not(df.empty):
+            df = df[df['tickers'].str.match(tickers) == True]
+
+        if cut is not None and not(df.empty):
+            df = df[df['cut'].str.match(cut) == True]
+
+        for k in dict_filter.keys():
+            if k is not None and not(df.empty):
+                df = df[df[k].str.match(dict_filter[k]) == True]
+
+        if ret_fields is not None and not(df.empty):
+            df = df[ret_fields]
+
+        df = df.drop_duplicates()
+
+        # Group any tickers/vendor_tickers together
+        if smart_group:
+            df = ConfigManager.smart_group_dataframe_tickers(df, ret_fields=ret_fields)
+
+        return df
+
+    @staticmethod
+    def smart_group_dataframe_tickers(df, ret_fields=['category', 'data_source', 'freq', 'cut']):
+        """Groups together a dataframe of metadata associated with assets
+        """
+
+        if set(['category', 'data_source', 'freq', 'cut']).issubset(ret_fields):
+            group_fields = ret_fields.copy()
+
+            agg_dict = {}
+
+            if 'tickers' in ret_fields:
+                df['tickers'] = [[x] for x in df['tickers'].tolist()]
+                agg_dict['tickers'] = 'sum'
+                group_fields.remove('tickers')
+
+            if 'vendor_tickers' in ret_fields:
+                df['vendor_tickers'] = [[x] for x in df['vendor_tickers'].tolist()]
+                agg_dict['vendor_tickers'] = 'sum'
+                group_fields.remove('vendor_tickers')
+
+            if agg_dict != {}:
+                df = df.groupby(group_fields).agg(agg_dict)
+
+                for i, g in enumerate(group_fields):
+                    df[g] = df.index.get_level_values(i)
+
+                df = df.reset_index(drop=True)
+
+        return df
+
+    @staticmethod
+    def get_dataframe_tickers():
+        return ConfigManager._data_frame_time_series_tickers
 
     @staticmethod
     def get_categories_from_fields():
@@ -206,9 +289,9 @@ class ConfigManager(object):
             split_cat = category_desc.split('.')
 
             category = split_cat[0]
-            source = split_cat[1]
-            freq = split_cat[2]
-            cut = split_cat[3]
+            # data_source = split_cat[1]
+            # freq = split_cat[2]
+            # cut = split_cat[3]
 
             if filter in category:
                 filtered_list.append(category_desc)
@@ -224,26 +307,26 @@ class ConfigManager(object):
         for sing in all_categories:
             split_sing = sing.split(".")
             category = split_sing[0]
-            source = split_sing[1]
+            data_source = split_sing[1]
             freq = split_sing[2]
             cut = split_sing[3]
 
             if(freq == 'intraday'):
-                intraday_tickers = ConfigManager().get_tickers_list_for_category(category, source, freq, cut)
+                intraday_tickers = ConfigManager.get_tickers_list_for_category(category, data_source, freq, cut)
 
                 for intraday in intraday_tickers:
-                    expanded_category_list.append(category + '.' + source + '.' + freq +
+                    expanded_category_list.append(category + '.' + data_source + '.' + freq +
                                                   '.' + cut + '.' + intraday)
             else:
-                expanded_category_list.append(category + '.' + source + '.' + freq +
+                expanded_category_list.append(category + '.' + data_source + '.' + freq +
                                                   '.' + cut)
 
         return expanded_category_list
 
     @staticmethod
-    def get_fields_list_for_category(category, source, freq, cut):
+    def get_fields_list_for_category(category, data_source, freq, cut):
         return ConfigManager._dict_time_series_category_fields_library_to_library[
-                category + '.' + source + '.' + freq + '.' + cut]
+                category + '.' + data_source + '.' + freq + '.' + cut]
 
     @staticmethod
     def get_fields_list_for_category_str(category):
@@ -255,14 +338,14 @@ class ConfigManager(object):
                 category + '.' + source + '.' + freq + '.' + cut]
 
     @staticmethod
-    def get_expiry_for_ticker(source, ticker):
+    def get_expiry_for_ticker(data_source, ticker):
         return ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
-                source + '.' + ticker]
+                data_source + '.' + ticker]
 
     @staticmethod
-    def get_filtered_tickers_list_for_category(category, source, freq, cut, filter):
+    def get_filtered_tickers_list_for_category(category, data_source, freq, cut, filter):
         tickers = ConfigManager._dict_time_series_category_tickers_library_to_library[
-                category + '.' + source + '.' + freq + '.' + cut]
+                category + '.' + data_source + '.' + freq + '.' + cut]
 
         filtered_tickers = []
 
@@ -273,55 +356,58 @@ class ConfigManager(object):
         return filtered_tickers
 
     @staticmethod
-    def get_tickers_list_for_category(category, source, freq, cut):
+    def get_tickers_list_for_category(category, data_source, freq, cut):
         return ConfigManager._dict_time_series_category_tickers_library_to_library[
-                category + '.' + source + '.' + freq + '.' + cut]
+                category + '.' + data_source + '.' + freq + '.' + cut]
 
     @staticmethod
-    def get_vendor_tickers_list_for_category(category, source, freq, cut):
-        category_source_freq_cut = category + '.' + source + '.' + freq + '.' + cut
+    def get_vendor_tickers_list_for_category(category, data_source, freq, cut):
+        category_source_freq_cut = category + '.' + data_source + '.' + freq + '.' + cut
 
         return ConfigManager.get_vendor_tickers_list_for_category_str(category_source_freq_cut)
 
     @staticmethod
-    def get_tickers_list_for_category_str(category_source_freq_cut):
-        return ConfigManager._dict_time_series_category_tickers_library_to_library[category_source_freq_cut]
+    def get_tickers_list_for_category_str(category_data_source_freq_cut):
+        return ConfigManager._dict_time_series_category_tickers_library_to_library[category_data_source_freq_cut]
 
     @staticmethod
-    def get_vendor_tickers_list_for_category_str(category_source_freq_cut):
-        tickers = ConfigManager._dict_time_series_category_tickers_library_to_library[category_source_freq_cut]
+    def get_vendor_tickers_list_for_category_str(category_data_source_freq_cut):
+        tickers = ConfigManager._dict_time_series_category_tickers_library_to_library[category_data_source_freq_cut]
 
         vendor_tickers = []
 
         for t in tickers:
-            vendor_tickers.append(ConfigManager.convert_library_to_vendor_ticker_str(category_source_freq_cut + "." + t))
+            vendor_tickers.append(ConfigManager.convert_library_to_vendor_ticker_str(category_data_source_freq_cut + "." + t))
 
         return ConfigManager.flatten_list_of_lists(vendor_tickers)
 
     @staticmethod
-    def convert_library_to_vendor_ticker(category, source, freq, cut, ticker):
+    def convert_library_to_vendor_ticker(category, data_source, freq, cut, ticker):
         return ConfigManager._dict_time_series_tickers_list_library_to_vendor[
-
-            category + '.' + source + '.' + freq + '.' + cut + '.' + ticker]
-
-    @staticmethod
-    def convert_library_to_vendor_ticker_str(category_source_freq_cut_ticker):
-        return ConfigManager._dict_time_series_tickers_list_library_to_vendor[category_source_freq_cut_ticker]
+            category + '.' + data_source + '.' + freq + '.' + cut + '.' + ticker]
 
     @staticmethod
-    def convert_vendor_to_library_ticker(source, sourceticker):
+    def convert_library_to_vendor_ticker_str(category_data_source_freq_cut_ticker):
+        return ConfigManager._dict_time_series_tickers_list_library_to_vendor[category_data_source_freq_cut_ticker]
+
+    @staticmethod
+    def convert_vendor_to_library_ticker(data_source, vendor_tickers):
         return ConfigManager._dict_time_series_tickers_list_vendor_to_library[
-            source + '.' + sourceticker]
+            data_source + '.' + vendor_tickers]
 
     @staticmethod
-    def convert_vendor_to_library_field(source, sourcefield):
+    def convert_vendor_to_library_field(data_source, vendor_fields):
         return ConfigManager._dict_time_series_fields_list_vendor_to_library[
-            source + '.' + sourcefield]
+            data_source + '.' + vendor_fields]
 
     @staticmethod
-    def convert_library_to_vendor_field(source, field):
+    def convert_library_to_vendor_field(data_source, fields):
         return ConfigManager._dict_time_series_fields_list_library_to_vendor[
-            source + '.' + field]
+            data_source + '.' + fields]
+
+    @staticmethod
+    def remove_duplicates_and_flatten_list(lst):
+        return list(dict.fromkeys(ConfigManager.flatten_list_of_lists(lst)))
 
     @staticmethod
     def flatten_list_of_lists(list_of_lists):
@@ -341,7 +427,7 @@ class ConfigManager(object):
             rt = []
             for i in list_of_lists:
                 if isinstance(i, list):
-                    rt.extend(self.flatten_list_of_lists(i))
+                    rt.extend(ConfigManager.flatten_list_of_lists(i))
                 else:
                     rt.append(i)
 
@@ -381,37 +467,37 @@ if __name__ == '__main__':
     for sing in categories:
         split_sing = sing.split(".")
         category = split_sing[0]
-        source = split_sing[1]
+        data_source = split_sing[1]
         freq = split_sing[2]
         cut = split_sing[3]
 
         logger.info("tickers for " + sing)
-        tickers = cm.get_tickers_list_for_category(category, source, freq, cut)
+        tickers = cm.get_tickers_list_for_category(category, data_source, freq, cut)
 
         print(tickers)
 
         logger.info("fields for " + sing)
-        fields = cm.get_fields_list_for_category(category, source, freq, cut)
+        fields = cm.get_fields_list_for_category(category, data_source, freq, cut)
 
         print(fields)
 
     # test the various converter mechanisms
-    output = cm.convert_library_to_vendor_ticker(category='fx', source='bloomberg', freq='daily', cut='TOK', ticker='USDJPY')
+    output = cm.convert_library_to_vendor_ticker(category='fx', data_source='bloomberg', freq='daily', cut='TOK', ticker='USDJPY')
 
     print(output)
 
     output = cm.convert_vendor_to_library_ticker(
-        source='bloomberg', sourceticker='EURUSD CMPT Curncy')
+        data_source='bloomberg', vendor_tickers='EURUSD CMPT Curncy')
 
     print(output)
 
     output = cm.convert_vendor_to_library_field(
-        source='bloomberg', sourcefield='PX_LAST')
+        data_source='bloomberg', vendor_fields='PX_LAST')
 
     print(output)
 
     output = cm.convert_library_to_vendor_field(
-        source='bloomberg', field='close')
+        data_source='bloomberg', vendor_fields='close')
 
     print(output)
 
