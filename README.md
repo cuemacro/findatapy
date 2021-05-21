@@ -128,6 +128,8 @@ individual data providers)
 
 # Coding log
 
+* 21 May 2021
+  * Added revision periods to config tickers
 * 20 May 2021
   * Added ability to query stored tickers by regular expressions
   * Made field names/code consistent for tickers/vendor_tickers etc.
