@@ -44,6 +44,7 @@ class ConfigManager(object):
     # Store categories -> fields
     _dict_time_series_category_fields_library_to_library = {}
     _dict_time_series_category_startdate_library_to_library = {}
+    _dict_time_series_category_revision_periods_library_to_library = {}
     _dict_time_series_category_tickers_library_to_library = {}
 
     # category, source, freq, ticker, cut, fields, sourceticker, local-close, expiry, ldn_clo
@@ -190,6 +191,7 @@ class ConfigManager(object):
             cut = line["cut"]
             fields = line["fields"].split(',') # Can have multiple fields
             startdate = line["startdate"]
+            revision_periods = line["revision_periods"]
 
             if category != "":
                 # Conversion from library category to library fields list
@@ -199,6 +201,10 @@ class ConfigManager(object):
                 # Conversion from library category to library startdate
                 ConfigManager._dict_time_series_category_startdate_library_to_library[
                         category + '.' + data_source + '.' + freq + '.' + cut] = parse(startdate).date()
+
+                # Conversion from library category to library revision periods
+                ConfigManager._dict_time_series_category_revision_periods_library_to_library[
+                    category + '.' + data_source + '.' + freq + '.' + cut] = int(revision_periods)
 
     def free_form_tickers_regex_query(self, category=None, data_source=None, freq=None, cut=None, tickers=None, dict_filter={},
                                       ret_fields=['category', 'data_source', 'freq', 'cut'], smart_group=False):
@@ -335,6 +341,11 @@ class ConfigManager(object):
     @staticmethod
     def get_startdate_for_category(category, source, freq, cut):
         return ConfigManager._dict_time_series_category_startdate_library_to_library[
+                category + '.' + source + '.' + freq + '.' + cut]
+
+    @staticmethod
+    def get_revision_periods_for_category(category, source, freq, cut):
+        return ConfigManager._dict_time_series_category_revision_periods_library_to_library[
                 category + '.' + source + '.' + freq + '.' + cut]
 
     @staticmethod
