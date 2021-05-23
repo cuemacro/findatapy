@@ -16,14 +16,15 @@ __author__ = 'saeedamen' # Saeed Amen
 
 import pandas
 import numpy
+import pandas as pd
 
 from findatapy.util.loggermanager import LoggerManager
 
 class TickerFactory(object):
-    """Creating lists of tickers from a shortcuts.
+    """Creating lists of tickers from a shortcuts and also from Excel files.
     """
 
-    def create_ticker(self, csv_file, out_csv_file):
+    def create_tickers_from_combinations(self, csv_file, out_csv_file):
         # reader = csv.DictReader(open(csv_file))
 
         data_frame = pandas.read_csv(csv_file, dtype=object)
@@ -85,21 +86,19 @@ class TickerFactory(object):
         #     vendor_tickers = line["vendor_tickers"]
 
 
-if __name__ == '__main__':
+    def aggregate_ticker_excel(self, excel_file, out_csv, sheets=[], skiprows=None, cols=None):
 
-    logger = LoggerManager.getLogger(__name__)
+        df_list = []
 
-    tf = TickerFactory()
+        for sh in sheets:
+            df_list.append(pd.read_excel(excel_file, sheet_name=sh, skiprows=skiprows))
 
-    root = 'E:/cuemacro/yen/conf'
-    # root = 'E:/cuemacro/findatapy/findatapy/conf'
+        df = pd.concat(df_list)
 
-    csv_file = root + '/fx_vol_tickers_maker.csv'
-    out_csv_file = root + '/fx_vol_tickers.csv'
+        if cols is not None:
+            df = df[cols]
 
-    tf.create_ticker(csv_file, out_csv_file)
+        df = df.reset_index()
+        df.to_csv(out_csv)
 
-    csv_file = root + '/fx_forwards_tickers_maker.csv'
-    out_csv_file = root + '/fx_forwards_tickers.csv'
-
-    tf.create_ticker(csv_file, out_csv_file)
+        return df

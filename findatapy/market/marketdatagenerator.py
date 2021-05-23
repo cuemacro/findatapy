@@ -50,13 +50,13 @@ class MarketDataGenerator(object):
     def set_intraday_code(self, code):
         self._intraday_code = code
 
-    def get_data_vendor(self, source):
+    def get_data_vendor(self, md_request):
         """Loads appropriate data service class
 
         Parameters
         ----------
-        source : str
-            the data service to use "bloomberg", "quandl", "yahoo", "google", "fred" etc.
+        md_request : MarketDataRequest
+            the data_source to use "bloomberg", "quandl", "yahoo", "google", "fred" etc.
             we can also have forms like "bloomberg-boe" separated by hyphens
 
         Returns
@@ -65,88 +65,89 @@ class MarketDataGenerator(object):
         """
         logger = LoggerManager().getLogger(__name__)
 
-        data_vendor = None
+        data_source = md_request.data_source
+        data_engine = md_request.data_engine
 
         # Special case for files
-        if '.csv' in source or '.h5' in source or '.parquet' in source:
+        if '.csv' in data_source or '.h5' in data_source or '.parquet' in data_source or data_engine is not None:
             from findatapy.market.datavendorweb import DataVendorFlatFile
             data_vendor = DataVendorFlatFile()
         else:
             try:
-                source = source.split("-")[0]
+                data_source = data_source.split("-")[0]
             except:
-                logger.error("Was data source specified?")
+                logger.error("Was data data_source specified?")
 
                 return None
 
-            if source == 'bloomberg':
+            if data_source == 'bloomberg':
                 try:
                     from findatapy.market.datavendorbbg import DataVendorBBGOpen
                     data_vendor = DataVendorBBGOpen()
                 except:
                     logger.warn("Bloomberg needs to be installed")
 
-            elif source == 'quandl':
+            elif data_source == 'quandl':
                 from findatapy.market.datavendorweb import DataVendorQuandl
                 data_vendor = DataVendorQuandl()
 
-            elif source == 'eikon':
+            elif data_source == 'eikon':
                 from findatapy.market.datavendorweb import DataVendorEikon
                 data_vendor = DataVendorEikon()
 
-            elif source == 'ons':
+            elif data_source == 'ons':
                 from findatapy.market.datavendorweb import DataVendorONS
                 data_vendor = DataVendorONS()
 
-            elif source == 'boe':
+            elif data_source == 'boe':
                 from findatapy.market.datavendorweb import DataVendorBOE
                 data_vendor = DataVendorBOE()
 
-            elif source == 'dukascopy':
+            elif data_source == 'dukascopy':
                 from findatapy.market.datavendorweb  import DataVendorDukasCopy
                 data_vendor = DataVendorDukasCopy()
 
-            elif source == 'fxcm':
+            elif data_source == 'fxcm':
                 from findatapy.market.datavendorweb  import DataVendorFXCM
                 data_vendor = DataVendorFXCM()
 
-            elif source == 'alfred':
+            elif data_source == 'alfred':
                 from findatapy.market.datavendorweb  import DataVendorALFRED
                 data_vendor = DataVendorALFRED()
 
-            elif source == 'yahoo':
+            elif data_source == 'yahoo':
                 from findatapy.market.datavendorweb  import DataVendorYahoo
                 data_vendor = DataVendorYahoo()
 
-            elif source in ['google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
+            elif data_source in ['google', 'fred', 'oecd', 'eurostat', 'edgar-index']:
                 from findatapy.market.datavendorweb  import DataVendorPandasWeb
                 data_vendor = DataVendorPandasWeb()
 
-            elif source == 'bitcoincharts':
+            elif data_source == 'bitcoincharts':
                 from findatapy.market.datavendorweb import DataVendorBitcoincharts
                 data_vendor = DataVendorBitcoincharts()
-            elif source == 'poloniex':
+            elif data_source == 'poloniex':
                 from findatapy.market.datavendorweb import DataVendorPoloniex
                 data_vendor = DataVendorPoloniex()
-            elif source == 'binance':
+            elif data_source == 'binance':
                 from findatapy.market.datavendorweb import DataVendorBinance
                 data_vendor = DataVendorBinance()
-            elif source == 'bitfinex':
+            elif data_source == 'bitfinex':
                 from findatapy.market.datavendorweb import DataVendorBitfinex
                 data_vendor = DataVendorBitfinex()
-            elif source == 'gdax':
+            elif data_source == 'gdax':
                 from findatapy.market.datavendorweb import DataVendorGdax
                 data_vendor = DataVendorGdax()
-            elif source == 'kraken':
+            elif data_source == 'kraken':
                 from findatapy.market.datavendorweb import DataVendorKraken
                 data_vendor = DataVendorKraken()
-            elif source == 'bitmex':
+            elif data_source == 'bitmex':
                 from findatapy.market.datavendorweb import DataVendorBitmex
                 data_vendor = DataVendorBitmex()
-            elif source == 'alphavantage':
+            elif data_source == 'alphavantage':
                 from findatapy.market.datavendorweb import DataVendorAlphaVantage
                 data_vendor = DataVendorAlphaVantage()
-            elif source == 'huobi':
+            elif data_source == 'huobi':
                 from findatapy.market.datavendorweb import DataVendorHuobi
                 data_vendor = DataVendorHuobi()
 
@@ -168,7 +169,7 @@ class MarketDataGenerator(object):
         """
         logger = LoggerManager().getLogger(__name__)
 
-        # data_vendor = self.get_data_vendor(market_data_request.data_source)
+        # data_vendor = self.get_data_vendor(md_request.data_source)
 
         # check if tickers have been specified (if not load all of them for a category)
         # also handle single tickers/list tickers
@@ -263,7 +264,8 @@ class MarketDataGenerator(object):
         if(isinstance(ticker, list)):
             ticker = ticker[0]
 
-        return self.create_cache_file_name(MarketDataRequest().create_category_key(market_data_request, ticker))
+        return self.create_cache_file_name(MarketDataRequest().create_category_key(
+            md_request=market_data_request, ticker=ticker))
 
     def download_intraday_tick(self, market_data_request):
         """Loads intraday time series from specified data provider
@@ -300,7 +302,7 @@ class MarketDataGenerator(object):
                 # data is stored on disk as float32 anyway
                 # old_finish_date = market_data_request_single.finish_date
                 #
-                # market_data_request_single.finish_date = self.refine_expiry_date(market_data_request)
+                # market_data_request_single.finish_date = self.refine_expiry_date(md_request)
                 #
                 # if market_data_request_single.finish_date >= market_data_request_single.start_date:
                 #     data_frame_single = data_vendor.load_ticker(market_data_request_single)
@@ -327,7 +329,7 @@ class MarketDataGenerator(object):
                         # else:
                         #     data_frame_agg = data_frame_single
 
-                # key = self.create_category_key(market_data_request, ticker)
+                # key = self.create_category_key(md_request, ticker)
                 # fname = self.create_cache_file_name(key)
                 # self._time_series_cache[fname] = data_frame_agg  # cache in memory (disable for intraday)
 
@@ -406,7 +408,7 @@ class MarketDataGenerator(object):
         data_frame_single = None
 
         if len(market_data_request.tickers) > 0:
-            data_frame_single = self.get_data_vendor(market_data_request.data_source).load_ticker(market_data_request)
+            data_frame_single = self.get_data_vendor(market_data_request).load_ticker(market_data_request)
             #print(data_frame_single.head(n=10))
 
         if data_frame_single is not None:
@@ -481,13 +483,15 @@ class MarketDataGenerator(object):
 
             # If it's a date column don't append to convert to a float
             for d in constants.always_date_columns:
-                if d in c:
+                if d in c or 'release-dt' in c:
                     is_date = True
                     break
 
             if is_date:
-                # TODO maybe force conversion?
-                pass
+                try:
+                    data_frame[c] = pd.to_datetime(data_frame[c], errors='coerce')
+                except:
+                    pass
             else:
                 try:
                     data_frame[c] = data_frame[c].astype('float32')
@@ -523,7 +527,7 @@ class MarketDataGenerator(object):
         pandas.DataFrame
         """
 
-        key = MarketDataRequest().create_category_key(market_data_request)
+        key = MarketDataRequest().create_category_key(md_request=market_data_request)
 
         is_key_overriden = False
 
@@ -540,8 +544,8 @@ class MarketDataGenerator(object):
 
         # Daily data does not include ticker in the key, as multiple tickers in the same file
         if thread_no == 1 or '.csv' in market_data_request.data_source or \
-            '.h5' in market_data_request.data_source or '.parquet' in market_data_request.data_source:
-            # data_frame_agg = data_vendor.load_ticker(market_data_request)
+            '.h5' in market_data_request.data_source or '.parquet' in market_data_request.data_source or market_data_request.data_engine is not None:
+            # data_frame_agg = data_vendor.load_ticker(md_request)
             data_frame_agg = self.fetch_single_time_series(market_data_request)
         else:
             market_data_request_list = []

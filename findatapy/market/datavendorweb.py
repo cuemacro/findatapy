@@ -35,6 +35,7 @@ import datetime
 from datetime import datetime
 from datetime import timedelta
 import time as time_library
+import re
 
 import requests
 
@@ -422,7 +423,7 @@ class DataVendorALFRED(DataVendor):
 
                         data_frame = data_frame.to_frame(name=market_data_request.tickers[i] + '.actual-release')
                         data_frame.index.name = 'Date'
-                        # data_frame = data_frame.rename(columns={"value" : market_data_request.tickers[i] + '.actual-release'})
+                        # data_frame = data_frame.rename(columns={"value" : md_request.tickers[i] + '.actual-release'})
 
                         filter = Filter()
                         data_frame = filter.filter_time_series_by_date(market_data_request.start_date,
@@ -1453,7 +1454,7 @@ class DataVendorDukasCopy(DataVendor):
 
         # single threaded
         # df_list = [self.fetch_file(time, symbol) for time in
-        #        self.hour_range(market_data_request.start_date, market_data_request.finish_date)]
+        #        self.hour_range(md_request.start_date, md_request.finish_date)]
 
         # parallel threaded (even with GIL, fast because lots of waiting for IO!)
         from findatapy.util import SwimPool
@@ -1812,7 +1813,7 @@ class DataVendorFXCM(DataVendor):
 
         # single threaded
         # df_list = [self.fetch_file(week_year, symbol) for week_year in
-        #           self.week_range(market_data_request.start_date, market_data_request.finish_date)]
+        #           self.week_range(md_request.start_date, md_request.finish_date)]
 
         # parallel threaded (note: lots of waiting on IO, so even with GIL quicker!)
         week_list = self.week_range(market_data_request.start_date, market_data_request.finish_date)
@@ -2402,10 +2403,14 @@ class Fred(object):
 ########################################################################################################################
 
 class DataVendorFlatFile(DataVendor):
-    """Reads in data from a user-specifed CSV or HDF5 flat file via findatapy library. Does not do any ticker/field
-    mapping, as this could vary significantly between CSV/HDF5 files.
+    """Reads in data from a user-specifed Parquet, CSV, HDF5 flat file (or arctic) via findatapy library. Does not do any ticker/field
+    mapping, as this could vary significantly between Parquet, CSV/HDF5 files (or arctic).
 
-    Users need to know the tickers/fields they wish to collect.
+    Users need to know the tickers/fields they wish to collect. Can also be used with predefined tickers, in this case
+    the filename format is of the form
+
+    eg. backtest.fx.quandl.daily.NYC.parquet (for daily data)
+    eg. backtest.fx.dukascopy.tick.NYC.EURUSD.parquet (for tick/intraday data, we store each ticker in a separate file)
 
     """
 
@@ -2416,15 +2421,58 @@ class DataVendorFlatFile(DataVendor):
     def load_ticker(self, market_data_request):
         logger = LoggerManager().getLogger(__name__)
 
-        logger.info("Request " + market_data_request.data_source + " data")
+        data_source = market_data_request.data_source
+        data_engine = market_data_request.data_engine
+
+        if data_engine is not None:
+
+            logger.info("Request " + market_data_request.data_source + " data via " + data_engine)
+
+            # If a file path has been specified
+            if '*' in data_engine:
+                w = data_engine.split("*.")
+
+                folder = w[0]
+                file_format = w[-1]
+
+                # For intraday/tick files each ticker is stored in a separate file
+                if market_data_request.freq == 'intraday' or market_data_request.freq == 'tick':
+                    path = market_data_request.environment + "." \
+                                  + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
+                                  + "." + market_data_request.cut + "." + market_data_request.tickers[0] + "." + file_format
+                else:
+                    path = market_data_request.environment + "." \
+                                  + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
+                                  + "." + market_data_request.cut + "." + file_format
+
+                full_path = os.path.join(folder, path)
+            else:
+                # Otherwise a database like arctic has been specified
+
+                # For intraday/tick files each ticker is stored in a separate file
+                if market_data_request.freq == 'intraday' or market_data_request.freq == 'tick':
+                    full_path = market_data_request.environment + "." \
+                           + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
+                           + "." + market_data_request.cut + "." + market_data_request.tickers[0]
+                else:
+                    full_path = market_data_request.environment + "." \
+                           + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
+                           + "." + market_data_request.cut
+
+        else:
+            logger.info("Request " + market_data_request.data_source + " data")
+
+            full_path = data_source
 
         if ".csv" in market_data_request.data_source:
-            data_frame = pandas.read_csv(market_data_request.data_source, index_col=0, parse_dates=True,
+            data_frame = pandas.read_csv(full_path, index_col=0, parse_dates=True,
                                          infer_datetime_format=True)
         elif ".h5" in market_data_request.data_source:
-            data_frame = IOEngine().read_time_series_cache_from_disk(market_data_request.data_source, engine='hdf5')
+            data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine='hdf5')
         elif ".parquet" in market_data_request.data_source or '.gzip' in market_data_request.data_source:
-            data_frame = IOEngine().read_time_series_cache_from_disk(market_data_request.data_source, engine='parquet')
+            data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine='parquet')
+        else:
+            data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine=data_engine)
 
         if data_frame is None or data_frame.index is []: return None
 

@@ -12,6 +12,7 @@ __author__ = 'saeedamen'  # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 import pandas as pd
+import numpy as np
 
 from findatapy.market.datavendor import DataVendor
 from findatapy.market.marketdatarequest import MarketDataRequest
@@ -21,7 +22,6 @@ from findatapy.timeseries import Calculations
 import abc
 import datetime
 import copy
-
 
 class DataVendorBBG(DataVendor):
     """Abstract class for download of Bloomberg daily, intraday data and reference data.
@@ -99,7 +99,7 @@ class DataVendorBBG(DataVendor):
                 old_fields = copy.deepcopy(market_data_request.fields)
                 old_vendor_fields = copy.deepcopy(market_data_request_vendor.fields)
 
-                # market_data_request = MarketDataRequest(md_request=market_data_request_copy)
+                # md_request = MarketDataRequest(md_request=market_data_request_copy)
 
                 market_data_request.fields = ref_fields
                 market_data_request.vendor_fields = ref_vendor_fields
@@ -121,7 +121,7 @@ class DataVendorBBG(DataVendor):
                     col = events_data_frame.index.name
                     events_data_frame = events_data_frame.reset_index(drop=False)
 
-                    data_frame = pandas.concat([events_data_frame, datetime_data_frame], axis=1)
+                    data_frame = pd.concat([events_data_frame, datetime_data_frame], axis=1)
                     temp = data_frame[col]
                     del data_frame[col]
                     data_frame.index = temp
@@ -135,17 +135,17 @@ class DataVendorBBG(DataVendor):
             else:
                 data_frame = self.get_daily_data(market_data_request, market_data_request_vendor)
 
-                if data_frame is not None:
-                    # Convert fields with release-dt to dates (special case!) and assume everything else numerical
-                    for c in data_frame.columns:
-                        try:
-                            if 'release-dt' in c:
-                                data_frame[c] = (data_frame[c]).astype('int').astype(str).apply(
-                                        lambda x: pandas.to_datetime(x, format='%Y%m%d'))
-                            else:
-                                data_frame[c] = pandas.to_numeric(data_frame[c])
-                        except:
-                            pass
+                # if data_frame is not None:
+                #     # Convert fields with release-dt to dates (special case!) and assume everything else numerical
+                #     for c in data_frame.columns:
+                #         try:
+                #             if 'release-dt' in c:
+                #                 data_frame[c] = (data_frame[c]).astype('int').astype(str).apply(
+                #                         lambda x: pd.to_datetime(x, format='%Y%m%d'))
+                #             else:
+                #                 data_frame[c] = pd.to_numeric(data_frame[c])
+                #         except:
+                #             pass
 
         # Assume one ticker only for intraday data and use IntradayDataRequest to Bloomberg
         if (market_data_request.freq in ['tick', 'intraday', 'second', 'minute', 'hourly']):
@@ -214,8 +214,18 @@ class DataVendorBBG(DataVendor):
             for i in range(0, len(fields)):
                 ticker_combined.append(tickers[i] + "." + fields[i])
 
+            # Convert numerical columns to floats and dates to dates (avoids having object columns
+            # which can cause issues with later Pandas)
+            data_frame = self.force_type_conversion(data_frame)
+
             data_frame.columns = ticker_combined
             data_frame.index.name = 'Date'
+
+            # Force sorting of index
+            try:
+                data_frame = data_frame.sort_index()
+            except:
+                pass
 
         return data_frame
 
@@ -259,33 +269,63 @@ class DataVendorBBG(DataVendor):
             data_frame.columns = ticker_combined
 
             # Need to convert numerical and datetime columns separately post pandas 0.23
-            for c in data_frame.columns:
-                is_date = False
+            data_frame = self.force_type_conversion(data_frame)
 
-                # Only convert those Bloomberg reference fields to dates which have been listed explicitly
-                for d in constants.always_date_columns:
-                    if d in c:
-                        try:
-                            data_frame[c] = pd.to_datetime(data_frame[c], errors='coerce')
-
-                            is_date = True
-                            break
-                        except:
-                            pass
-
-                # Otherwise this is not a date field so attempt to convert into numbers
-                if not(is_date):
-                    try:
-                        data_frame[c] = pd.to_numeric(data_frame[c], errors='ignore')
-                    except:
-                        pass
-
-
-            # data_frame = data_frame.apply(pandas.to_datetime, errors='ignore')
-            # data_frame = data_frame.apply(pandas.to_numeric, errors='ignore')
+            # data_frame = data_frame.apply(pd.to_datetime, errors='ignore')
+            # data_frame = data_frame.apply(pd.to_numeric, errors='ignore')
 
             # TODO coerce will be deprecated from pandas 0.23.0 onwards) so remove!
             # data_frame = data_frame.convert_objects(convert_dates = 'coerce', convert_numeric= 'coerce')
+
+        return data_frame
+
+
+    def force_type_conversion(self, data_frame):
+        constants = DataConstants()
+
+        logger = LoggerManager().getLogger(__name__)
+
+        if data_frame is not None:
+            if not(data_frame.empty):
+                # Need to convert numerical and datetime columns separately post pandas 0.23
+                for c in data_frame.columns:
+                    is_date = False
+
+                    # Special case for ECO_RELEASE_DT / FIRST_REVISION_DATE
+                    if 'ECO_RELEASE_DT' in c or 'FIRST_REVISION_DATE' in c:
+                        try:
+                            temp_col = []# data_frame[c].values
+                            
+                            for i in range(0, len(data_frame[c].values)):
+                                try:
+                                    temp_col.append(pd.to_datetime(str(int(data_frame[c].values[i])), format='%Y%m%d'))
+                                except:
+                                    temp_col.append(np.datetime64('NaT'))
+
+                            data_frame[c] = temp_col
+                        except Exception as e:
+                            logger.warning("Couldn't convert " + str(c) + " to date.. was this column empty? " + str(e))
+
+                    else:
+                        # Only convert those Bloomberg reference fields to dates which have been listed explicitly
+                        for d in constants.always_date_columns:
+                            if d in c:
+                                try:
+                                    data_frame[c] = pd.to_datetime(data_frame[c], errors='coerce')
+
+                                    is_date = True
+                                    break
+                                except:
+                                    pass
+
+                        # Otherwise this is not a date field so attempt to convert into numbers
+                        if not(is_date):
+                            try:
+                                data_frame[c] = pd.to_numeric(data_frame[c], errors='ignore')
+                            except:
+                                pass
+
+        logger.debug("Returning converted dataframe...")
 
         return data_frame
 
@@ -318,8 +358,6 @@ import copy
 import collections
 import datetime
 import re
-
-import pandas
 
 try:
     import blpapi  # obtainable from Bloomberg website
@@ -379,10 +417,10 @@ class DataVendorBBGOpen(DataVendorBBG):
         market_data_request_vendor_selective = copy.copy(market_data_request)
 
         # special case for future date releases
-        # if 'release-date-time-full' in market_data_request.fields:
+        # if 'release-date-time-full' in md_request.fields:
         #     market_data_request_vendor_selective.fields = ['ECO_FUTURE_RELEASE_DATE_LIST']
         #
-        # if 'last-tradeable-day' in market_data_request.fields:
+        # if 'last-tradeable-day' in md_request.fields:
         #     market_data_request_vendor_selective.fields = ['LAST_TRADEABLE_DT']
 
         data_frame = low_level_loader.load_time_series(market_data_request_vendor_selective)
@@ -522,7 +560,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
         from findatapy.timeseries import Calculations
 
         if data_frame_cols == [] and data_frame_list != []:  # intraday case
-            data_frame = pandas.concat(data_frame_list)
+            data_frame = pd.concat(data_frame_list)
         else:  # daily frequencies
             data_frame = Calculations().join(data_frame_list, how='outer')
 
@@ -556,7 +594,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
             logger.warn("No elements for ticker.")
             return None
         else:
-            return pandas.concat(data_frame_list)
+            return pd.concat(data_frame_list)
 
     def get_previous_trading_date(self):
         tradedOn = datetime.date.today()
@@ -682,6 +720,8 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         return options
 
     def process_message(self, msg):
+
+        constants = DataConstants()
         # Process received events
 
         # SLOW loop (careful, not all the fields will be returned every time hence need to include the field name in the tuple)
@@ -736,12 +776,12 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
             data = bbgloop_numba(fieldData, ticker)
             # TODO cython
 
-        data_frame = pandas.DataFrame(data)
+        data_frame = pd.DataFrame(data)
 
         # if obsolete ticker could return no values
         if (not (data_frame.empty)):
-            # data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
-            data_frame.index = pandas.to_datetime(data_frame.index)
+            # data_frame.columns = pd.MultiIndex.from_tuples(data, names=['field', 'ticker'])
+            data_frame.index = pd.to_datetime(data_frame.index)
             logger.info("Read: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
         else:
             return None
@@ -838,14 +878,14 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                       fieldException.getElementAsString("fieldId"))
                 print("stop")
 
-        # explicitly state from_dict (buggy if create pandas.DataFrame(data)
-        data_frame = pandas.DataFrame.from_dict(data)
+        # explicitly state from_dict (buggy if create pd.DataFrame(data)
+        data_frame = pd.DataFrame.from_dict(data)
 
         # if obsolete ticker could return no values
         if (not (data_frame.empty)):
             # if not(single):
             #    pass
-            # data_frame.columns = pandas.MultiIndex.from_tuples(data, names=['field', 'ticker'])
+            # data_frame.columns = pd.MultiIndex.from_tuples(data, names=['field', 'ticker'])
 
             logger.info("Reading: " + ticker + ' ' + str(data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
         else:
@@ -965,7 +1005,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         # logger.info("Dates between " + str(date_index[0]) + " - " + str(date_index[-1]))
         #
         # # create pandas dataframe with the Bloomberg output
-        # return pandas.DataFrame(data = data_matrix, index = date_index,
+        # return pd.DataFrame(data = data_matrix, index = date_index,
         #                columns=['open', 'high', 'low', 'close', 'volume', 'events'])
 
         ## for loop method is touch slower
@@ -1001,7 +1041,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
             return None
 
         # create pandas dataframe with the Bloomberg output
-        return pandas.DataFrame(data=data_table, index=time_list,
+        return pd.DataFrame(data=data_table, index=time_list,
                                 columns=['open', 'high', 'low', 'close', 'volume', 'events'])
 
     # implement abstract method: create request for data
@@ -1056,7 +1096,7 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
 
         options.security = market_data_request.tickers[0]  # get 1st ticker only!
         options.event = market_data_request.trade_side.upper()
-        # self._options.barInterval = market_data_request.freq_mult
+        # self._options.barInterval = md_request.freq_mult
         options.startDateTime = market_data_request.start_date
         options.endDateTime = market_data_request.finish_date
         # self._options.gapFillInitialBar = False
@@ -1105,7 +1145,7 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
             return None
 
         # create pandas dataframe with the Bloomberg output
-        return pandas.DataFrame(data=data_table, index=time_list,
+        return pd.DataFrame(data=data_table, index=time_list,
                                 columns=['close', 'ticksize'])
 
     # implement abstract method: create request for data

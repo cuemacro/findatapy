@@ -43,7 +43,7 @@ def key_store(service_name):
 class DataConstants(object):
 
     ###### SHOULD AUTODETECT FOLDER
-    root_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace('\\', '/') + "/"
+    root_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace('\\', '/')
     temp_folder = root_folder + "temp"
 
     ###### FOR FUTURE VERSIONS (which include caching)
@@ -51,9 +51,15 @@ class DataConstants(object):
     folder_historic_CSV = "x:/"
     folder_time_series_data = "x:/"
 
-    ###### FOR DATABASE
+    # Usually the data folder where we want to store market data (eg. '.../test/*.parquet')
+    # or 'arctic'
+    default_data_engine = None
+
+    ###### FOR DATABASE (Arctic/MongoDB)
     db_server = '127.0.0.1'
     db_port = '27017'
+    db_username = None
+    db_password = None
 
     ###### FOR TEMPORARY IN-MEMORY CACHE (Redis)
     db_cache_server = '127.0.0.1'
@@ -62,9 +68,12 @@ class DataConstants(object):
 
     use_cache_compression = True
 
+    parquet_compression = 'gzip' # 'gzip' or 'snappy'
+    aws_region = None
+
     ###### FOR ALIAS TICKERS
     # Config file for time series categories
-    config_root_folder = root_folder + "/conf/"
+    config_root_folder = os.path.join(root_folder, "conf")
 
     time_series_categories_fields = \
         os.path.join(config_root_folder, "time_series_categories_fields.csv")
@@ -136,13 +145,15 @@ class DataConstants(object):
     # These fields will be forcibly be converted to datetime64 (only for Bloomberg)
     always_date_columns = ['release-date-time-full', 'last-tradeable-day',
                           'futures-chain-last-trade-dates', 'first-notice-date', 'first-tradeable-day',
-                          'cal-non-settle-dates', 'first-revision-date']
+                          'cal-non-settle-dates', 'first-revision-date', 'release-dt']
+
+    default_time_units = 'us' # 'ns' or 'ms' too
 
     # These are string/object fields which do not need to be converted
     always_str_fields = ['futures-chain-tickers']
 
     # Log config file
-    logging_conf = root_folder + "conf/logging.conf"
+    logging_conf = os.path.join(config_root_folder, "logging.conf")
 
     ####### Bloomberg settings
     bbg_server = "localhost"       # needs changing if you use Bloomberg Server API
@@ -150,7 +161,7 @@ class DataConstants(object):
 
     # These fields are BDS style fields to be downloaded using Bloomberg's Reference Data interface
     # You may need to add to this list
-    bbg_ref_fields =     {'release-date-time-full' : 'ECO_FUTURE_RELEASE_DATE_LIST',
+    bbg_ref_fields = {'release-date-time-full' : 'ECO_FUTURE_RELEASE_DATE_LIST',
                           'last-tradeable-day' : 'LAST_TRADEABLE_DT',
                           'futures-chain-tickers' :  'FUT_CHAIN',
                           'futures-chain-last-trade-dates' :'FUT_CHAIN_LAST_TRADE_DATES',

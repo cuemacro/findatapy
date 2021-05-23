@@ -500,7 +500,7 @@ class Filter(object):
         -------
         DataFrame
         """
-        old_columns = data_frame.columns
+        old_columns = data_frame.columns.tolist()
 
         common_columns = [val for val in columns if val in old_columns]
         uncommon_columns = [val for val in columns if val not in old_columns]
@@ -517,10 +517,24 @@ class Filter(object):
 
             data_frame = pd.concat([data_frame, new_data_frame], axis=1)
 
+            # Force new columns to float NaNs (not objects which causes problems with newer pandas versions)
+            # or to NaT if they are date columns
+            for u in uncommon_columns:
+                is_date = False
+
+                for c in constants.always_date_columns:
+                    if c in u:
+                        is_date = True
+
+                if is_date:
+                    data_frame[u] = np.datetime64('NaT')
+                else:
+                    data_frame[u] = np.nan
+
             # SLOW method below
             # for x in uncommon_columns: data_frame.loc[:,x] = np.nan
 
-        # get columns in same order again
+        # Get columns in same order again
         data_frame = data_frame[columns]
 
         return data_frame

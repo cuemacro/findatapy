@@ -64,7 +64,7 @@ class MarketDataRequest(object):
         else:
             ticker = self.tickers[0]
 
-        self.__category_key = self.create_category_key(self, ticker=ticker)
+        self.__category_key = self.create_category_key(md_request=self, ticker=ticker)
 
         return SpeedCache().generate_key(self, ['logger', '_MarketDataRequest__abstract_curve',
                                                 '_MarketDataRequest__cache_algo',
@@ -85,6 +85,9 @@ class MarketDataRequest(object):
                  fx_forwards_tenor=data_constants.fx_forwards_tenor,
                  base_depos_currencies=data_constants.base_depos_currencies,
                  base_depos_tenor=data_constants.base_depos_tenor,
+
+                 data_engine = data_constants.default_data_engine,
+
                  md_request=None, abstract_curve=None, quandl_api_key=data_constants.quandl_api_key,
                  fred_api_key=data_constants.fred_api_key, alpha_vantage_api_key=data_constants.alpha_vantage_api_key,
                  eikon_api_key=data_constants.eikon_api_key,
@@ -136,6 +139,8 @@ class MarketDataRequest(object):
                 self.fx_forwards_tenor = copy.deepcopy(md_request.fx_forwards_tenor)
                 self.base_depos_currencies = copy.deepcopy(md_request.base_depos_currencies)
                 self.base_depos_tenor = copy.deepcopy(md_request.base_depos_tenor)
+                
+                self.data_engine = copy.deepcopy(md_request.data_engine)
 
                 self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
                 self.quandl_api_key = copy.deepcopy(md_request.quandl_api_key)
@@ -180,6 +185,8 @@ class MarketDataRequest(object):
             self.fx_forwards_tenor = fx_forwards_tenor
             self.base_depos_currencies = base_depos_currencies
             self.base_depos_tenor = base_depos_tenor
+            
+            self.data_engine = data_engine
 
             self.abstract_curve = abstract_curve
             
@@ -195,13 +202,13 @@ class MarketDataRequest(object):
 
             self.tickers = tickers
 
-    def create_category_key(self, market_data_request, ticker=None):
+    def create_category_key(self, md_request=None, ticker=None):
         """Returns a category key for the associated MarketDataRequest, which can be used to create filenames (or
         as part of a storage key in a cache)
 
         Parameters
         ----------
-        market_data_request : MarketDataRequest
+        md_request : MarketDataRequest
             contains various properties describing time series to fetched, including ticker, start & finish date etc.
 
         Returns
@@ -212,13 +219,19 @@ class MarketDataRequest(object):
         category = 'default-cat'
         cut = 'default-cut'
 
-        if market_data_request.category is not None: category = market_data_request.category
+        if md_request is None:
+            md_request = self
 
-        environment = market_data_request.environment
-        source = market_data_request.data_source
-        freq = market_data_request.freq
+        if md_request.category is not None: category = md_request.category
 
-        if market_data_request.cut is not None: cut = market_data_request.cut
+        environment = md_request.environment
+        source = md_request.data_source
+        freq = md_request.freq
+
+        if ticker is None and (md_request.freq == 'intraday' or md_request.freq == 'tick'):
+            ticker = md_request.tickers[0]
+
+        if md_request.cut is not None: cut = md_request.cut
 
         if (ticker is not None):
             key = str(environment) + "." + str(category) + '.' + str(source) + '.' + str(freq) + '.' + str(cut) \
@@ -606,6 +619,14 @@ class MarketDataRequest(object):
     @base_depos_tenor.setter
     def base_depos_tenor(self, base_depos_tenor):
         self.__base_depos_tenor = base_depos_tenor
+        
+    @property
+    def data_engine(self):
+        return self.__data_engine
+
+    @data_engine.setter
+    def data_engine(self, data_engine):
+        self.__data_engine = data_engine
 
     ######
     @property
