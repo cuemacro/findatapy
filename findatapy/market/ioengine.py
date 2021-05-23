@@ -36,10 +36,21 @@ try:
 except:
     pass
 
+# for reading and writing to S3
+try:
+    import pyarrow.fs
+    import pyarrow.parquet as pq
+
+    from s3fs import S3FileSystem
+except:
+    pass
+
 try:
     import redis
 except:
     pass
+
+import pandas as pd
 
 from openpyxl import load_workbook
 import os.path
@@ -228,10 +239,10 @@ class IOEngine(object):
     ### functions to handle HDF5 on disk, arctic etc.
     def write_time_series_cache_to_disk(self, fname, data_frame,
                                         engine='hdf5_fixed', append_data=False, db_server=constants.db_server,
-                                        db_port=constants.db_port, username=None, password=None,
+                                        db_port=constants.db_port, username=constants.db_username, password=constants.db_password,
                                         filter_out_matching=None, timeout=10,
                                         use_cache_compression=constants.use_cache_compression,
-                                        parquet_compression='gzip'):
+                                        parquet_compression=constants.parquet_compression, md_request=None, ticker=None):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
@@ -256,6 +267,9 @@ class IOEngine(object):
         """
 
         logger = LoggerManager().getLogger(__name__)
+
+        if md_request is not None:
+            fname = os.path.join(fname, md_request.create_category_key(ticker=ticker))
 
         # default HDF5 format
         hdf5_format = 'fixed'
@@ -369,18 +383,20 @@ class IOEngine(object):
 
                 data_frame = data_frame[new_cols]
 
-            # problems with Arctic when writing timezone to disk sometimes, so strip
+            # Problems with Arctic when writing timezone to disk sometimes, so strip
             data_frame = data_frame.copy().tz_localize(None)
 
-            # can duplicate values if we have existing dates
-            if append_data:
-                library.append(fname, data_frame)
-            else:
-                library.write(fname, data_frame)
+            try:
+                # Can duplicate values if we have existing dates
+                if append_data:
+                    library.append(fname, data_frame)
+                else:
+                    library.write(fname, data_frame)
 
-            c.close()
-
-            logger.info("Written MongoDB library: " + fname)
+                c.close()
+                logger.info("Written MongoDB library: " + fname)
+            except Exception as e:
+                logger.warning("Couldn't write MongoDB library: " + fname + " " + str(e))
 
         elif (engine == 'hdf5'):
             h5_filename = self.get_h5_filename(fname)
@@ -442,11 +458,20 @@ class IOEngine(object):
         elif (engine == 'parquet'):
             if '.parquet' not in fname:
                 if fname[-5:] != '.gzip':
-                    fname = fname + '.gzip'
+                    fname = fname + '.parquet'
 
-            data_frame.to_parquet(fname, compression=parquet_compression)
+            self.to_parquet(data_frame, fname, aws_region=constants.aws_region, parquet_compression=parquet_compression)
+            # data_frame.to_parquet(fname, compression=parquet_compression)
 
             logger.info("Written Parquet: " + fname)
+        elif engine == 'csv':
+            if '.csv' not in fname:
+                fname = fname + '.csv'
+
+            data_frame.to_csv(fname)
+
+            logger.info("Written CSV: " + fname)
+
 
     def get_h5_filename(self, fname):
         """Strips h5 off filename returning first portion of filename
@@ -525,7 +550,7 @@ class IOEngine(object):
 
     def read_time_series_cache_from_disk(self, fname, engine='hdf5', start_date=None, finish_date=None,
                                          db_server=constants.db_server,
-                                         db_port=constants.db_port, username=None, password=None):
+                                         db_port=constants.db_port, username=constants.db_username, password=constants.db_password):
         """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
@@ -673,8 +698,14 @@ class IOEngine(object):
 
                 store.close()
 
+            elif self.path_exists(fname_single) and '.csv' in fname_single:
+                data_frame = pandas.read_csv(fname_single, index_col=0)
+
+                data_frame.index = pd.to_datetime(data_frame.index)
+
             elif self.path_exists(fname_single):
-                data_frame = pandas.read_parquet(fname_single)
+                data_frame = self.read_parquet(fname_single)
+                # data_frame = pandas.read_parquet(fname_single)
 
             data_frame_list.append(data_frame)
 
@@ -849,6 +880,54 @@ class IOEngine(object):
 
     def get_engine(self, engine='hdf5_fixed'):
         pass
+
+    def read_parquet(self, path):
+        return pd.read_parquet(path)
+
+    def to_parquet(self, df, path, aws_region=constants.aws_region, parquet_compression=constants.parquet_compression):
+
+        constants = DataConstants()
+
+        # is_date = False
+        #
+        # # Force any date columns to default time units (Parquet with pyarrow has problems with ns dates)
+        # for c in df.columns:
+        #
+        #     # If it's a date column don't append to convert to a float
+        #     for d in constants.always_date_columns:
+        #         if d in c or 'release-dt' in c:
+        #             is_date = True
+        #             break
+        #
+        #     if is_date:
+        #         try:
+        #             df[c] = pd.to_datetime(df[c], errors='coerce', unit=constants.default_time_units)
+        #         except:
+        #             pass
+
+        try:
+            df.index = pd.to_datetime(df.index, unit=constants.default_time_units)
+        except:
+            pass
+
+        if 's3://' in path:
+            s3 = pyarrow.fs.S3FileSystem(region=aws_region)
+            table = pa.Table.from_pandas(df)
+
+            path_in_s3 = path.replace("s3://", "")
+
+            with s3.open_output_stream(path_in_s3) as f:
+                pq.write_table(table, f, compression=parquet_compression, coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True,
+                               )
+
+        else:
+            # Using pandas.to_parquet, doesn't let us pass in parameters to allow coersion of timestamps
+            # ie. ns -> us
+            table = pa.Table.from_pandas(df)
+
+            pq.write_table(table, path, compression=parquet_compression,
+                           coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True)
+            # df.to_parquet(path, compression=parquet_compression)
 
     def path_exists(self, path):
         if 's3://' in path:

@@ -128,6 +128,13 @@ individual data providers)
 
 # Coding log
 
+* 23 May 2021
+  * Fixed various bugs with reading ECO_RELEASE_DT etc. dates from Bloomberg
+  * Fixed bugs when predefined ticker is defined differently in different categories  
+  * Can now write Parquet without date truncation errors (eg. ns to us)
+  * Reads/writes Parquet from S3
+* 22 May 2021
+  * Better reading/writing of files to disk
 * 21 May 2021
   * Added revision periods to config tickers
 * 20 May 2021

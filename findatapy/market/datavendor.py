@@ -203,12 +203,12 @@ class DataVendor(object):
         return fields_converted
 
     # Translate findatapy ticker to vendor ticker
-    def translate_from_vendor_ticker(self, vendor_tickers_list, market_data_request):
+    def translate_from_vendor_ticker(self, vendor_tickers_list, md_request):
         """Converts all the fields from vendor tickers to findatapy tickers
 
         Parameters
         ----------
-        market_data_request : MarketDataRequest
+        md_request : MarketDataRequest
             contains all the various parameters detailing time series start and finish, tickers etc
 
         Returns
@@ -216,9 +216,9 @@ class DataVendor(object):
         List of Strings
         """
 
-        if market_data_request.vendor_tickers is not None:
+        if md_request.vendor_tickers is not None:
 
-            dictionary = dict(zip(self.get_lower_case_list(market_data_request.vendor_tickers), market_data_request.tickers))
+            dictionary = dict(zip(self.get_lower_case_list(md_request.vendor_tickers), md_request.tickers))
 
             tickers_stuff = []
 
@@ -227,8 +227,8 @@ class DataVendor(object):
 
             return tickers_stuff # [item for sublist in tickers_stuff for item in sublist]
 
-        data_source = market_data_request.data_source
-        # tickers_list = market_data_request.tickers
+
+        # tickers_list = md_request.tickers
 
         if isinstance(vendor_tickers_list, str):
             vendor_tickers_list = [vendor_tickers_list]
@@ -239,7 +239,9 @@ class DataVendor(object):
 
         for vendor_ticker in vendor_tickers_list:
             try:
-                v = self.config.convert_vendor_to_library_ticker(data_source, vendor_ticker)
+                v = self.config.convert_vendor_to_library_ticker(
+                    md_request.category, md_request.data_source,
+                    md_request.freq, md_request.cut, vendor_ticker)
             except:
                 logger = LoggerManager().getLogger(__name__)
                 logger.error("Couldn't find ticker conversion, did you type it correctly: " + vendor_ticker)

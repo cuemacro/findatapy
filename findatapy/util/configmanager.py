@@ -98,7 +98,11 @@ class ConfigManager(object):
         # eg. bloomberg / close / PX_LAST
 
         ## Populate tickers list (allow for multiple files)
-        time_series_tickers_list_file = data_constants.time_series_tickers_list.split(';')
+
+        if isinstance(data_constants.time_series_tickers_list, str):
+            time_series_tickers_list_file = data_constants.time_series_tickers_list.split(';')
+        else:
+            time_series_tickers_list_file = data_constants.time_series_tickers_list
 
         df_tickers = []
 
@@ -149,16 +153,17 @@ class ConfigManager(object):
                             except:
                                 pass
 
+                            # Library of tickers by category
+                            key = category + '.' + data_source + '.' + freq + '.' + cut
+
                             # Conversion from library tickers to library expiry date
                             ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
                                                                                            data_source + '.' +
                                                                                            tickers] = expiry
 
                             # Conversion from vendor vendor_tickers to library tickers
-                            ConfigManager._dict_time_series_tickers_list_vendor_to_library[data_source + '.' + vendor_tickers] = tickers
-
-                            # Library of tickers by category
-                            key = category + '.' + data_source + '.' + freq + '.' + cut
+                            ConfigManager._dict_time_series_tickers_list_vendor_to_library[
+                                key + '.' + vendor_tickers] = tickers
 
                             if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
                                 ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(tickers)
@@ -204,7 +209,7 @@ class ConfigManager(object):
 
                 # Conversion from library category to library revision periods
                 ConfigManager._dict_time_series_category_revision_periods_library_to_library[
-                    category + '.' + data_source + '.' + freq + '.' + cut] = int(revision_periods)
+                    category + '.' + data_source + '.' + freq + '.' + cut] = revision_periods
 
     def free_form_tickers_regex_query(self, category=None, data_source=None, freq=None, cut=None, tickers=None, dict_filter={},
                                       ret_fields=['category', 'data_source', 'freq', 'cut'], smart_group=False):
@@ -402,9 +407,9 @@ class ConfigManager(object):
         return ConfigManager._dict_time_series_tickers_list_library_to_vendor[category_data_source_freq_cut_ticker]
 
     @staticmethod
-    def convert_vendor_to_library_ticker(data_source, vendor_tickers):
+    def convert_vendor_to_library_ticker(category, data_source, freq, cut, vendor_tickers):
         return ConfigManager._dict_time_series_tickers_list_vendor_to_library[
-            data_source + '.' + vendor_tickers]
+            category + '.' + data_source + '.' + freq + '.' + cut + '.' + vendor_tickers]
 
     @staticmethod
     def convert_vendor_to_library_field(data_source, vendor_fields):

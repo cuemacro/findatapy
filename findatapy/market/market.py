@@ -217,7 +217,8 @@ class Market(object):
                                                    cut=md_request.cut, data_source=md_request.data_source,
                                                    freq=md_request.freq,
                                                    cache_algo=md_request.cache_algo, type=type,
-                                                   environment=md_request.environment, fields=md_request.fields)
+                                                   environment=md_request.environment, fields=md_request.fields,
+                                                   data_engine=md_request.data_engine)
 
             # For FX implied volatility we can return the full surface
             if (md_request.category == 'fx-implied-vol'):
@@ -233,7 +234,9 @@ class Market(object):
                                                         cut=md_request.cut, data_source=md_request.data_source,
                                                         part=md_request.fx_vol_part,
                                                         cache_algo=md_request.cache_algo,
-                                                        field=md_request.fields))
+                                                        environment=md_request.environment,
+                                                        field=md_request.fields,
+                                                        data_engine=md_request.data_engine))
 
                     if df != []:
                         data_frame = Calculations().join(df, how='outer')
@@ -258,7 +261,8 @@ class Market(object):
                                                   freq=md_request.freq,
                                                   cache_algo=md_request.cache_algo, type='spot',
                                                   environment=md_request.environment,
-                                                  fields=md_request.fields))
+                                                  fields=md_request.fields,
+                                                  data_engine=md_request.data_engine))
 
                             # Entire FX vol surface
                             df.append(
@@ -266,21 +270,26 @@ class Market(object):
                                                         cut=md_request.cut, data_source=md_request.data_source,
                                                         part=md_request.fx_vol_part,
                                                         cache_algo=md_request.cache_algo,
-                                                        field=md_request.fields))
+                                                        environment=md_request.environment,
+                                                        field=md_request.fields,
+                                                        data_engine=md_request.data_engine))
 
                             # FX forward points for every point on curve
                             df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t,
                                                                   md_request.fx_forwards_tenor,
                                                                   cut=md_request.cut,
                                                                   data_source=md_request.data_source,
+                                                                  environment=md_request.environment,
                                                                   cache_algo=md_request.cache_algo,
-                                                                  field=md_request.fields))
+                                                                  field=md_request.fields,
+                                                                  data_engine=md_request.data_engine))
 
                     # Lastly fetch the base depos
                     df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date,
                                                    self._get_base_depo_currencies(md_request.tickers), md_request.base_depos_tenor,
+                                                   environment=md_request.environment,
                                                    cut=md_request.cut, data_source=md_request.data_source,
-                                                   cache_algo=md_request.cache_algo, field=md_request.fields
+                                                   cache_algo=md_request.cache_algo, field=md_request.fields, data_engine=md_request.data_engine
                                                    ))
 
                     if df != []:
@@ -303,22 +312,27 @@ class Market(object):
                                                   freq=md_request.freq,
                                                   cache_algo=md_request.cache_algo, type='spot',
                                                   environment=md_request.environment,
-                                                  fields=md_request.fields))
+                                                  fields=md_request.fields,
+                                                  data_engine=md_request.data_engine))
 
                             # FX forward points for every point on curve
                             df.append(rates.get_fx_forward_points(md_request.start_date, md_request.finish_date, t,
                                                                   md_request.fx_forwards_tenor,
                                                                   cut=md_request.cut,
                                                                   data_source=md_request.data_source,
+                                                                  environment=md_request.environment,
                                                                   cache_algo=md_request.cache_algo,
-                                                                  field=md_request.fields))
+                                                                  field=md_request.fields,
+                                                                  data_engine=md_request.data_engine))
 
                     # Lastly fetch the base depos
                     df.append(rates.get_base_depos(md_request.start_date, md_request.finish_date,
                                                    self._get_base_depo_currencies(md_request.tickers), md_request.base_depos_tenor,
                                                    cut=md_request.cut, data_source=md_request.data_source,
                                                    cache_algo=md_request.cache_algo,
-                                                   field=md_request.fields
+                                                   environment=md_request.environment,
+                                                   field=md_request.fields,
+                                                   data_engine=md_request.data_engine
                                                    ))
 
                     if df != []:
@@ -673,7 +687,7 @@ class FXCrossFactory(object):
 
     def get_fx_cross_tick(self, start, end, cross,
                           cut="NYC", data_source="dukascopy", cache_algo='internet_load_return', type='spot',
-                          environment=constants.default_data_environment, fields=['bid', 'ask']):
+                          environment=constants.default_data_environment, fields=['bid', 'ask'], data_engine=constants.default_data_engine):
 
         if isinstance(cross, str):
             cross = [cross]
@@ -689,7 +703,8 @@ class FXCrossFactory(object):
             start_date=start,
             finish_date=end,
             data_source=data_source,
-            category='fx'
+            category='fx',
+            data_engine=data_engine
         )
 
         market_data_generator = self._market_data_generator
@@ -728,12 +743,13 @@ class FXCrossFactory(object):
     def get_fx_cross(self, start, end, cross,
                      cut="NYC", data_source="bloomberg", freq="intraday", cache_algo='internet_load_return',
                      type='spot',
-                     environment=constants.default_data_environment, fields=['close']):
+                     environment=constants.default_data_environment, fields=['close'], data_engine=constants.default_data_engine):
 
         if data_source == "gain" or data_source == 'dukascopy' or freq == 'tick':
             return self.get_fx_cross_tick(start, end, cross,
                                           cut=cut, data_source=data_source, cache_algo=cache_algo, type='spot',
-                                          fields=fields)
+                                          environment=environment,
+                                          fields=fields, data_engine=data_engine)
 
         if isinstance(cross, str):
             cross = [cross]
@@ -751,7 +767,8 @@ class FXCrossFactory(object):
                                                     start_date=start,
                                                     finish_date=end,
                                                     data_source=data_source,
-                                                    environment=environment)
+                                                    environment=environment,
+                                                    data_engine=data_engine)
 
             market_data_request.type = type
             market_data_request.cross = cr
@@ -879,7 +896,7 @@ class FXCrossFactory(object):
                     if (correct_cr != cr):
                         cross_vals = 1 / cross_vals
 
-                # cross_vals = self._market_data_generator.harvest_time_series(market_data_request)
+                # cross_vals = self._market_data_generator.harvest_time_series(md_request)
                 cross_vals.columns = [cr + '.' + market_data_request.fields[0]]
 
         elif type[0:3] == "tot":
@@ -953,7 +970,8 @@ class FXVolFactory(object):
         return
 
     def get_fx_implied_vol(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg", part="V",
-                           cache_algo="internet_load_return", environment=constants.default_data_environment, field='close'):
+                           cache_algo="internet_load_return", environment=constants.default_data_environment, field='close',
+                           data_engine=constants.default_data_engine):
         """Get implied vol for specified cross, tenor and part of surface. By default we use Bloomberg, but we could
         use any data provider for which we have vol tickers.
 
@@ -1001,7 +1019,8 @@ class FXVolFactory(object):
             tickers=tickers,
             fields=field,
             cache_algo=cache_algo,
-            environment=environment
+            environment=environment,
+            data_engine=data_engine
         )
 
         data_frame = market_data_generator.fetch_market_data(market_data_request)
@@ -1022,11 +1041,11 @@ class FXVolFactory(object):
             # Now get LDN and TOK vol data to fill any gaps
             vol_data_LDN = self.get_fx_implied_vol(start=start, end=end, cross=cross, tenor=tenor,
                                                                        data_source=data_source, cut='LDN', part=part,
-                                                                       cache_algo=cache_algo, field=field)
+                                                                       cache_algo=cache_algo, field=field, data_engine=data_engine)
 
             vol_data_TOK = self.get_fx_implied_vol(start=start, end=end, cross=cross, tenor=tenor,
                                                                        data_source=data_source, cut='TOK', part=part,
-                                                                       cache_algo=cache_algo, field=field)
+                                                                       cache_algo=cache_algo, field=field, data_engine=data_engine)
 
             # vol_data_LDN.index = pandas.DatetimeIndex(vol_data_LDN.index)
             # vol_data_TOK.index = pandas.DatetimeIndex(vol_data_TOK.index)
@@ -1148,7 +1167,8 @@ class RatesFactory(object):
         return
 
     def get_base_depos(self, start, end, currencies, tenor, cut="NYC", data_source="bloomberg",
-                       cache_algo="internet_load_return", field='close'):
+                       cache_algo="internet_load_return", field='close', environment=constants.default_data_environment,
+                       data_engine=constants.default_data_engine):
         """Gets the deposit rates for a particular tenor and part of surface
 
         Parameter
@@ -1209,7 +1229,8 @@ class RatesFactory(object):
             tickers=tickers,
             fields=field,
             cache_algo=cache_algo,
-            environment=constants.default_data_environment
+            environment=environment,
+            data_engine=data_engine
         )
 
         data_frame = market_data_generator.fetch_market_data(market_data_request)
@@ -1218,7 +1239,8 @@ class RatesFactory(object):
         return data_frame
 
     def get_fx_forward_points(self, start, end, cross, tenor, cut="BGN", data_source="bloomberg",
-                              cache_algo="internet_load_return", field='close'):
+                              cache_algo="internet_load_return", field='close', environment=constants.default_data_environment,
+                              data_engine=constants.default_data_engine):
         """Gets the forward points for a particular tenor and currency
 
         Parameter
@@ -1244,12 +1266,12 @@ class RatesFactory(object):
         Contains deposit rates
         """
 
-        # market_data_request = MarketDataRequest()
+        # md_request = MarketDataRequest()
         market_data_generator = self._market_data_generator
 
-        # market_data_request.data_source = data_source  # use bbg as a data_source
-        # market_data_request.start_date = start  # start_date
-        # market_data_request.finish_date = end  # finish_date
+        # md_request.data_source = data_source  # use bbg as a data_source
+        # md_request.start_date = start  # start_date
+        # md_request.finish_date = end  # finish_date
 
         if tenor is None:
             tenor = constants.fx_forwards_tenor
@@ -1275,7 +1297,8 @@ class RatesFactory(object):
             tickers=tickers,
             fields=field,
             cache_algo=cache_algo,
-            environment=constants.default_data_environment
+            environment=environment,
+            data_engine=data_engine
         )
 
         data_frame = market_data_generator.fetch_market_data(market_data_request)
