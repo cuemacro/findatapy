@@ -269,7 +269,7 @@ class IOEngine(object):
         logger = LoggerManager().getLogger(__name__)
 
         if md_request is not None:
-            fname = os.path.join(fname, md_request.create_category_key(ticker=ticker))
+            fname = self.path_join(fname, md_request.create_category_key(ticker=ticker))
 
         # default HDF5 format
         hdf5_format = 'fixed'
@@ -936,6 +936,16 @@ class IOEngine(object):
             return S3FileSystem(anon=False).exists(path_in_s3)
         else:
             return os.path.exists(path)
+
+    def path_join(self, folder, file):
+        if 's3://' in folder:
+            if folder[-1] == '/':
+                return folder + file
+            else:
+                return folder + '/' + file
+        else:
+            return os.path.join(folder, file)
+
 
 
 #######################################################################################################################
