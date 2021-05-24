@@ -22,6 +22,16 @@ Has various constants required for the findatapy project. These have been define
 import os
 import keyring
 
+
+def path_join(folder, file):
+    if 's3://' in folder:
+        if folder[-1] == '/':
+            return folder + file
+        else:
+            return folder + '/' + file
+    else:
+        return os.path.join(folder, file)
+
 def key_store(service_name):
     key = None
 
@@ -73,25 +83,25 @@ class DataConstants(object):
 
     ###### FOR ALIAS TICKERS
     # Config file for time series categories
-    config_root_folder = os.path.join(root_folder, "conf")
+    config_root_folder = path_join(root_folder, "conf")
 
     time_series_categories_fields = \
-        os.path.join(config_root_folder, "time_series_categories_fields.csv")
+        path_join(config_root_folder, "time_series_categories_fields.csv")
 
     # We can have multiple tickers files (separated by ";")
-    time_series_tickers_list = os.path.join(config_root_folder, "time_series_tickers_list.csv") +";" + \
-                               os.path.join(config_root_folder, "fx_vol_tickers.csv")+";" + \
-                               os.path.join(config_root_folder, "fx_forwards_tickers.csv")+";" + \
-                               os.path.join(config_root_folder, "base_depos_tickers_list.csv")+";"
+    time_series_tickers_list = path_join(config_root_folder, "time_series_tickers_list.csv") +";" + \
+                               path_join(config_root_folder, "fx_vol_tickers.csv")+";" + \
+                               path_join(config_root_folder, "fx_forwards_tickers.csv")+";" + \
+                               path_join(config_root_folder, "base_depos_tickers_list.csv")+";"
 
-    time_series_fields_list = os.path.join(config_root_folder, "time_series_fields_list.csv")
+    time_series_fields_list = path_join(config_root_folder, "time_series_fields_list.csv")
 
     # Config file for long term econ data
-    all_econ_tickers = os.path.join(config_root_folder, "all_econ_tickers.csv")
-    econ_country_codes = os.path.join(config_root_folder, "econ_country_codes.csv")
-    econ_country_groups = os.path.join(config_root_folder, "econ_country_groups.csv")
+    all_econ_tickers = path_join(config_root_folder, "all_econ_tickers.csv")
+    econ_country_codes = path_join(config_root_folder, "econ_country_codes.csv")
+    econ_country_groups = path_join(config_root_folder, "econ_country_groups.csv")
 
-    holidays_parquet_table = os.path.join(config_root_folder, "holidays_table.parquet")
+    holidays_parquet_table = path_join(config_root_folder, "holidays_table.parquet")
 
     # For events filtering
     events_category = 'events'
@@ -153,7 +163,7 @@ class DataConstants(object):
     always_str_fields = ['futures-chain-tickers']
 
     # Log config file
-    logging_conf = os.path.join(config_root_folder, "logging.conf")
+    logging_conf = path_join(config_root_folder, "logging.conf")
 
     ####### Bloomberg settings
     bbg_server = "localhost"       # needs changing if you use Bloomberg Server API
