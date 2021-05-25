@@ -15,6 +15,31 @@ __author__ = 'saeedamen'  # Saeed Amen
 # Note you'll need to "pip install s3fs" for this work which is not installed by default by findatapy
 # You'll also need to have setup your S3 bucket, and have all your AWS credentials set on your machine
 # This article explains how to give S3 rights to other/accounts-users https://stackoverflow.com/questions/45336781/amazon-s3-access-for-other-aws-accounts
+# See below for an example
+
+"""
+{
+    "Version": "2012-10-17",
+    "Id": "S3AccessPolicy",
+    "Statement": [
+        {
+            "Sid": "GiveFredAccess",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::123456789012:user/fred"
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::bucket-a",
+                "arn:aws:s3:::bucket-a/*"
+            ]
+        }
+    ]
+}
+"""
 
 # It is recommended NOT to give your S3 access public in general
 
