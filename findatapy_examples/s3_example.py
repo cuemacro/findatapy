@@ -68,7 +68,7 @@ df = market.fetch_market(md_request=md_request)
 
 print(df)
 
-folder = 's3://type_your_s3_bucket here'
+folder = 's3://type_your_s3_bucket_here'
 
 # Save to disk in a format friendly for reading later (ie. s3://bla_bla_bla/backtest.fx.tick.dukascopy.NYC.EURUSD.parquet)
 # Here it will automatically generate the filename from the folder we gave
