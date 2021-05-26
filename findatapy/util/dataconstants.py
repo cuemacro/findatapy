@@ -107,6 +107,9 @@ class DataConstants(object):
     events_category = 'events'
     events_category_dt = 'events_dt'
 
+    # Ignore these columns when doing smart grouping
+    drop_cols_smart_tickers_grouping = ['level_0']
+
     ###### FOR CURRENT VERSION
 
     # which marketdatagenerator type to use?

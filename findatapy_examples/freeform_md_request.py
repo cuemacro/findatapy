@@ -50,8 +50,21 @@ if __name__ == '__main__':
     # We can also create MarketDataRequest by passing a str that relates to predefined tickers
     md_request = market.create_md_request_from_str('backtest.fx.bloomberg.daily.NYC.EURUSD.close')
 
+    print(md_request)
+
+    # We can do an approximate match for predefined tickers, and findatapy will "guess" the closest match
+    md_request = market.create_md_request_from_str('_.bloomberg.EURUSD.NYC')
+
+    print(md_request)
+
+    # We get *all* the predefined tickers which match in any column with quandl and fx, and these be smart grouped
+    # into the smallest number of requests
+    md_request = market.create_md_request_from_str('_.quandl.fx', best_match_only=False, smart_group=True)
+
+    print(md_request)
+
     # We can also create MarketDataRequest by passing a str for an arbitrary Parquet, note, if we have dots in the path
-    # we need to use {} to denote them
+    # we need to use {} to denote them (we can use either 'raw' to denote this or just 'r')
     md_request = market.create_md_request_from_str('raw.data_source.{c:\parquet_files\dump.parquet}.tickers.EURUSD')
 
     print(md_request)
