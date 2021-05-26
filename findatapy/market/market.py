@@ -365,13 +365,15 @@ class Market(object):
 
         return data_frame
 
-    def create_md_request_from_dataframe(self, md_request_df, md_request=None, start_date=None, finish_date=None):
+    def create_md_request_from_dataframe(self, md_request_df, md_request=None, start_date=None, finish_date=None, smart_group=True):
 
         md_list = []
 
         # Aggregate/shrink dataframe grouping it by common attributes
         # tickers, vendor_tickers, fields, vendor_fields
-        md_request_df = ConfigManager().get_instance().smart_group_dataframe_tickers(md_request_df, ret_fields=md_request_df.columns.tolist())
+        if smart_group:
+            md_request_df = ConfigManager().get_instance().smart_group_dataframe_tickers(
+                md_request_df, ret_fields=md_request_df.columns.tolist())
 
         # Now populate MarketDataRequests based on the DataFrame
         for index, row in md_request_df.iterrows():
@@ -406,7 +408,7 @@ class Market(object):
 
         return md_request
 
-    def create_md_request_from_str(self, md_request_str, md_request=None, start_date=None, finish_date=None):
+    def create_md_request_from_str(self, md_request_str, md_request=None, start_date=None, finish_date=None, best_match_only=False, smart_group=True):
 
         json_md_request = None
 
@@ -427,7 +429,10 @@ class Market(object):
         except:
             pass
 
+        # If we failed to parse as a JSON, let's try as string
         if json_md_request is None:
+
+            # Create a list of input parameters for our MarketDataRequest
             split_lst = []
 
             word = ''
@@ -457,7 +462,8 @@ class Market(object):
             if environment in constants.possible_data_environment:
                 i = 0
 
-            elif environment == 'raw':
+            # Otherwise, what if the user wants to specify each property manually?
+            elif environment == 'raw' or environment == 'r':
                 # Here the user can specify any tickers/fields etc. they want, they don't have to be predefined
                 # eg. raw.data_source.bloomberg.tickers.EURUSD.vendor_tickers.EURUSD Curncy
                 if md_request is None:
@@ -480,10 +486,23 @@ class Market(object):
 
                 return self.create_md_request_from_freeform(md_request)
 
+            # Otherwise we do a partial match of predefined tickers
+            elif environment == "_":
+                # Try a heuristic/approximate match eg. _.quandl.fx
+                md_request_df = ConfigManager().get_instance().free_form_tickers_query(md_request_params[1:],
+                                                                                       best_match_only=best_match_only,
+                                                                                       smart_group=smart_group)
+
+                return self.create_md_request_from_dataframe(md_request_df,
+                                                             md_request=md_request, start_date=start_date,
+                                                             finish_date=finish_date)
+
             else:
                 i = -1
                 environment = None
 
+            # Otherwise the user has specified the MarketDataRequest str in the form
+            # category.data_source.freq.cut.tickers.field = fx.bloomberg.daily.NYC.EURUSD.close
             category = md_request_params[i + 1]
             data_source = md_request_params[i + 2]
 

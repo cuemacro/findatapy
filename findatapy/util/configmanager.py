@@ -17,9 +17,12 @@ import os
 import csv
 import pandas as pd
 
+
+from findatapy.timeseries import Calculations
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.singleton import Singleton
 from findatapy.util.loggermanager import LoggerManager
+
 from dateutil.parser import parse
 
 import re
@@ -170,7 +173,14 @@ class ConfigManager(object):
                             else:
                                 ConfigManager._dict_time_series_category_tickers_library_to_library[key] = [tickers]
 
-        ConfigManager._data_frame_time_series_tickers = pd.concat(df_tickers)
+        try:
+            df_tickers = pd.concat(df_tickers).sort_values(by=['category', 'data_source', 'freq', 'cut'])
+        except:
+            pass
+
+        df_tickers = df_tickers.reset_index().drop('level_0', axis=1).reset_index()
+
+        ConfigManager._data_frame_time_series_tickers = df_tickers
 
         ## Populate fields conversions
         reader = csv.DictReader(open(data_constants.time_series_fields_list))
@@ -249,10 +259,95 @@ class ConfigManager(object):
 
         return df
 
+    def free_form_tickers_query(self, free_form_query, best_match_only=False,
+                                ret_fields=['category', 'data_source', 'freq', 'cut', 'tickers', 'vendor_tickers', 'fields'],
+                                smart_group=True):
+        """From a string or list of properties for predefined tickers, we create a DataFrame that can be used to populate a
+        MarketDataRequest. We search through all the predefined tickers, and "guess" any matches to our query, without
+        having to use the standard query format which consists of category.data_source.freq.cut.ticker such as this example
+        fx.bloomberg.daily.NYC.EURUSD.close
+
+        eg. quandl.fx will match all tickers which are from "quandl" and have a "category" fx
+
+        We must be careful to make sure that categories, data_sources  etc. are unique and do not overlap with other properties
+        like tickers
+
+        Parameters
+        ----------
+        free_form_query : str
+            A query that can be used to generate a MarketDataRequest
+
+            eg. quandl.fx
+
+        best_match_only : bool
+            Only return at most 1 row of a DataFrame (default: False)
+
+        ret_fields : str(list)
+            Which properties of a MarketDataRequest to return
+
+        smart_group : bool
+            Smart group tickers of a particular category in a specific row
+
+        Returns
+        -------
+        DataFrame
+        """
+        logger = LoggerManager().getLogger(__name__)
+
+        if isinstance(free_form_query, str):
+            keywords = free_form_query.split('.')
+        else:
+            keywords = free_form_query
+
+        logger.info("Finding ticker combination which matches " + str(free_form_query))
+
+        df = ConfigManager._data_frame_time_series_tickers
+
+        df_joined = df
+
+        # Search through all the keywords, and see if matches with any columns of our predefined tickers
+        try:
+            for k in keywords:
+                for c in df.columns:
+                    try:
+                        df_temp = df_joined[df_joined[c] == k]
+                    except:
+                        df_temp = pd.DataFrame()
+
+                    if not(df_temp.empty):
+                        df_joined = df_temp
+                        break
+
+            df = df_joined
+        except Exception as e:
+            return None
+
+        if len(df.index) > 1:
+            logger.info("Found multiple matches for ticker combination, first trying smart group...")
+
+            if smart_group:
+                df = self.smart_group_dataframe_tickers(df, ret_fields=ret_fields)
+
+            if best_match_only:
+                logger.info("Taking only top match...")
+                df = pd.DataFrame(df.head(1))
+
+        return df
+
     @staticmethod
     def smart_group_dataframe_tickers(df, ret_fields=['category', 'data_source', 'freq', 'cut']):
-        """Groups together a dataframe of metadata associated with assets
+        """Groups together a DataFrame of metadata associated with assets, which can be used to create MarketDataRequest
+        objects
         """
+
+        if ret_fields is None:
+            ret_fields = df.columns.to_list()
+        elif isinstance(ret_fields, 'str'):
+            if ret_fields == 'all':
+                ret_fields = df.columns.to_list()
+        elif isinstance(ret_fields, list):
+            if ret_fields == []:
+                ret_fields =  df.columns.to_list()
 
         if set(['category', 'data_source', 'freq', 'cut']).issubset(ret_fields):
             group_fields = ret_fields.copy()
@@ -270,12 +365,22 @@ class ConfigManager(object):
                 group_fields.remove('vendor_tickers')
 
             if agg_dict != {}:
-                df = df.groupby(group_fields).agg(agg_dict)
 
-                for i, g in enumerate(group_fields):
-                    df[g] = df.index.get_level_values(i)
+                try:
+                    df = df.drop(data_constants.drop_cols_smart_tickers_grouping, axis=1)
+                except:
+                    pass
 
-                df = df.reset_index(drop=True)
+                df_temp = df.groupby(group_fields).agg(agg_dict)
+
+                # If grouping fails (when there aren't multiple elements to group!)
+                if df_temp.empty:
+                   pass
+                else:
+                    for i, g in enumerate(group_fields):
+                        df_temp[g] = df_temp.index.get_level_values(i)
+
+                    df = df_temp.reset_index(drop=True)
 
         return df
 

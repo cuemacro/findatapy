@@ -128,6 +128,8 @@ individual data providers)
 
 # Coding log
 
+* 26 May 2021
+  * Added more flexible ticker calls (with a '_' prefix)
 * 23 May 2021
   * Fixed various bugs with reading ECO_RELEASE_DT etc. dates from Bloomberg
   * Fixed bugs when predefined ticker is defined differently in different categories  
