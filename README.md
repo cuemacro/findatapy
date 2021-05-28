@@ -128,6 +128,8 @@ individual data providers)
 
 # Coding log
 
+* 29 May 2021
+  * Improved freeform queries for MarketDataRequest
 * 26 May 2021
   * Added more flexible ticker calls (with a '_' prefix)
 * 23 May 2021

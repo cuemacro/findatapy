@@ -80,3 +80,16 @@ md_request.data_engine = folder + '/*.parquet'
 df = market.fetch_market(md_request)
 
 print(df)
+
+# Or we could have just read it directly using
+df = IOEngine().read_time_series_cache_from_disk(folder, df, engine='parquet', md_request=md_request)
+
+# We can try this using daily data
+import os
+
+quandl_api_key = os.environ['QUANDL_API_KEY']
+
+df = market.fetch_market(md_request_str='fx.quandl.daily.NYC',
+                         md_request=MarketDataRequest(start_date='01 Jan 2021', quandl_api_key=quandl_api_key))
+
+print(df)

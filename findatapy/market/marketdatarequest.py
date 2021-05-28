@@ -202,6 +202,12 @@ class MarketDataRequest(object):
 
             self.tickers = tickers
 
+            if self.tickers is None:
+                self.tickers = vendor_tickers
+
+    def __str__(self):
+        return "MarketDataRequest summary - " + self.generate_key()
+
     def create_category_key(self, md_request=None, ticker=None):
         """Returns a category key for the associated MarketDataRequest, which can be used to create filenames (or
         as part of a storage key in a cache)
