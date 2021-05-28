@@ -59,7 +59,7 @@ if __name__ == '__main__':
     print(df.head(min(5, len(df.index))))
 
     # Let's search for all the category.data_source.freq.cut.tickers.fields combinations
-    # where the category matches the regular expression for which has 'fx' or 'equities' in it
+    # where the category matches the regular expression for which has 'fx' or 'equities' in it and smart group
     df = cm.free_form_tickers_regex_query(category='fx/*|equities/*', ret_fields=['category', 'data_source', 'freq', 'cut', 'tickers', 'fields'],
                                           smart_group=True)
 
@@ -68,6 +68,20 @@ if __name__ == '__main__':
     # We'll do the same query again, but this time, we'll convert it into a DataFrame which can use to create
     # a MarketDataRequest
     df_ungrouped = cm.free_form_tickers_regex_query(category='fx/*|equities/*', ret_fields=['category', 'data_source', 'freq', 'cut', 'tickers', 'fields'])
+
+    print(df_ungrouped)
+
+    # We can also do exact matches for multiple queries, where findatapy guesses the what parameters we were intending to find
+    # so they don't necessarily have to be in the order category.data_source.freq.cut.ticker etc. They can be in whatever
+    # order you want. Note that for this to work, we can not have values common across multiple fields, like tickers and category
+    #
+    # Here we are searching for the tickers/vendor_tickers combination which matches
+    # - fx.daily.quandl (ie. findatapy will guess category='fx', freq='daily' and data_source = 'quandl')
+    # - fx.daily.bloomberg (ie. findatapy
+    df_guess = cm.free_form_tickers_query(['fx.daily.quandl', 'fx.daily.bloomberg'],
+        ret_fields=['tickers', 'vendor_tickers'], list_query=True, smart_group=True)
+
+    print(df_guess)
 
     market = Market(market_data_generator=MarketDataGenerator())
 

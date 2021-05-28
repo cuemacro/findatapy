@@ -259,7 +259,7 @@ class ConfigManager(object):
 
         return df
 
-    def free_form_tickers_query(self, free_form_query, best_match_only=False,
+    def free_form_tickers_query(self, free_form_query, best_match_only=False, list_query=False,
                                 ret_fields=['category', 'data_source', 'freq', 'cut', 'tickers', 'vendor_tickers', 'fields'],
                                 smart_group=True):
         """From a string or list of properties for predefined tickers, we create a DataFrame that can be used to populate a
@@ -282,6 +282,9 @@ class ConfigManager(object):
         best_match_only : bool
             Only return at most 1 row of a DataFrame (default: False)
 
+        list_query : bool
+            Is this a list of tickers?
+
         ret_fields : str(list)
             Which properties of a MarketDataRequest to return
 
@@ -294,33 +297,41 @@ class ConfigManager(object):
         """
         logger = LoggerManager().getLogger(__name__)
 
-        if isinstance(free_form_query, str):
-            keywords = free_form_query.split('.')
-        else:
-            keywords = free_form_query
-
         logger.info("Finding ticker combination which matches " + str(free_form_query))
 
         df = ConfigManager._data_frame_time_series_tickers
 
-        df_joined = df
+        if list_query and isinstance(free_form_query, list):
+            free_form_query = free_form_query
+        else:
+            free_form_query = [free_form_query]
 
-        # Search through all the keywords, and see if matches with any columns of our predefined tickers
-        try:
-            for k in keywords:
-                for c in df.columns:
-                    try:
-                        df_temp = df_joined[df_joined[c] == k]
-                    except:
-                        df_temp = pd.DataFrame()
+        df_joined_list = []
 
-                    if not(df_temp.empty):
-                        df_joined = df_temp
-                        break
+        for key in free_form_query:
+            df_joined = df
 
-            df = df_joined
-        except Exception as e:
-            return None
+            key = ConfigManager.split_ticker_string(key)
+
+            # Search through all the keywords, and see if matches with any columns of our predefined tickers
+            try:
+                for k in key:
+                    for c in df.columns:
+                        try:
+                            df_temp = df_joined[df_joined[c] == k]
+                        except:
+                            df_temp = pd.DataFrame()
+
+                        if not(df_temp.empty):
+                            df_joined = df_temp
+                            break
+
+                df_joined_list.append(df_joined)
+            except Exception as e:
+                pass
+
+        # Drop any duplicated tickers
+        df = pd.concat(df_joined_list).drop_duplicates()
 
         if len(df.index) > 1:
             logger.info("Found multiple matches for ticker combination, first trying smart group...")
@@ -332,7 +343,39 @@ class ConfigManager(object):
                 logger.info("Taking only top match...")
                 df = pd.DataFrame(df.head(1))
 
+        if ret_fields is not None and not(df.empty):
+            df = df[ret_fields]
+
         return df
+
+    @staticmethod
+    def split_ticker_string(md_request_str):
+
+        if isinstance(md_request_str, str):
+            split_lst = []
+
+            word = ''
+            ignore_dot = False
+
+            for c in md_request_str:
+                if c == '{':
+                    ignore_dot = True
+
+                elif c == '}':
+                    ignore_dot = False
+
+                elif c == '.' and not (ignore_dot):
+                    split_lst.append(word)
+                    word = ''
+                    ignore_dot = False
+                else:
+                    word = word + c
+
+            split_lst.append(word)
+
+            return split_lst
+
+        return md_request_str
 
     @staticmethod
     def smart_group_dataframe_tickers(df, ret_fields=['category', 'data_source', 'freq', 'cut']):
@@ -342,7 +385,7 @@ class ConfigManager(object):
 
         if ret_fields is None:
             ret_fields = df.columns.to_list()
-        elif isinstance(ret_fields, 'str'):
+        elif isinstance(ret_fields, str):
             if ret_fields == 'all':
                 ret_fields = df.columns.to_list()
         elif isinstance(ret_fields, list):

@@ -432,29 +432,8 @@ class Market(object):
         # If we failed to parse as a JSON, let's try as string
         if json_md_request is None:
 
-            # Create a list of input parameters for our MarketDataRequest
-            split_lst = []
-
-            word = ''
-            ignore_dot = False
-
-            for c in md_request_str:
-                if c == '{':
-                    ignore_dot = True
-
-                elif c == '}':
-                    ignore_dot = False
-
-                elif c == '.' and not(ignore_dot):
-                    split_lst.append(word)
-                    word = ''
-                    ignore_dot = False
-                else:
-                    word = word + c
-
-            split_lst.append(word)
-
-            md_request_params = split_lst
+            # Split up ticker string
+            md_request_params = ConfigManager.split_ticker_string(md_request_str)
 
             environment = md_request_params[0]
 
