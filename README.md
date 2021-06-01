@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.22 - findatapy (01 Jun 2021)
 * 0.1.21 - findatapy (04 May 2021)
 * 0.1.20 - findatapy (11 Feb 2021)
 * 0.1.19 - findatapy (22 Jan 2021)
