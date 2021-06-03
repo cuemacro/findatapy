@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.23 - findatapy (03 Jun 2021)
 * 0.1.22 - findatapy (01 Jun 2021)
 * 0.1.21 - findatapy (04 May 2021)
 * 0.1.20 - findatapy (11 Feb 2021)
@@ -128,7 +129,8 @@ individual data providers)
 * 0.1.12 - findatapy (06 May 2020)
 
 # Coding log
-
+* 03 Jun 2021
+  * Fix bug in ConfigManager
 * 29 May 2021
   * Improved freeform queries for MarketDataRequest
 * 26 May 2021

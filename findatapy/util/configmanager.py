@@ -178,7 +178,15 @@ class ConfigManager(object):
         except:
             pass
 
-        df_tickers = df_tickers.reset_index().drop('level_0', axis=1).reset_index()
+        try:
+            df_tickers = df_tickers.reset_index()
+        except:
+            pass
+
+        try:
+            df_tickers = df_tickers.drop('level_0', axis=1).reset_index()
+        except:
+            pass
 
         ConfigManager._data_frame_time_series_tickers = df_tickers
 
