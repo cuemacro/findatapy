@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # run_example = 5 - download second FX data from Bloomberg
     # run_example = 6 - download free tick data from FXCM example (compare with DukasCopy)
 
-    run_example = 1
+    run_example = 4
 
     if run_example == 1 or run_example == 0:
 
