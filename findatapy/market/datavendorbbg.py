@@ -343,7 +343,7 @@ class DataVendorBBG(DataVendor):
         return
 
     @abc.abstractmethod
-    def download_daily(self, market_data_request):
+    def download_daily(self, market_data_request, market_data_request_vendor):
         return
 
     @abc.abstractmethod
@@ -462,6 +462,18 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
         # else:
         #    session = BBGLowLevelTemplate._session
 
+        def download_data_frame(session, eventQueue, options, cid):
+            if options.security is not None:
+                self.send_bar_request(session, eventQueue, options, cid)
+
+                logger.info("Waiting for data to be returned...")
+
+                return self.event_loop(session)
+            else:
+                logger.warn("No ticker or field specified!")
+
+                return None
+
         try:
             # if can't open the session, kill existing one
             # then try reopen (up to 5 times...)
@@ -482,7 +494,7 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
 
                 i = i + 1
 
-            # give error if still doesn't work after several tries..
+            # Give error if still doesn't work after several tries..
             if not session.openService("//blp/refdata"):
                 logger.error("Failed to open //blp/refdata")
 
@@ -493,21 +505,23 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
             eventQueue = blpapi.EventQueue()
             # eventQueue = None
 
-            # create a request
+            # Create a request
             from blpapi import CorrelationId
-            cid = CorrelationId()
+
             options = self.fill_options(market_data_request)
 
-            if options.security is not None:
-                self.send_bar_request(session, eventQueue, options, cid)
+            # In some instances we might split the options if need to have different overrides
+            if isinstance(options, list):
+                data_frame_list = []
 
-                logger.info("Waiting for data to be returned...")
+                for op in options:
+                    cid = CorrelationId()
+                    data_frame_list.append(download_data_frame(session, eventQueue, op, cid))
 
-                data_frame = self.event_loop(session)
+                data_frame = Calculations().join(data_frame_list)
             else:
-                logger.warn("No ticker or field specified!")
-
-                data_frame = None
+                cid = CorrelationId()
+                data_frame = download_data_frame(session, eventQueue, options, cid)
         finally:
             # stop the session (will fail if NoneType)
             try:
@@ -656,12 +670,27 @@ class BBGLowLevelTemplate(object):  # in order that the init function works in c
         override1.setElement("fieldId", field)
         override1.setElement("value", value)
 
+    def add_override_dict(self, request, options):
+        if options.overrides != {}:
+            for k in options.overrides.keys():
+                new_k = k
+
+                # Is there a pretty name for this?
+                if k in self.convert_override_fields:
+                    new_k = self.convert_override_fields[k]
+
+                self.add_override(request, new_k, options.overrides[k])
+
+    @abc.abstractmethod
+    def fill_options(self, market_data_request):
+        pass
+
     @abc.abstractmethod
     def process_message(self, msg):
         # To be implemented by subclass
         return
 
-    # create request for data
+    # Create request for data
     @abc.abstractmethod
     def send_bar_request(self, session, eventQueue, options, cid):
         # To be implemented by subclass
@@ -708,16 +737,78 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
     # Populate options for Bloomberg request for asset daily request
     def fill_options(self, market_data_request):
+        constants = DataConstants()
+
         options = OptionsBBG()
 
-        options.security = market_data_request.tickers
+        options.security = None # market_data_request.tickers
         options.startDateTime = market_data_request.start_date
         options.endDateTime = market_data_request.finish_date
         options.fields = market_data_request.fields
 
         options.overrides = market_data_request.overrides
 
-        return options
+        # options_copy = OptionsBBG(options_bbg=options)
+
+        options_list = []
+
+        last_overide_combo = {}
+
+        if market_data_request.old_tickers is not None:
+
+            ticker_list = []
+            curr_options = OptionsBBG(options_bbg=options)
+
+            for tick, old_tick in zip(market_data_request.tickers, market_data_request.old_tickers):
+                if old_tick is not None:
+
+                    t = old_tick.lower()
+
+                    ## Special case for GDP where the advance, final and preliminary releases (but can define more
+                    # in DataConstants)
+                    # have the same ticker but different overrides
+                    bbg_keyword_dict_override = constants.bbg_keyword_dict_override
+
+                    # eg. RELEASE_STAGE_OVERRIDE
+                    for bbg_override in bbg_keyword_dict_override.keys():
+
+                        keyword_dict = bbg_keyword_dict_override[bbg_override]
+
+                        for bbg_keyword in keyword_dict.keys():
+
+                            # eg. ['gdp', 'advance']
+                            keyword = keyword_dict[bbg_keyword]
+
+                            if all(k.lower() in t for k in keyword):
+
+                                if bbg_override in last_overide_combo:
+                                    if last_overide_combo[bbg_override] != bbg_keyword:
+                                        curr_options.security = ticker_list
+                                        options_list.append(curr_options)
+
+                                        ticker_list = []
+
+                                        curr_options = OptionsBBG(options_bbg=options)
+
+                                last_overide_combo[bbg_override] = bbg_keyword
+                                curr_options.overrides[bbg_override] = bbg_keyword
+
+                    ## Add other special cases
+                    ticker_list.append(tick)
+
+            if ticker_list != []:
+                curr_options.security = ticker_list
+
+            options_list.append(curr_options)
+        else:
+            options.security = market_data_request.tickers
+
+            return options
+
+        if len(options_list) == 1:
+            return options_list[0]
+
+        return options_list
 
     def process_message(self, msg):
 
@@ -778,7 +869,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
         data_frame = pd.DataFrame(data)
 
-        # if obsolete ticker could return no values
+        # If obsolete ticker could return no values
         if (not (data_frame.empty)):
             # data_frame.columns = pd.MultiIndex.from_tuples(data, names=['field', 'ticker'])
             data_frame.index = pd.to_datetime(data_frame.index)
@@ -805,6 +896,9 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
         for security in options.security:
             request.getElement("securities").appendValue(security)
 
+        # Add user defined overrides for BBG request
+        self.add_override_dict(request, options)
+
         logger.info("Sending Bloomberg Daily Request:" + str(request))
         session.sendRequest(request=request, correlationId=cid)
 
@@ -814,7 +908,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
     def __init__(self):
         super(BBGLowLevelRef, self).__init__()
 
-    # Populate options for Bloomberg request for asset intraday request
+    # Populate options for Bloomberg request for reference request
     def fill_options(self, market_data_request):
         options = OptionsBBG()
 
@@ -878,11 +972,11 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
                       fieldException.getElementAsString("fieldId"))
                 print("stop")
 
-        # explicitly state from_dict (buggy if create pd.DataFrame(data)
+        # Explicitly state from_dict (buggy if create pd.DataFrame(data)
         data_frame = pd.DataFrame.from_dict(data)
 
-        # if obsolete ticker could return no values
-        if (not (data_frame.empty)):
+        # Ff obsolete ticker could return no values
+        if not(data_frame.empty):
             # if not(single):
             #    pass
             # data_frame.columns = pd.MultiIndex.from_tuples(data, names=['field', 'ticker'])
@@ -900,7 +994,7 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
 
         return None
 
-    # create request for data
+    # Create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
         logger = LoggerManager().getLogger(__name__)
 
@@ -912,22 +1006,15 @@ class BBGLowLevelRef(BBGLowLevelTemplate):
         self.add_override(request, 'START_DT', options.startDateTime.strftime('%Y%m%d'))
         self.add_override(request, 'END_DT', options.endDateTime.strftime('%Y%m%d'))
 
-        # only one security/eventType per request
+        # Only one security/eventType per request
         for field in options.fields:
             request.getElement("fields").appendValue(field)
 
         for security in options.security:
             request.getElement("securities").appendValue(security)
 
-        if options.overrides != {}:
-            for k in options.overrides.keys():
-                new_k = k
-
-                # is there a pretty name for this?
-                if k in super().convert_override_fields:
-                    new_k = super().convert_override_fields[k]
-
-                self.add_override(request, new_k, options.overrides[k])
+        # Add user defined overrides for BBG request
+        self.add_override_dict(request, options)
 
         logger.info("Sending Bloomberg Ref Request:" + str(request))
         session.sendRequest(request=request, correlationId=cid)
@@ -956,7 +1043,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         # return data_frame.append(data_frame_slice)
         return data_frame_slice
 
-    # populate options for Bloomberg request for asset intraday request
+    # Populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
         options = OptionsBBG()
 
@@ -1044,7 +1131,7 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
         return pd.DataFrame(data=data_table, index=time_list,
                                 columns=['open', 'high', 'low', 'close', 'volume', 'events'])
 
-    # implement abstract method: create request for data
+    # Implement abstract method: create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
         logger = LoggerManager().getLogger(__name__)
         refDataService = session.getService("//blp/refdata")
@@ -1057,12 +1144,15 @@ class BBGLowLevelIntraday(BBGLowLevelTemplate):
 
         # self.add_override(request, 'TIME_ZONE_OVERRIDE', 'GMT')
 
-        if options.startDateTime and options.endDateTime:
+        if options.startDateTime is not None and options.endDateTime is not None:
             request.set("startDateTime", options.startDateTime)
             request.set("endDateTime", options.endDateTime)
 
         if options.gapFillInitialBar:
             request.append("gapFillInitialBar", True)
+
+        # Add user defined overrides for BBG request
+        self.add_override_dict(request, options)
 
         logger.info("Sending Intraday Bloomberg Request...")
 
@@ -1090,11 +1180,11 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
         # return data_frame.append(data_frame_slice)
         return data_frame_slice
 
-    # populate options for Bloomberg request for asset intraday request
+    # Populate options for Bloomberg request for asset intraday request
     def fill_options(self, market_data_request):
         options = OptionsBBG()
 
-        options.security = market_data_request.tickers[0]  # get 1st ticker only!
+        options.security = market_data_request.tickers[0]  # Get 1st ticker only!
         options.event = market_data_request.trade_side.upper()
         # self._options.barInterval = md_request.freq_mult
         options.startDateTime = market_data_request.start_date
@@ -1148,7 +1238,7 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
         return pd.DataFrame(data=data_table, index=time_list,
                                 columns=['close', 'ticksize'])
 
-    # implement abstract method: create request for data
+    # Implement abstract method: create request for data
     def send_bar_request(self, session, eventQueue, options, cid):
         logger = LoggerManager().getLogger(__name__)
 
@@ -1167,6 +1257,9 @@ class BBGLowLevelTick(BBGLowLevelTemplate):
             request.set("startDateTime", options.startDateTime)
             request.set("endDateTime", options.endDateTime)
 
+        # Add user defined overrides for BBG request
+        self.add_override_dict(request, options)
+
         logger.info("Sending Tick Bloomberg Request...")
 
         session.sendRequest(request=request, correlationId=cid)
@@ -1178,8 +1271,90 @@ from findatapy.util.loggermanager import LoggerManager
 from datetime import datetime
 
 
-class OptionsBBG:
+class OptionsBBG(object):
 
-    # TODO create properties that cannot be manipulated
-    def __init__(self):
-        pass
+    def __init__(self, options_bbg=None, security=None, event=None, barInterval=None, startDateTime=None, endDateTime=None,
+                 fields=None, overrides=None, gapFillInitialBar=False):
+
+        if options_bbg is not None:
+            security = copy.copy(options_bbg.security)
+            event = copy.copy(options_bbg.event)
+            barInterval = copy.copy(options_bbg.barInterval)
+            startDateTime = copy.copy(options_bbg.startDateTime)
+            endDateTime = copy.copy(options_bbg.endDateTime)
+            fields = copy.copy(options_bbg.fields)
+            overrides = copy.copy(options_bbg.overrides)
+            gapFillInitialBar = copy.copy(options_bbg.gapFillInitialBar)
+
+        self.security = security
+        self.event = event
+        self.barInterval = barInterval
+        self.startDateTime = startDateTime
+        self.endDateTime = endDateTime
+        self.fields = fields
+        self.overrides = overrides
+        self.gapFillInitialBar = gapFillInitialBar
+    
+    @property
+    def security(self):
+        return self.__security
+
+    @security.setter
+    def security(self, security):
+        self.__security = security
+        
+    @property
+    def event(self):
+        return self.__event
+
+    @event.setter
+    def event(self, event):
+        self.__event = event
+        
+    @property
+    def barInterval(self):
+        return self.__barInterval
+
+    @barInterval.setter
+    def barInterval(self, barInterval):
+        self.__barInterval = barInterval
+        
+    @property
+    def startDateTime(self):
+        return self.__startDateTime
+
+    @startDateTime.setter
+    def startDateTime(self, startDateTime):
+        self.__startDateTime = startDateTime
+        
+    @property
+    def endDateTime(self):
+        return self.__endDateTime
+
+    @endDateTime.setter
+    def endDateTime(self, endDateTime):
+        self.__endDateTime = endDateTime
+    
+    @property
+    def fields(self):
+        return self.__fields
+
+    @fields.setter
+    def fields(self, fields):
+        self.__fields = fields
+        
+    @property
+    def overrides(self):
+        return self.__overrides
+
+    @overrides.setter
+    def overrides(self, overrides):
+        self.__overrides = overrides
+        
+    @property
+    def gapFillInitialBar(self):
+        return self.__gapFillInitialBar
+
+    @gapFillInitialBar.setter
+    def gapFillInitialBar(self, gapFillInitialBar):
+        self.__gapFillInitialBar = gapFillInitialBar

@@ -183,6 +183,13 @@ class DataConstants(object):
                           'cal-non-settle-dates': 'CALENDAR_NON_SETTLEMENT_DATES'
     }
 
+    # Depending on the ticker field inclusion of specific keywords, apply a particular BBG override (make sure all lowercase)
+    bbg_keyword_dict_override = {
+        'RELEASE_STAGE_OVERRIDE' : {'A' : ['gdp', 'advance'],
+                                    'F' : ['gdp', 'final'],
+                                    'P' : ['gdp', 'preliminary']}
+    }
+
     #######  Dukascopy settings
     dukascopy_base_url = "https://www.dukascopy.com/datafeed/"
     dukascopy_write_temp_tick_disk = False

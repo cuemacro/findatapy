@@ -70,6 +70,8 @@ class DataVendor(object):
         market_data_request_vendor.tickers = symbols_vendor
         market_data_request_vendor.fields = fields_vendor
 
+        market_data_request_vendor.old_tickers = market_data_request.tickers
+
         return market_data_request_vendor
 
     def translate_to_vendor_field(self, market_data_request):

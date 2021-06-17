@@ -205,6 +205,8 @@ class MarketDataRequest(object):
             if self.tickers is None:
                 self.tickers = vendor_tickers
 
+            self.old_tickers = self.tickers
+
     def __str__(self):
         return "MarketDataRequest summary - " + self.generate_key()
 
@@ -310,7 +312,16 @@ class MarketDataRequest(object):
             self.__tickers = new_tickers
         else:
             self.__tickers = tickers
+    
+    
+    @property
+    def old_tickers(self):
+        return self.__old_tickers
 
+    @old_tickers.setter
+    def old_tickers(self, old_tickers):
+        self.__old_tickers = old_tickers
+        
     @property
     def fields(self):
         return self.__fields

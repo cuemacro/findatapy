@@ -64,7 +64,7 @@ class Filter(object):
 
         data_frame = self.filter_time_series_by_date(start_date, finish_date, data_frame)
 
-        # filter by ticker.field combinations requested
+        # Filter by ticker.field combinations requested
         columns = self.create_tickers_fields_list(market_data_request)
 
         if (pad_columns):

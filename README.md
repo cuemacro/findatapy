@@ -129,6 +129,8 @@ individual data providers)
 * 0.1.12 - findatapy (06 May 2020)
 
 # Coding log
+* 17 Jun 2021
+  * Can download different GDP releases from Bloomberg, without having to specify overrides
 * 03 Jun 2021
   * Fix bug in ConfigManager
 * 29 May 2021
