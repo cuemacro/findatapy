@@ -2,6 +2,8 @@
 
 # [findatapy](https://github.com/cuemacro/findatapy)
 
+[![Downloads](https://pepy.tech/badge/findatapy)](https://pepy.tech/project/findatapy)
+
 findatapy creates an easy to use Python API to download market data from many sources including Quandl, Bloomberg, Yahoo, Google etc. using
 a unified high level interface. Users can also define their own custom tickers, using configuration files. There is also functionality which
 is particularly useful for those downloading FX market data. Below example shows how to download AUDJPY data from Quandl (and automatically 
@@ -129,6 +131,9 @@ individual data providers)
 * 0.1.12 - findatapy (06 May 2020)
 
 # Coding log
+
+* 29 Jun 2021
+  * Added downloads badge
 * 17 Jun 2021
   * Can download different GDP releases from Bloomberg, without having to specify overrides
 * 03 Jun 2021
