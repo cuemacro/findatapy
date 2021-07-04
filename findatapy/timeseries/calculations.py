@@ -41,7 +41,6 @@ from pandas import compat
 import copy
 from datetime import timedelta
 
-
 class Calculations(object):
     """Calculations on time series, such as calculating strategy returns and various wrappers on pd for rolling sums etc.
 

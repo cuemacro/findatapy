@@ -881,10 +881,72 @@ class IOEngine(object):
     def get_engine(self, engine='hdf5_fixed'):
         pass
 
-    def read_parquet(self, path):
-        return pd.read_parquet(path)
+    def sanitize_path(self, path):
+        """Will remove unnecessary // from a file path (eg. in the middle)
 
-    def to_parquet(self, df, path, aws_region=constants.aws_region, parquet_compression=constants.parquet_compression):
+        Parameters
+        ----------
+        path : str
+            path to be sanitized
+
+        Returns
+        -------
+        str
+        """
+        if "s3://" in path:
+            path = path.replace("s3://", "")
+
+            path = path.replace("//", "/")
+
+            return "s3://" + path
+
+        return path
+
+    def read_parquet(self, path):
+        """Reads a Pandas DataFrame from a local or s3 path
+
+        Parameters
+        ----------
+        path : str
+
+        Returns
+        -------
+        DataFrame
+        """
+        return pd.read_parquet(self.sanitize_path(path))
+
+    def to_parquet(self, df, path, filename=None, aws_region=constants.aws_region, parquet_compression=constants.parquet_compression):
+        """Write a DataFrame to a local or s3 path as a Parquet file
+
+        Parameters
+        ----------
+        df : DataFrame
+            DataFrame to be written
+
+        path : str(list)
+            Paths where the DataFrame will be written
+
+        filename : str (optional)
+            Filename to be used (will be combined with the specified paths)
+
+        aws_region : str (optional)
+            AWS region for s3 dump
+
+        parquet_compression : str (optional)
+            Parquet compression type to use when writting
+        """
+        if isinstance(path, list):
+            pass
+        else:
+            path = [path]
+
+        if filename is not None:
+            new_path = []
+
+            for p in path:
+                new_path.append(self.path_join(p, filename))
+
+            path = new_path
 
         constants = DataConstants()
 
@@ -910,24 +972,43 @@ class IOEngine(object):
         except:
             pass
 
-        if 's3://' in path:
-            s3 = pyarrow.fs.S3FileSystem(region=aws_region)
-            table = pa.Table.from_pandas(df)
+        for p in path:
+            p = self.sanitize_path(p)
+
+            if 's3://' in p:
+                s3 = pyarrow.fs.S3FileSystem(region=aws_region)
+                table = pa.Table.from_pandas(df)
+
+                path_in_s3 = p.replace("s3://", "")
+
+                with s3.open_output_stream(path_in_s3) as f:
+                    pq.write_table(table, f, compression=parquet_compression, coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True,
+                                   )
+
+            else:
+                # Using pandas.to_parquet, doesn't let us pass in parameters to allow coersion of timestamps
+                # ie. ns -> us
+                table = pa.Table.from_pandas(df)
+
+                pq.write_table(table, p, compression=parquet_compression,
+                               coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True)
+                # df.to_parquet(path, compression=parquet_compression)
+
+    def to_csv(self, df, path):
+
+        if "s3://" in path:
+
+            path = self.sanitize_path(path)
+
+            s3 = S3FileSystem(anon=False)
 
             path_in_s3 = path.replace("s3://", "")
 
-            with s3.open_output_stream(path_in_s3) as f:
-                pq.write_table(table, f, compression=parquet_compression, coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True,
-                               )
-
+            # Use 'w' for py3, 'wb' for py2
+            with s3.open(path_in_s3, 'w') as f:
+                df.to_csv(f)
         else:
-            # Using pandas.to_parquet, doesn't let us pass in parameters to allow coersion of timestamps
-            # ie. ns -> us
-            table = pa.Table.from_pandas(df)
-
-            pq.write_table(table, path, compression=parquet_compression,
-                           coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True)
-            # df.to_parquet(path, compression=parquet_compression)
+            df.to_csv(path)
 
     def path_exists(self, path):
         if 's3://' in path:
@@ -939,14 +1020,15 @@ class IOEngine(object):
 
     def path_join(self, folder, file):
         if 's3://' in folder:
-            if folder[-1] == '/':
-                return folder + file
-            else:
-                return folder + '/' + file
+            folder = folder.replace("s3://", "")
+            folder = folder + file
+
+            folder = folder.replace("//", "/")
+
+            return "s3://" + folder
+
         else:
             return os.path.join(folder, file)
-
-
 
 #######################################################################################################################
 

@@ -68,8 +68,9 @@ class MarketDataGenerator(object):
         data_source = md_request.data_source
         data_engine = md_request.data_engine
 
-        # Special case for files
-        if '.csv' in data_source or '.h5' in data_source or '.parquet' in data_source or data_engine is not None:
+        # Special case for files (csv, h5, parquet or zip)
+        if '.csv' in str(data_source) or '.h5' in str(data_source) or '.parquet' in str(data_source) or '.zip' in str(data_source) \
+                or data_engine is not None:
             from findatapy.market.datavendorweb import DataVendorFlatFile
             data_vendor = DataVendorFlatFile()
         else:
@@ -180,7 +181,7 @@ class MarketDataGenerator(object):
 
         tickers = market_data_request.tickers
 
-        if tickers is None :
+        if tickers is None:
             create_tickers = True
         elif isinstance(tickers, str):
             if tickers == '': create_tickers = True
@@ -539,12 +540,13 @@ class MarketDataGenerator(object):
         # By default use other
         thread_no = constants.market_thread_no['other']
 
-        if market_data_request.data_source in constants.market_thread_no:
+        if str(market_data_request.data_source) in constants.market_thread_no:
             thread_no = constants.market_thread_no[market_data_request.data_source]
 
         # Daily data does not include ticker in the key, as multiple tickers in the same file
-        if thread_no == 1 or '.csv' in market_data_request.data_source or \
-            '.h5' in market_data_request.data_source or '.parquet' in market_data_request.data_source or market_data_request.data_engine is not None:
+        if thread_no == 1 or '.csv' in str(market_data_request.data_source) or \
+            '.h5' in str(market_data_request.data_source) or '.parquet' in str(market_data_request.data_source) \
+                or '.zip' in str(market_data_request.data_source) or market_data_request.data_engine is not None:
             # data_frame_agg = data_vendor.load_ticker(md_request)
             data_frame_agg = self.fetch_single_time_series(market_data_request)
         else:
