@@ -1021,14 +1021,22 @@ class IOEngine(object):
     def path_join(self, folder, file):
         if 's3://' in folder:
             folder = folder.replace("s3://", "")
-            folder = folder + file
+            folder = folder + "/" + file
 
             folder = folder.replace("//", "/")
 
-            return "s3://" + folder
+            folder = "s3://" + folder
 
         else:
-            return os.path.join(folder, file)
+            if file[0] == '/':
+                file = file[1::]
+
+            folder = os.path.join(folder, file)
+
+        folder = folder.replace("\\\\", "/")
+        folder = folder.replace("\\", "/")
+
+        return folder
 
 #######################################################################################################################
 
