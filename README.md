@@ -132,6 +132,10 @@ individual data providers)
 
 # Coding log
 
+* 04 Jul 2021
+  * Added extra support for reading/writing to S3 buckets of Parquet files
+* 02 Jul 2021
+  * Can download multiple CSVs in ZIP with time series data (DataVendorWeb) 
 * 29 Jun 2021
   * Added downloads badge
 * 17 Jun 2021

@@ -2418,83 +2418,115 @@ class DataVendorFlatFile(DataVendor):
         super(DataVendorFlatFile, self).__init__()
 
     # implement method in abstract superclass
-    def load_ticker(self, market_data_request):
+    def load_ticker(self, market_data_request, index_col=0):
         logger = LoggerManager().getLogger(__name__)
 
-        data_source = market_data_request.data_source
+        data_source_list = market_data_request.data_source
         data_engine = market_data_request.data_engine
 
-        if data_engine is not None:
+        if isinstance(data_source_list, list):
+            pass
+        else:
+            data_source_list = [data_source_list]
 
-            logger.info("Request " + market_data_request.data_source + " data via " + data_engine)
+        data_frame_list = []
 
-            # If a file path has been specified
-            if '*' in data_engine:
-                w = data_engine.split("*.")
+        for data_source in data_source_list:
 
-                folder = w[0]
-                file_format = w[-1]
+            if data_engine is not None:
 
-                # For intraday/tick files each ticker is stored in a separate file
-                if market_data_request.freq == 'intraday' or market_data_request.freq == 'tick':
-                    path = market_data_request.environment + "." \
-                                  + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
-                                  + "." + market_data_request.cut + "." + market_data_request.tickers[0] + "." + file_format
+                logger.info("Request " + market_data_request.data_source + " data via " + data_engine)
+
+                # If a file path has been specified
+                if '*' in data_engine:
+                    w = data_engine.split("*.")
+
+                    folder = w[0]
+                    file_format = w[-1]
+
+                    # For intraday/tick files each ticker is stored in a separate file
+                    if market_data_request.freq == 'intraday' or market_data_request.freq == 'tick':
+                        path = market_data_request.environment + "." \
+                                      + market_data_request.category + "." + data_source + "." + market_data_request.freq \
+                                      + "." + market_data_request.cut + "." + market_data_request.tickers[0] + "." + file_format
+                    else:
+                        path = market_data_request.environment + "." \
+                                      + market_data_request.category + "." + data_source + "." + market_data_request.freq \
+                                      + "." + market_data_request.cut + "." + file_format
+
+                    full_path = os.path.join(folder, path)
                 else:
-                    path = market_data_request.environment + "." \
-                                  + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
-                                  + "." + market_data_request.cut + "." + file_format
+                    # Otherwise a database like arctic has been specified
 
-                full_path = os.path.join(folder, path)
+                    # For intraday/tick files each ticker is stored in a separate file
+                    if market_data_request.freq == 'intraday' or market_data_request.freq == 'tick':
+                        full_path = market_data_request.environment + "." \
+                               + market_data_request.category + "." + data_source + "." + market_data_request.freq \
+                               + "." + market_data_request.cut + "." + market_data_request.tickers[0]
+                    else:
+                        full_path = market_data_request.environment + "." \
+                               + market_data_request.category + "." + data_source + "." + market_data_request.freq \
+                               + "." + market_data_request.cut
+
             else:
-                # Otherwise a database like arctic has been specified
+                logger.info("Request " + data_source + " data")
 
-                # For intraday/tick files each ticker is stored in a separate file
-                if market_data_request.freq == 'intraday' or market_data_request.freq == 'tick':
-                    full_path = market_data_request.environment + "." \
-                           + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
-                           + "." + market_data_request.cut + "." + market_data_request.tickers[0]
+                full_path = data_source
+
+            if ".zip" in data_source:
+                import zipfile
+
+                if "http" in full_path:
+                    from requests import get
+                    request = get(full_path)
+                    zf = zipfile.ZipFile(BytesIO(request.content))
                 else:
-                    full_path = market_data_request.environment + "." \
-                           + market_data_request.category + "." + market_data_request.data_source + "." + market_data_request.freq \
-                           + "." + market_data_request.cut
+                    zf = zipfile.ZipFile(full_path)
 
-        else:
-            logger.info("Request " + market_data_request.data_source + " data")
+                name_list = zipfile.ZipFile.namelist(zf)
 
-            full_path = data_source
+                df_list = []
 
-        if ".csv" in market_data_request.data_source:
-            data_frame = pandas.read_csv(full_path, index_col=0, parse_dates=True,
-                                         infer_datetime_format=True)
-        elif ".h5" in market_data_request.data_source:
-            data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine='hdf5')
-        elif ".parquet" in market_data_request.data_source or '.gzip' in market_data_request.data_source:
-            data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine='parquet')
-        else:
-            data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine=data_engine)
+                for name in name_list:
+                    df_list.append(pd.read_csv(zf.open(name), index_col=index_col, parse_dates=True,
+                                             infer_datetime_format=True))
 
-        if data_frame is None or data_frame.index is []: return None
+                data_frame = pd.concat(df_list)
+            elif ".csv" in data_source:
+                data_frame = pandas.read_csv(full_path, index_col=index_col, parse_dates=True,
+                                             infer_datetime_format=True)
+            elif ".h5" in data_source:
+                data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine='hdf5')
+            elif ".parquet" in data_source or '.gzip' in data_source:
+                data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine='parquet')
+            else:
+                data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine=data_engine)
 
-        if data_frame is not None:
-            tickers = data_frame.columns
+            if data_frame is None or data_frame.index is []: return None
 
-        if data_frame is not None:
-            # Tidy up tickers into a format that is more easily translatable
-            # we can often get multiple fields returned (even if we don't ask for them!)
-            # convert to lower case
-            ticker_combined = []
+            if data_frame is not None:
+                tickers = data_frame.columns
 
-            for i in range(0, len(tickers)):
-                if "." in tickers[i]:
-                    ticker_combined.append(tickers[i])
-                else:
-                    ticker_combined.append(tickers[i] + ".close")
+            if data_frame is not None:
+                # Tidy up tickers into a format that is more easily translatable
+                # we can often get multiple fields returned (even if we don't ask for them!)
+                # convert to lower case
+                ticker_combined = []
 
-            data_frame.columns = ticker_combined
-            data_frame.index.name = 'Date'
+                for i in range(0, len(tickers)):
+                    if "." in tickers[i]:
+                        ticker_combined.append(tickers[i])
+                    else:
+                        ticker_combined.append(tickers[i] + ".close")
 
-        logger.info("Completed request from " + market_data_request.data_source + " for " + str(ticker_combined))
+                data_frame.columns = ticker_combined
+                data_frame.index.name = 'Date'
+
+            logger.info("Completed request from " + str(data_source) + " for " + str(ticker_combined))
+
+            data_frame_list.append(data_frame)
+
+        data_frame = pd.concat(data_frame_list)
 
         return data_frame
 
