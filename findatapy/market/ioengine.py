@@ -12,12 +12,14 @@ __author__ = 'saeedamen'  # Saeed Amen
 # See the License for the specific language governing permissions and limitations under the License.
 #
 
-import pandas
+import numpy as np
 import codecs
 import glob
 import datetime
 from dateutil.parser import parse
 import shutil
+
+import math
 
 try:
     import bcolz
@@ -111,15 +113,15 @@ class IOEngine(object):
         """
 
         if (create_new):
-            writer = pandas.ExcelWriter(fname, engine='xlsxwriter')
+            writer = pd.ExcelWriter(fname, engine='xlsxwriter')
         else:
             if self.path_exists(fname):
                 book = load_workbook(fname)
-                writer = pandas.ExcelWriter(fname, engine='xlsxwriter')
+                writer = pd.ExcelWriter(fname, engine='xlsxwriter')
                 writer.book = book
                 writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
             else:
-                writer = pandas.ExcelWriter(fname, engine='xlsxwriter')
+                writer = pd.ExcelWriter(fname, engine='xlsxwriter')
 
         data_frame.to_excel(writer, sheet_name=sheet, engine='xlsxwriter')
 
@@ -242,7 +244,8 @@ class IOEngine(object):
                                         db_port=constants.db_port, username=constants.db_username, password=constants.db_password,
                                         filter_out_matching=None, timeout=10,
                                         use_cache_compression=constants.use_cache_compression,
-                                        parquet_compression=constants.parquet_compression, md_request=None, ticker=None):
+                                        parquet_compression=constants.parquet_compression, use_pyarrow_directly=False,
+                                        md_request=None, ticker=None, ):
         """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
 
         Parmeters
@@ -283,7 +286,7 @@ class IOEngine(object):
             data_frame.columns = self.find_replace_chars(data_frame.columns, _invalid_chars, _replace_chars)
             data_frame.columns = ['A_' + x for x in data_frame.columns]
 
-            data_frame['DTS_'] = pandas.to_datetime(data_frame.index, unit='ns')
+            data_frame['DTS_'] = pd.to_datetime(data_frame.index, unit='ns')
 
             bcolzpath = self.get_bcolz_filename(fname)
             shutil.rmtree(bcolzpath, ignore_errors=True)
@@ -302,7 +305,7 @@ class IOEngine(object):
                 # If Redis is alive, try pushing to it
                 if ping:
                     if data_frame is not None:
-                        if isinstance(data_frame, pandas.DataFrame):
+                        if isinstance(data_frame, pd.DataFrame):
                             mem = data_frame.memory_usage(deep='deep').sum()
                             mem_float = round(float(mem) / (1024.0 * 1024.0), 3)
 
@@ -404,7 +407,7 @@ class IOEngine(object):
             # append data only works for HDF5 stored as tables (but this is much slower than fixed format)
             # removes duplicated entries at the end
             if append_data:
-                store = pandas.HDFStore(h5_filename, format=hdf5_format, complib="zlib", complevel=9)
+                store = pd.HDFStore(h5_filename, format=hdf5_format, complib="zlib", complevel=9)
 
                 if ('intraday' in fname):
                     data_frame = data_frame.astype('float32')
@@ -436,7 +439,7 @@ class IOEngine(object):
                 except:
                     pass
 
-                store = pandas.HDFStore(h5_filename_temp, complib="zlib", complevel=9)
+                store = pd.HDFStore(h5_filename_temp, complib="zlib", complevel=9)
 
                 if ('intraday' in fname):
                     data_frame = data_frame.astype('float32')
@@ -460,7 +463,8 @@ class IOEngine(object):
                 if fname[-5:] != '.gzip':
                     fname = fname + '.parquet'
 
-            self.to_parquet(data_frame, fname, aws_region=constants.aws_region, parquet_compression=parquet_compression)
+            self.to_parquet(data_frame, fname, aws_region=constants.aws_region, parquet_compression=parquet_compression,
+                            use_pyarrow_directly=use_pyarrow_directly)
             # data_frame.to_parquet(fname, compression=parquet_compression)
 
             logger.info("Written Parquet: " + fname)
@@ -544,7 +548,7 @@ class IOEngine(object):
 
         cols = data_frame32.columns
 
-        store_export = pandas.HDFStore(fname_r)
+        store_export = pd.HDFStore(fname_r)
         store_export.put('df_for_r', data_frame32, data_columns=cols)
         store_export.close()
 
@@ -596,7 +600,7 @@ class IOEngine(object):
                     zlens = bcolz.open(rootdir=name)
                     data_frame = zlens.todataframe()
 
-                    data_frame.index = pandas.DatetimeIndex(data_frame['DTS_'])
+                    data_frame.index = pd.DatetimeIndex(data_frame['DTS_'])
                     data_frame.index.name = 'Date'
                     del data_frame['DTS_']
 
@@ -647,7 +651,7 @@ class IOEngine(object):
                 else:
                     logger.info('Load Redis cache: ' + fname_single)
 
-                    data_frame = msg # pandas.read_msgpack(msg)
+                    data_frame = msg # pd.read_msgpack(msg)
 
             elif (engine == 'arctic'):
                 socketTimeoutMS = 2 * 1000
@@ -690,7 +694,7 @@ class IOEngine(object):
                     data_frame = None
 
             elif self.path_exists(self.get_h5_filename(fname_single)):
-                store = pandas.HDFStore(self.get_h5_filename(fname_single))
+                store = pd.HDFStore(self.get_h5_filename(fname_single))
                 data_frame = store.select("data")
 
                 if ('intraday' in fname_single):
@@ -699,13 +703,13 @@ class IOEngine(object):
                 store.close()
 
             elif self.path_exists(fname_single) and '.csv' in fname_single:
-                data_frame = pandas.read_csv(fname_single, index_col=0)
+                data_frame = pd.read_csv(fname_single, index_col=0)
 
                 data_frame.index = pd.to_datetime(data_frame.index)
 
             elif self.path_exists(fname_single):
                 data_frame = self.read_parquet(fname_single)
-                # data_frame = pandas.read_parquet(fname_single)
+                # data_frame = pd.read_parquet(fname_single)
 
             data_frame_list.append(data_frame)
 
@@ -759,9 +763,9 @@ class IOEngine(object):
                 dateparse = lambda x: ciso8601.parse_datetime(x)
 
             if excel_sheet is None:
-                data_frame = pandas.read_csv(f_name, index_col=0, parse_dates=True, date_parser=dateparse)
+                data_frame = pd.read_csv(f_name, index_col=0, parse_dates=True, date_parser=dateparse)
             else:
-                data_frame = pandas.read_excel(f_name, excel_sheet, index_col=0, na_values=['NA'])
+                data_frame = pd.read_excel(f_name, excel_sheet, index_col=0, na_values=['NA'])
 
             data_frame = data_frame.astype('float32')
             data_frame.index.names = ['Date']
@@ -778,7 +782,7 @@ class IOEngine(object):
             # daily data
             if 'events' in f_name:
 
-                data_frame = pandas.read_csv(f_name)
+                data_frame = pd.read_csv(f_name)
 
                 # very slow conversion
                 data_frame = data_frame.convert_objects(convert_dates='coerce')
@@ -786,23 +790,23 @@ class IOEngine(object):
             else:
                 if excel_sheet is None:
                     try:
-                        data_frame = pandas.read_csv(f_name, index_col=0, parse_dates=["DATE"], date_parser=dateparse)
+                        data_frame = pd.read_csv(f_name, index_col=0, parse_dates=["DATE"], date_parser=dateparse)
                     except:
-                        data_frame = pandas.read_csv(f_name, index_col=0, parse_dates=["Date"], date_parser=dateparse)
+                        data_frame = pd.read_csv(f_name, index_col=0, parse_dates=["Date"], date_parser=dateparse)
                 else:
-                    data_frame = pandas.read_excel(f_name, excel_sheet, index_col=0, na_values=['NA'])
+                    data_frame = pd.read_excel(f_name, excel_sheet, index_col=0, na_values=['NA'])
 
         # convert Date to Python datetime
         # datetime data_frame['Date1'] = data_frame.index
 
-        # slower method: lambda x: pandas.datetime.strptime(x, '%d/%m/%Y %H:%M:%S')
+        # slower method: lambda x: pd.datetime.strptime(x, '%d/%m/%Y %H:%M:%S')
         # data_frame['Date1'].apply(lambda x: datetime.datetime(int(x[6:10]), int(x[3:5]), int(x[0:2]),
         #                                        int(x[12:13]), int(x[15:16]), int(x[18:19])))
 
         # data_frame.index = data_frame['Date1']
         # data_frame.drop('Date1')
 
-        # slower method: data_frame.index = pandas.to_datetime(data_frame.index)
+        # slower method: data_frame.index = pd.to_datetime(data_frame.index)
 
         if (freq == 'intraday'):
             # assume time series are already in UTC and assign this (can specify other time zones)
@@ -915,7 +919,8 @@ class IOEngine(object):
         """
         return pd.read_parquet(self.sanitize_path(path))
 
-    def to_parquet(self, df, path, filename=None, aws_region=constants.aws_region, parquet_compression=constants.parquet_compression):
+    def to_parquet(self, df, path, filename=None, aws_region=constants.aws_region,
+                   parquet_compression=constants.parquet_compression, use_pyarrow_directly=False):
         """Write a DataFrame to a local or s3 path as a Parquet file
 
         Parameters
@@ -935,6 +940,8 @@ class IOEngine(object):
         parquet_compression : str (optional)
             Parquet compression type to use when writting
         """
+        logger = LoggerManager.getLogger(__name__)
+
         if isinstance(path, list):
             pass
         else:
@@ -972,27 +979,157 @@ class IOEngine(object):
         except:
             pass
 
-        for p in path:
-            p = self.sanitize_path(p)
+        # Tends to be slower than using pandas/pyarrow directly, but for very large files, we might have to split
+        # before writing to disk
+        def pyarrow_dump(df, path):
+            # Trying to convert large Pandas DataFrames in one go to Arrow tables can result in out-of-memory
+            # messages, so chunk them first, convert them one by one, and write to disk in chunks
+            df_list = self.chunk_dataframes(df)
 
-            if 's3://' in p:
-                s3 = pyarrow.fs.S3FileSystem(region=aws_region)
-                table = pa.Table.from_pandas(df)
+            # Using pandas.to_parquet, doesn't let us pass in parameters to allow coersion of timestamps
+            # hence have to do it this way, using underlying pyarrow interface (/)
+            # ie. ns -> us
+            if not (isinstance(df_list, list)):
+                df_list = [df_list]
 
-                path_in_s3 = p.replace("s3://", "")
+            for p in path:
+                p = self.sanitize_path(p)
 
-                with s3.open_output_stream(path_in_s3) as f:
-                    pq.write_table(table, f, compression=parquet_compression, coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True,
-                                   )
+                # Reference:
+                # https://stackoverflow.com/questions/47113813/using-pyarrow-how-do-you-append-to-parquet-file
+                # https://arrow.apache.org/docs/python/filesystems.html
 
-            else:
-                # Using pandas.to_parquet, doesn't let us pass in parameters to allow coersion of timestamps
-                # ie. ns -> us
-                table = pa.Table.from_pandas(df)
+                pqwriter = None
+                counter = 1
 
-                pq.write_table(table, p, compression=parquet_compression,
-                               coerce_timestamps=constants.default_time_units, allow_truncated_timestamps=True)
-                # df.to_parquet(path, compression=parquet_compression)
+                if 's3://' in p:
+                    s3 = pyarrow.fs.S3FileSystem(region=aws_region)
+                    p_in_s3 = p.replace("s3://", "")
+
+                    for df_ in df_list:
+                        logger.info("S3 chunk... " + str(counter) + " of " + str(len(df_list)))
+                        table = pa.Table.from_pandas(df_)
+
+                        if pqwriter is None:
+                            pqwriter = pq.ParquetWriter(p_in_s3, table.schema, compression=parquet_compression,
+                                                        coerce_timestamps=constants.default_time_units,
+                                                        allow_truncated_timestamps=True, filesystem=s3)
+
+                        pqwriter.write_table(table)
+
+                        counter = counter + 1
+
+                else:
+                    for df_ in df_list:
+                        logger.info("Local chunk... " + str(counter) + " of " + str(len(df_list)))
+                        table = pa.Table.from_pandas(df_)
+
+                        if pqwriter is None:
+                            pqwriter = pq.ParquetWriter(p, table.schema, compression=parquet_compression,
+                                                        coerce_timestamps=constants.default_time_units,
+                                                        allow_truncated_timestamps=True)
+
+                        pqwriter.write_table(table)
+
+                        counter = counter + 1
+
+                # Close the parquet writer
+                if pqwriter:
+                    pqwriter.close()
+
+                    # df.to_parquet(path, compression=parquet_compression)
+
+        if use_pyarrow_directly:
+            pyarrow_dump(df, path)
+        else:
+            # First try to use Pandas/pyarrow, if fails, which can occur with large DataFrames use chunked write
+            try:
+                for p in path:
+                    p = self.sanitize_path(p)
+
+                    df.to_parquet(p, compression=parquet_compression,
+                                      coerce_timestamps=constants.default_time_units,
+                                      allow_truncated_timestamps=True)
+
+            except pyarrow.lib.ArrowMemoryError as e:
+                logger.warning("Couldn't dump using Pandas/pyarrow, will instead try chunking with pyarrow directly " + str(e))
+
+                pyarrow_dump(df, path)
+
+
+    def split_array_chunks(self, array, chunks=None, chunk_size=None):
+        """Splits an array or DataFrame into a list of equally sized chunks
+
+        Parameters
+        ----------
+        array : NumPy array/pd DataFrame
+            array to be split into chunks
+
+        chunks : int (optional)
+            number of chunks
+
+        chunk_size : int (optional)
+            size of each chunk (in rows)
+
+        Returns
+        -------
+        list of arrays or DataFrames
+        """
+
+        if chunk_size is None and chunks is None:
+            return array
+
+        if chunk_size is None:
+            chunk_size = int(array.shape[0] / chunks)
+
+        if chunks is None:
+            chunks = int(array.shape[0] / chunk_size)
+
+        # alternative split array method (untested)
+
+        # if isinstance(array, pd.DataFrame):
+        #     array = array.copy()
+        #     array_list = []
+        #
+        #     for start in range(0, array.shape[0], chunk_size):
+        #         array_list.append(array.iloc[start:start + chunk_size])
+        #
+        #     return array_list
+
+        if chunks > 0:
+            # if isinstance(array, pd.DataFrame):
+            #    array = [array[i:i + chunk_size] for i in range(0, array.shape[0], chunk_size)]
+
+            return np.array_split(array, chunks)
+
+        return array
+
+    def get_obj_size_mb(self, obj):
+        # Can sometime have very large dataframes, which need to be split, otherwise won't fit in a single Redis key
+        mem = obj.memory_usage(deep='deep').sum()
+        mem_float = round(float(mem) / (1024.0 * 1024.0), 3)
+
+        return mem_float
+
+    def chunk_dataframes(self, obj, chunk_size_mb=constants.chunk_size_mb):
+        logger = LoggerManager.getLogger(__name__)
+
+        # Can sometime have very large dataframes, which need to be split, otherwise won't fit in a single Redis key
+        mem_float = self.get_obj_size_mb(obj)
+        mem = '----------- ' + str(mem_float) + ' MB -----------'
+
+        chunks = int(math.ceil(mem_float / chunk_size_mb))
+
+        if chunks > 1:
+            obj_list = self.split_array_chunks(obj, chunks=chunks)
+        else:
+
+            obj_list = [obj]
+
+        if obj_list != []:
+            logger.info("Pandas dataframe of size: " + mem + " in " + str(chunks) + " chunk(s)")
+
+        return obj_list
 
     def to_csv(self, df, path):
 

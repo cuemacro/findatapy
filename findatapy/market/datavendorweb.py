@@ -36,6 +36,7 @@ from datetime import datetime
 from datetime import timedelta
 import time as time_library
 import re
+import concurrent.futures
 
 import requests
 
@@ -2418,7 +2419,7 @@ class DataVendorFlatFile(DataVendor):
         super(DataVendorFlatFile, self).__init__()
 
     # implement method in abstract superclass
-    def load_ticker(self, market_data_request, index_col=0):
+    def load_ticker(self, market_data_request, index_col=0, max_workers=1):
         logger = LoggerManager().getLogger(__name__)
 
         data_source_list = market_data_request.data_source
@@ -2431,8 +2432,7 @@ class DataVendorFlatFile(DataVendor):
 
         data_frame_list = []
 
-        for data_source in data_source_list:
-
+        def download_data_frame(data_source):
             if data_engine is not None:
 
                 logger.info("Request " + market_data_request.data_source + " data via " + data_engine)
@@ -2522,11 +2522,26 @@ class DataVendorFlatFile(DataVendor):
                 data_frame.columns = ticker_combined
                 data_frame.index.name = 'Date'
 
-            logger.info("Completed request from " + str(data_source) + " for " + str(ticker_combined))
+                logger.info("Completed request from " + str(data_source) + " for " + str(ticker_combined))
 
-            data_frame_list.append(data_frame)
+            return data_frame
 
-        data_frame = pd.concat(data_frame_list)
+        if max_workers == 1:
+            for data_source in data_source_list:
+                data_frame_list.append(download_data_frame(data_source))
+        else:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                data_frame_list = list(executor.map(download_data_frame, data_source_list))
+
+        if data_frame_list != []:
+
+            data_frame_list_filtered = []
+
+            for data_frame in data_frame_list:
+                if data_frame is not None:
+                    data_frame_list_filtered.append(data_frame)
+
+            data_frame = pd.concat(data_frame_list)
 
         return data_frame
 

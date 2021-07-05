@@ -165,6 +165,9 @@ class DataConstants(object):
     # These are string/object fields which do not need to be converted
     always_str_fields = ['futures-chain-tickers']
 
+    # Dataframe chunk size
+    chunk_size_mb = 500
+
     # Log config file
     logging_conf = path_join(config_root_folder, "logging.conf")
 

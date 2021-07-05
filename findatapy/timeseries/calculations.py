@@ -35,11 +35,16 @@ except:
         pass
 
 from findatapy.timeseries import Filter, Calendar, Timezone
+from findatapy.util.dataconstants import DataConstants
+from findatapy.util.loggermanager import LoggerManager
 
 from pandas import compat
+import numpy as np
 
 import copy
 from datetime import timedelta
+
+constants = DataConstants()
 
 class Calculations(object):
     """Calculations on time series, such as calculating strategy returns and various wrappers on pd for rolling sums etc.
@@ -1813,6 +1818,49 @@ class Calculations(object):
         df.columns = new_fields
 
         return df
+
+    def convert_to_numeric_dataframe(self, data_frame, numeric_columns=constants.always_numeric_column,
+                                     date_columns=constants.always_date_columns):
+
+        logger = LoggerManager().getLogger(__name__)
+
+        failed_conversion_cols = []
+
+        for c in data_frame.columns:
+            is_date = False
+
+            # If it's a date column don't append to convert to a float
+            for d in date_columns:
+                if d in c or 'release-dt' in c:
+                    is_date = True
+                    break
+
+            if is_date:
+                try:
+                    data_frame[c] = pd.to_datetime(data_frame[c], errors='coerce')
+                except:
+                    pass
+            else:
+                try:
+                    data_frame[c] = data_frame[c].astype('float32')
+                except:
+                    if '.' in c:
+                        if c.split('.')[1] in numeric_columns:
+                            data_frame[c] = data_frame[c].astype('float32', errors='coerce')
+                        else:
+                            failed_conversion_cols.append(c)
+                    else:
+                        failed_conversion_cols.append(c)
+
+                try:
+                    data_frame[c] = data_frame[c].fillna(value=np.nan)
+                except:
+                    pass
+
+        if failed_conversion_cols != []:
+            logger.warning('Could not convert to float for ' + str(failed_conversion_cols))
+
+        return data_frame
 
 if __name__ == '__main__':
     # test functions

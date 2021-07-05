@@ -132,6 +132,10 @@ individual data providers)
 
 # Coding log
 
+* 05 Jul 2021
+  * Now (optionally) writes Parquet files in chunks (user specified size) to avoid memory issues with pyarrow
+  * Default is to use pandas.to_parquet (with pyarrow), and to fall back on chunked writing if that fails
+  * Added multithreaded reading for DataVendorFlatFile
 * 04 Jul 2021
   * Added extra support for reading/writing to S3 buckets of Parquet files
 * 02 Jul 2021
