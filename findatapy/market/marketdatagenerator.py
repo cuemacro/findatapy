@@ -417,7 +417,7 @@ class MarketDataGenerator(object):
                 data_frame_single.index.name = 'Date'
 
                 # Will fail for DataFrames which includes dates/strings (eg. futures contract names)
-                data_frame_single = self.convert_to_numeric_dataframe(data_frame_single)
+                data_frame_single = Calculations().convert_to_numeric_dataframe(data_frame_single)
 
                 if market_data_request.freq == "second":
                     data_frame_single = data_frame_single.resample("1s")
@@ -472,48 +472,6 @@ class MarketDataGenerator(object):
                     logger.warning('Possible overlap of columns? Have you specifed same ticker several times: ' + str(e))
 
         return data_frame_agg
-
-    def convert_to_numeric_dataframe(self, data_frame):
-
-        logger = LoggerManager().getLogger(__name__)
-
-        failed_conversion_cols = []
-
-        for c in data_frame.columns:
-            is_date = False
-
-            # If it's a date column don't append to convert to a float
-            for d in constants.always_date_columns:
-                if d in c or 'release-dt' in c:
-                    is_date = True
-                    break
-
-            if is_date:
-                try:
-                    data_frame[c] = pd.to_datetime(data_frame[c], errors='coerce')
-                except:
-                    pass
-            else:
-                try:
-                    data_frame[c] = data_frame[c].astype('float32')
-                except:
-                    if '.' in c:
-                        if c.split('.')[1] in constants.always_numeric_column:
-                            data_frame[c] = data_frame[c].astype('float32', errors='coerce')
-                        else:
-                            failed_conversion_cols.append(c)
-                    else:
-                        failed_conversion_cols.append(c)
-
-                try:
-                    data_frame[c] = data_frame[c].fillna(value=np.nan)
-                except:
-                    pass
-
-        if failed_conversion_cols != []:
-            logger.warning('Could not convert to float for ' + str(failed_conversion_cols))
-
-        return data_frame
 
     def download_daily(self, market_data_request):
         """Loads daily time series from specified data provider
