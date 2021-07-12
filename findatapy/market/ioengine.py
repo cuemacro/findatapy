@@ -18,6 +18,7 @@ import glob
 import datetime
 from dateutil.parser import parse
 import shutil
+import copy
 
 import math
 
@@ -463,7 +464,7 @@ class IOEngine(object):
                 if fname[-5:] != '.gzip':
                     fname = fname + '.parquet'
 
-            self.to_parquet(data_frame, fname, aws_region=constants.aws_region, parquet_compression=parquet_compression,
+            self.to_parquet(data_frame, fname, cloud_credentials=constants.cloud_credentials, parquet_compression=parquet_compression,
                             use_pyarrow_directly=use_pyarrow_directly)
             # data_frame.to_parquet(fname, compression=parquet_compression)
 
@@ -899,27 +900,86 @@ class IOEngine(object):
         """
         if "s3://" in path:
             path = path.replace("s3://", "")
-
             path = path.replace("//", "/")
 
             return "s3://" + path
 
         return path
 
-    def read_parquet(self, path):
+    def read_parquet(self, path, cloud_credentials=constants.cloud_credentials):
         """Reads a Pandas DataFrame from a local or s3 path
 
         Parameters
         ----------
         path : str
+            Path of Parquet file (can be S3)
+
+        cloud_credentials : dict (optional)
+            Credentials for logging into the cloud
 
         Returns
         -------
         DataFrame
         """
-        return pd.read_parquet(self.sanitize_path(path))
 
-    def to_parquet(self, df, path, filename=None, aws_region=constants.aws_region,
+        if "s3://" in path:
+            storage_options = self._convert_cred(cloud_credentials, convert_to_s3fs=True)
+
+            return pd.read_parquet(self.sanitize_path(path), storage_options=storage_options)
+        else:
+            return pd.read_parquet(path)
+
+
+    def _create_cloud_filesystem(self, cloud_credentials, filesystem_type):
+
+        cloud_credentials = self._convert_cred(cloud_credentials)
+
+        if 's3_pyarrow' == filesystem_type:
+            return pyarrow.fs.S3FileSystem(anon=cloud_credentials['aws_anon'],
+                                           access_key=cloud_credentials['aws_access_key'],
+                                           secret_key=cloud_credentials['aws_secret_key'],
+                                           session_token=cloud_credentials['aws_session_token'])
+
+        elif 's3_filesystem' == filesystem_type:
+            return S3FileSystem(anon=cloud_credentials['aws_anon'],
+                                key=cloud_credentials['aws_access_key'],
+                                secret=cloud_credentials['aws_secret_key'],
+                                token=cloud_credentials['aws_session_token'])
+
+    def _convert_cred(self, cloud_credentials, convert_to_s3fs=False):
+        """Backfills the credential dictionary (usually for AWS login)
+        """
+
+        cloud_credentials = copy.copy(cloud_credentials)
+
+        boolean_keys = {'aws_anon' : False}
+
+        mappings = {'aws_anon' : 'anon',
+                    'aws_access_key': 'key',
+                    'aws_secret_key': 'secret',
+                    'aws_session_token': 'token'
+                    }
+
+        for m in mappings.keys():
+            if m not in cloud_credentials.keys():
+                if m in boolean_keys:
+                    cloud_credentials[m] = boolean_keys[m]
+                else:
+                    cloud_credentials[m] = None
+
+        # Converts the field names eg. aws_access_key => key etc.
+        if convert_to_s3fs:
+
+            cloud_credentials_temp = {}
+
+            for m in cloud_credentials.keys():
+                cloud_credentials_temp[mappings[m]] = cloud_credentials[m]
+
+            return cloud_credentials_temp
+
+        return cloud_credentials
+
+    def to_parquet(self, df, path, filename=None, cloud_credentials=constants.cloud_credentials,
                    parquet_compression=constants.parquet_compression, use_pyarrow_directly=False):
         """Write a DataFrame to a local or s3 path as a Parquet file
 
@@ -934,11 +994,11 @@ class IOEngine(object):
         filename : str (optional)
             Filename to be used (will be combined with the specified paths)
 
-        aws_region : str (optional)
-            AWS region for s3 dump
+        cloud_credentials : str (optional)
+            AWS credentials for S3 dump
 
         parquet_compression : str (optional)
-            Parquet compression type to use when writting
+            Parquet compression type to use when writing
         """
         logger = LoggerManager.getLogger(__name__)
 
@@ -979,6 +1039,9 @@ class IOEngine(object):
         except:
             pass
 
+
+        cloud_credentials = self._convert_cred(cloud_credentials)
+
         # Tends to be slower than using pandas/pyarrow directly, but for very large files, we might have to split
         # before writing to disk
         def pyarrow_dump(df, path):
@@ -1003,7 +1066,8 @@ class IOEngine(object):
                 counter = 1
 
                 if 's3://' in p:
-                    s3 = pyarrow.fs.S3FileSystem(region=aws_region)
+                    s3 = self._create_cloud_filesystem(cloud_credentials, 's3_pyarrow')
+
                     p_in_s3 = p.replace("s3://", "")
 
                     for df_ in df_list:
@@ -1131,15 +1195,25 @@ class IOEngine(object):
 
         return obj_list
 
-    def to_csv(self, df, path):
+    def read_csv(self, path, cloud_credentials=constants.cloud_credentials):
 
         if "s3://" in path:
+            s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
 
-            path = self.sanitize_path(path)
+            path_in_s3 = self.sanitize_path(path).replace("s3://", "")
 
-            s3 = S3FileSystem(anon=False)
+            # Use 'w' for py3, 'wb' for py2
+            with s3.open(path_in_s3, 'r') as f:
+                return pd.read_csv(f)
+        else:
+            return pd.read_csv(path)
 
-            path_in_s3 = path.replace("s3://", "")
+    def to_csv(self, df, path, cloud_credentials=constants.cloud_credentials):
+
+        if "s3://" in path:
+            s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
+
+            path_in_s3 = self.sanitize_path(path).replace("s3://", "")
 
             # Use 'w' for py3, 'wb' for py2
             with s3.open(path_in_s3, 'w') as f:
@@ -1151,7 +1225,7 @@ class IOEngine(object):
         if 's3://' in path:
             path_in_s3 = path.replace("s3://", "")
 
-            return S3FileSystem(anon=False).exists(path_in_s3)
+            return S3FileSystem().exists(path_in_s3)
         else:
             return os.path.exists(path)
 
@@ -1174,6 +1248,23 @@ class IOEngine(object):
         folder = folder.replace("\\", "/")
 
         return folder
+
+    def list_files(self, path, cloud_credentials=constants.cloud_credentials):
+        if "s3://" in path:
+            s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
+
+            path_in_s3 = self.sanitize_path(path).replace("s3://", "")
+
+            files = ['s3://' + x for x in s3.glob(path_in_s3)]
+
+        else:
+            files = glob.glob(path)
+
+        list.sort(files)
+
+        return files
+
+
 
 #######################################################################################################################
 

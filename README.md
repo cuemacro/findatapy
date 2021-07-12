@@ -132,6 +132,9 @@ individual data providers)
 
 # Coding log
 
+* 12 Jul 2021
+  * Can now read CSV conf files for tickers from S3 buckets and improved S3 support (can now specify AWS credentials, as parameter)
+  * Additional file functions (eg. list_files)
 * 05 Jul 2021
   * Now (optionally) writes Parquet files in chunks (user specified size) to avoid memory issues with pyarrow
   * Default is to use pandas.to_parquet (with pyarrow), and to fall back on chunked writing if that fails

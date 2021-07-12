@@ -112,10 +112,12 @@ class ConfigManager(object):
         for tickers_list_file in time_series_tickers_list_file:
 
             if os.path.isfile(tickers_list_file):
-                reader = csv.DictReader(open(tickers_list_file))
-                df_tickers.append(pd.read_csv(tickers_list_file))
+                # reader = csv.DictReader(open(tickers_list_file))
+                df = pd.read_csv(tickers_list_file)
+                df = df.dropna(how='all')
+                df_tickers.append(df)
 
-                for line in reader:
+                for index, line in df.iterrows():
                     category = line["category"]
                     data_source = line["data_source"]
                     freq_list = line["freq"].split(',')
@@ -191,9 +193,11 @@ class ConfigManager(object):
         ConfigManager._data_frame_time_series_tickers = df_tickers
 
         ## Populate fields conversions
-        reader = csv.DictReader(open(data_constants.time_series_fields_list))
+        # reader = csv.DictReader(open(data_constants.time_series_fields_list))
+        df = pd.read_csv(data_constants.time_series_fields_list)
+        df = df.dropna(how='all')
 
-        for line in reader:
+        for index, line in df.iterrows():
             data_source = line["data_source"]
             fields = line["fields"]
             vendor_fields = line["vendor_fields"]
@@ -205,9 +209,11 @@ class ConfigManager(object):
             ConfigManager._dict_time_series_fields_list_library_to_vendor[data_source + '.' + fields] = vendor_fields
 
         ## Populate categories fields list
-        reader = csv.DictReader(open(data_constants.time_series_categories_fields))
+        # reader = csv.DictReader(open(data_constants.time_series_categories_fields))
+        df = pd.read_csv(data_constants.time_series_categories_fields)
+        df = df.dropna(how='all')
 
-        for line in reader:
+        for index, line in df.iterrows():
             category = line["category"]
             data_source = line["data_source"]
             freq = line["freq"]

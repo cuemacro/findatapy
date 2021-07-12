@@ -25,12 +25,23 @@ import keyring
 
 def path_join(folder, file):
     if 's3://' in folder:
-        if folder[-1] == '/':
-            return folder + file
-        else:
-            return folder + '/' + file
+        folder = folder.replace("s3://", "")
+        folder = folder + "/" + file
+
+        folder = folder.replace("//", "/")
+
+        folder = "s3://" + folder
+
     else:
-        return os.path.join(folder, file)
+        if file[0] == '/':
+            file = file[1::]
+
+        folder = os.path.join(folder, file)
+
+    folder = folder.replace("\\\\", "/")
+    folder = folder.replace("\\", "/")
+
+    return folder
 
 def key_store(service_name):
     key = None
@@ -79,7 +90,16 @@ class DataConstants(object):
     use_cache_compression = True
 
     parquet_compression = 'gzip' # 'gzip' or 'snappy'
-    aws_region = None
+
+    # Note for AWS you can set these globally without having to specify here with AWS CLI
+    cloud_credentials = {'aws_anon' : False}
+
+    ## eg. {
+    # {
+    #    "aws_access_key": "asdfksesdf",
+    #    "aws_secret_key": "asfsdf",
+    #    "aws_access_token": "adsfsdf",
+    # },
 
     ###### FOR ALIAS TICKERS
     # Config file for time series categories
