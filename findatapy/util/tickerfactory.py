@@ -90,8 +90,14 @@ class TickerFactory(object):
 
         df_list = []
 
+        logger = LoggerManager.getLogger(__name__)
+
         for sh in sheets:
-            df_list.append(pd.read_excel(excel_file, sheet_name=sh, skiprows=skiprows))
+            logger.info("Reading from " + sh + " in " + excel_file)
+
+            df = pd.read_excel(excel_file, sheet_name=sh, skiprows=skiprows)
+            df = df.dropna(how='all')
+            df_list.append(df)
 
         df = pd.concat(df_list)
 
@@ -99,6 +105,15 @@ class TickerFactory(object):
             df = df[cols]
 
         df = df.reset_index()
-        df.to_csv(out_csv)
+
+        if isinstance(out_csv, list):
+            for out in out_csv:
+                logger.info("Writing to " + out)
+
+                df.to_csv(out)
+
+        else:
+            logger.info("Writing to " + out_csv)
+            df.to_csv(out_csv)
 
         return df

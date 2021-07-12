@@ -52,44 +52,61 @@ from findatapy.market import Market, MarketDataRequest
 from findatapy.util.dataconstants import DataConstants
 from findatapy.market.ioengine import IOEngine
 
-md_request = MarketDataRequest(
-    start_date='04 Jan 2021',
-    finish_date='05 Jan 2021',
-    category='fx',
-    data_source='dukascopy',
-    freq='tick',
-    tickers=['EURUSD'],
-    fields=['bid', 'ask', 'bidv', 'askv'],
-)
+# choose run_example = 0 for everything
+# run_example = 1 - download FX tick data from Dukascopy and dump in S3
+# run_example = 2 - list files in S3 according to a pattern
 
-market = Market()
-
-df = market.fetch_market(md_request=md_request)
-
-print(df)
+run_example = 2
 
 folder = 's3://type_your_s3_bucket_here'
 
-# Save to disk in a format friendly for reading later (ie. s3://bla_bla_bla/backtest.fx.tick.dukascopy.NYC.EURUSD.parquet)
-# Here it will automatically generate the filename from the folder we gave
-# and the MarketDataRequest we made (altenatively, we could have just given the filename directly)
-IOEngine().write_time_series_cache_to_disk(folder, df, engine='parquet', md_request=md_request)
+if run_example == 1 or run_example == 0:
+    md_request = MarketDataRequest(
+        start_date='04 Jan 2021',
+        finish_date='05 Jan 2021',
+        category='fx',
+        data_source='dukascopy',
+        freq='tick',
+        tickers=['EURUSD'],
+        fields=['bid', 'ask', 'bidv', 'askv'],
+    )
 
-md_request.data_engine = folder + '/*.parquet'
+    market = Market()
 
-df = market.fetch_market(md_request)
+    df = market.fetch_market(md_request=md_request)
 
-print(df)
+    print(df)
 
-# Or we could have just read it directly using
-df = IOEngine().read_time_series_cache_from_disk(folder, df, engine='parquet', md_request=md_request)
+    # Save to disk in a format friendly for reading later (ie. s3://bla_bla_bla/backtest.fx.tick.dukascopy.NYC.EURUSD.parquet)
+    # Here it will automatically generate the filename from the folder we gave
+    # and the MarketDataRequest we made (altenatively, we could have just given the filename directly)
+    IOEngine().write_time_series_cache_to_disk(folder, df, engine='parquet', md_request=md_request)
 
-# We can try this using daily data
-import os
+    md_request.data_engine = folder + '/*.parquet'
 
-quandl_api_key = os.environ['QUANDL_API_KEY']
+    df = market.fetch_market(md_request)
 
-df = market.fetch_market(md_request_str='fx.quandl.daily.NYC',
-                         md_request=MarketDataRequest(start_date='01 Jan 2021', quandl_api_key=quandl_api_key))
+    print(df)
 
-print(df)
+    # Or we could have just read it directly using
+    df = IOEngine().read_time_series_cache_from_disk(folder, df, engine='parquet', md_request=md_request)
+
+    # We can try this using daily data
+    import os
+
+    quandl_api_key = os.environ['QUANDL_API_KEY']
+
+    df = market.fetch_market(md_request_str='fx.quandl.daily.NYC',
+                             md_request=MarketDataRequest(start_date='01 Jan 2021', quandl_api_key=quandl_api_key))
+
+    print(df)
+
+if run_example == 2 or run_example == 0:
+
+    io_engine = IOEngine()
+
+    pattern = folder + "/*.parquet"
+
+    matched_files = io_engine.list_files(pattern)
+
+    print(matched_files)
