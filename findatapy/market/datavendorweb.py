@@ -167,8 +167,7 @@ try:
     asyncio.set_event_loop(asyncio.SelectorEventLoop())
     import eikon as ek
 except:
-    logger = LoggerManager().getLogger(__name__)
-    logger.info("Did not load Eikon library")
+    pass
 
 
 # ek.set_port_number(9400)
@@ -213,7 +212,7 @@ class DataVendorEikon(DataVendor):
                 fields = self.translate_from_vendor_field(returned_fields, market_data_request)
                 tickers = self.translate_from_vendor_ticker(returned_tickers, market_data_request)
             except Exception:
-                print('error')
+                logger.warning("Problems when converting from vendor ticker/field")
 
             ticker_combined = []
 

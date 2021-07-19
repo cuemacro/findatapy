@@ -132,6 +132,8 @@ individual data providers)
 
 # Coding log
 
+* 19 Jul 2021
+  * Added delete file method in `IOEngine` for S3
 * 12 Jul 2021
   * Can now read CSV conf files for tickers from S3 buckets and improved S3 support (can now specify AWS credentials, as parameter)
   * Additional file functions (eg. list_files)
