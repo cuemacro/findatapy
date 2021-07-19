@@ -1195,7 +1195,7 @@ class IOEngine(object):
 
         return obj_list
 
-    def read_csv(self, path, cloud_credentials=constants.cloud_credentials):
+    def read_csv(self, path, cloud_credentials=constants.cloud_credentials, encoding='utf-8', encoding_errors=None, errors='ignore'):
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
@@ -1203,10 +1203,16 @@ class IOEngine(object):
             path_in_s3 = self.sanitize_path(path).replace("s3://", "")
 
             # Use 'w' for py3, 'wb' for py2
-            with s3.open(path_in_s3, 'r') as f:
-                return pd.read_csv(f)
+            with s3.open(path_in_s3, 'r', errors=errors) as f:
+                if encoding_errors is not None:
+                    return pd.read_csv(f, encoding=encoding, encoding_errors=encoding_errors)
+                else:
+                    return pd.read_csv(f, encoding=encoding)
         else:
-            return pd.read_csv(path)
+            if encoding_errors is not None:
+                return pd.read_csv(path, encoding=encoding, encoding_errors=encoding_errors)
+            else:
+                return pd.read_csv(path, encoding=encoding)
 
     def to_csv(self, df, path, cloud_credentials=constants.cloud_credentials):
 
@@ -1221,11 +1227,13 @@ class IOEngine(object):
         else:
             df.to_csv(path)
 
-    def path_exists(self, path):
-        if 's3://' in path:
+    def path_exists(self, path, cloud_credentials=constants.cloud_credentials):
+        if "s3://" in path:
+            s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
+
             path_in_s3 = path.replace("s3://", "")
 
-            return S3FileSystem().exists(path_in_s3)
+            return s3.exists(path_in_s3)
         else:
             return os.path.exists(path)
 
@@ -1263,6 +1271,20 @@ class IOEngine(object):
         list.sort(files)
 
         return files
+
+    def delete(self, path, cloud_credentials=constants.cloud_credentials):
+
+        if "s3://" in path:
+            s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
+
+            path_in_s3 = self.sanitize_path(path).replace("s3://", "")
+
+            if self.path_exists(path, cloud_credentials=cloud_credentials):
+                s3.delete(path_in_s3)
+        else:
+            if self.path_exists(path, cloud_credentials=cloud_credentials):
+                os.remove(path)
+
 
 
 

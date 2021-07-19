@@ -27,7 +27,10 @@ class TickerFactory(object):
     def create_tickers_from_combinations(self, csv_file, out_csv_file):
         # reader = csv.DictReader(open(csv_file))
 
-        data_frame = pandas.read_csv(csv_file, dtype=object)
+        if isinstance(csv_file, pd.DataFrame):
+            data_frame = csv_file
+        else:
+            data_frame = pandas.read_csv(csv_file, dtype=object)
 
         rows = 100000
         # category	data_source	freq	ticker	cut	fields	vendor_tickers
@@ -75,7 +78,11 @@ class TickerFactory(object):
 
         data_frame_out = data_frame_out[0:i]
 
-        data_frame_out.to_csv(out_csv_file)
+        if out_csv_file is not None:
+            data_frame_out.to_csv(out_csv_file)
+
+        return data_frame_out
+
 
         # for line in reader:
         #     category = line["category"]
@@ -97,6 +104,10 @@ class TickerFactory(object):
 
             df = pd.read_excel(excel_file, sheet_name=sh, skiprows=skiprows)
             df = df.dropna(how='all')
+
+            if 'maker' in sh:
+                df = self.create_tickers_from_combinations(df, None)
+
             df_list.append(df)
 
         df = pd.concat(df_list)
