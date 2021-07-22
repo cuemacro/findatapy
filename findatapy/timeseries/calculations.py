@@ -451,8 +451,10 @@ class Calculations(object):
         ----------
         signal_data_frame : DataFrame
             trading signals
+
         returns_data_frame: DataFrame
             returns of asset to be traded
+
         period_shift : int
             number of periods to shift signal
 
@@ -471,10 +473,13 @@ class Calculations(object):
         ----------
         signal_data_frame : DataFrame
             trading signals
+
         returns_data_frame: DataFrame
             returns of asset to be traded
+
         tc : float
             transaction costs
+
         period_shift : int
             number of periods to shift signal
 
@@ -490,7 +495,7 @@ class Calculations(object):
 
     def calculate_signal_returns_with_tc_from_prices(self, signal_data_frame, prices_data_frame, tc, period_shift=1):
         """Calculates the trading startegy returns for given signal and asset prices including
-        transaction costs
+        transaction costs (and roll costs)
 
         Parameters
         ----------
@@ -514,17 +519,23 @@ class Calculations(object):
 
         return signal_data_frame.shift(period_shift) * self.calculate_returns(prices_data_frame) - tc_costs
 
-    def calculate_signal_returns_with_tc_matrix(self, signal_data_frame, returns_data_frame, tc, period_shift=1):
+    def calculate_signal_returns_with_tc_matrix(self, signal_data_frame, returns_data_frame, tc, rc=None, period_shift=1):
         """Calculates the trading startegy returns for given signal and asset with transaction costs with matrix multiplication
 
         Parameters
         ----------
         signal_data_frame : DataFrame
             trading signals
+
         returns_data_frame: DataFrame
             returns of asset to be traded
+
         tc : float
             transaction costs
+
+        rc : float
+            roll costs
+
         period_shift : int
             number of periods to shift signal
 
@@ -552,32 +563,76 @@ class Calculations(object):
         elif isinstance(tc, pd.DataFrame):
             tc_ind = []
 
-            # get indices related to the returns
+            # Get indices related to the returns
             for k in returns_data_frame.columns:
                 try:
                     tc_ind.append(k.split('.')[0] + ".spread")
                 except:
                     tc_ind.append('default.spread')
 
-            # don't include transaction costs at a portfolio level (TODO - weight it according to the assets)
+            # Don't include transaction costs at a portfolio level (TODO - weight it according to the assets)
             tc['Portfolio.spread'] = 0
 
-            # get associated transaction costs time series
+            # Get associated transaction costs time series
             tc_costs = tc[tc_ind]
 
-            # make sure transaction costs are aligned to the signals
+            # Make sure transaction costs are aligned to the signals
             signal_data_frame, tc_costs = signal_data_frame.align(tc_costs, join='left', axis='index')
 
             tc_costs = tc_costs.fillna(method='ffill')
 
-            # calculate the transaction costs by multiplying by trades
+            # Calculate the transaction costs by multiplying by trades
             tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc_costs.values)
 
         else:
             tc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values - signal_data_frame.values) * tc)
 
+        # Now handle roll costs
+        if rc is not None:
+            if isinstance(rc, dict):
+
+                rc_ind = []
+
+                for k in returns_data_frame.columns:
+                    try:
+                        rc_ind.append(rc[k.split('.')[0]])
+                    except:
+                        rc_ind.append(rc['default'])
+
+                rc_ind = numpy.array(rc_ind)
+
+                rc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values) * rc_ind)
+            elif isinstance(rc, pd.DataFrame):
+                rc_ind = []
+
+                # Get indices related to the returns
+                for k in returns_data_frame.columns:
+                    try:
+                        rc_ind.append(k.split('.')[0] + ".rc")
+                    except:
+                        rc_ind.append('default.rc')
+
+                # Don't include roll costs at a portfolio level (TODO - weight it according to the assets)
+                rc['Portfolio.rc'] = 0
+
+                # Get associated roll costs time series
+                rc_costs = rc[rc_ind]
+
+                # Make sure transaction costs are aligned to the signals
+                signal_data_frame, rc_costs = signal_data_frame.align(rc_costs, join='left', axis='index')
+
+                rc_costs = rc_costs.fillna(0)
+
+                # Calculate the roll costs by multiplying by our position (eg. if position is zero, then no roll cost)
+                rc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values) * rc_costs.values)
+
+            else:
+                rc_costs = (numpy.abs(signal_data_frame.shift(period_shift).values) * rc)
+        else:
+            rc_costs = 0
+
         return pd.DataFrame(
-            signal_data_frame.shift(period_shift).values * returns_data_frame.values - tc_costs,
+            signal_data_frame.shift(period_shift).values * returns_data_frame.values - tc_costs - rc_costs,
             index=returns_data_frame.index)
 
     def calculate_returns(self, data_frame, period_shift=1):

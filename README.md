@@ -132,6 +132,9 @@ individual data providers)
 
 # Coding log
 
+* 22 Jul 2021
+  * Fixed S3 credentials management and added S3 file copy method
+  * Added roll costs
 * 19 Jul 2021
   * Added delete file method in `IOEngine` for S3
 * 12 Jul 2021
