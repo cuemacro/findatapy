@@ -96,6 +96,7 @@ class DataConstants(object):
 
     ## eg. {
     # {
+    #    "aws_anon" : False,
     #    "aws_access_key": "asdfksesdf",
     #    "aws_secret_key": "asfsdf",
     #    "aws_access_token": "adsfsdf",
