@@ -132,6 +132,8 @@ individual data providers)
 
 # Coding log
 
+* 28 Jul 2021
+  * Improved freeform ticker queries and fixed bug with downloading whole categories
 * 22 Jul 2021
   * Fixed S3 credentials management and added S3 file copy method
   * Added roll costs

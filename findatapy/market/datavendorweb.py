@@ -2434,7 +2434,7 @@ class DataVendorFlatFile(DataVendor):
         def download_data_frame(data_source):
             if data_engine is not None:
 
-                logger.info("Request " + market_data_request.data_source + " data via " + data_engine)
+                logger.info("Request " + str(market_data_request.data_source) + " data via " + str(data_engine))
 
                 # If a file path has been specified
                 if '*' in data_engine:
