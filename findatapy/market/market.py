@@ -51,7 +51,8 @@ class Market(object):
         self._calculations = Calculations()
         self.md_request = md_request
 
-    def fetch_market(self, md_request=None, md_request_df=None, md_request_str=None, start_date=None, finish_date=None):
+    def fetch_market(self, md_request=None, md_request_df=None, md_request_str=None, tickers=None,
+                     start_date=None, finish_date=None, best_match_only=False, **kwargs):
         """Fetches market data for specific tickers
 
         The user does not need to know to the low level API for each data provider works. The MarketDataRequest
@@ -91,23 +92,34 @@ class Market(object):
         if self.md_request is not None:
             md_request = self.md_request
 
+        # Any kwargs are assumed to be to set MarketDataRequest attributes
+        if kwargs != {}:
+            md_request = self._kwargs_to_md_request(kwargs, md_request)
+
         # When we have specified a string
         if md_request_str is not None:
             md_request = self.create_md_request_from_str(md_request_str, md_request=md_request,
-                                                         start_date=start_date, finish_date=finish_date)
+                                                         start_date=start_date, finish_date=finish_date, best_match_only=best_match_only, **kwargs)
+
+            return self.fetch_market(md_request)
+
+        # When we have specified predefined tickers
+        if tickers is not None:
+            md_request = self.create_md_request_from_tickers(tickers, md_request=md_request,
+                                                         start_date=start_date, finish_date=finish_date, best_match_only=best_match_only, **kwargs)
 
             return self.fetch_market(md_request)
 
         # When we have specified a DataFrame with tickers
         if md_request_df is not None:
             md_request = self.create_md_request_from_dataframe(md_request_df, md_request=md_request,
-                                                               start_date=start_date, finish_date=finish_date)
+                                                               start_date=start_date, finish_date=finish_date, best_match_only=best_match_only, **kwargs)
 
             return self.fetch_market(md_request)
 
         # Or directly as a string
         if isinstance(md_request, str):
-            md_request = self.create_md_request_from_str(md_request, start_date=start_date, finish_date=finish_date)
+            md_request = self.create_md_request_from_str(md_request, start_date=start_date, finish_date=finish_date, best_match_only=best_match_only, **kwargs)
 
             return self.fetch_market(md_request)
 
@@ -119,7 +131,7 @@ class Market(object):
 
         # Or directly as a DataFrame
         if isinstance(md_request, pd.DataFrame):
-            md_request = self.create_md_request_from_dataframe(md_request, start_date=start_date, finish_date=finish_date)
+            md_request = self.create_md_request_from_dataframe(md_request, start_date=start_date, finish_date=finish_date, **kwargs)
 
             return self.fetch_market(md_request)
 
@@ -352,6 +364,9 @@ class Market(object):
             # the idea is that we do all the market data downloading here, rather than elsewhere
 
         # By default: pass the market data request to MarketDataGenerator
+        if data_frame is not None:
+            data_frame = None
+
         if data_frame is None:
             data_frame = self._market_data_generator.fetch_market_data(md_request)
 
@@ -365,7 +380,8 @@ class Market(object):
 
         return data_frame
 
-    def create_md_request_from_dataframe(self, md_request_df, md_request=None, start_date=None, finish_date=None, smart_group=True):
+    def create_md_request_from_dataframe(self, md_request_df, md_request=None, start_date=None, finish_date=None, smart_group=True,
+                                          keep_initial_md_request_att_cols=['tickers', 'fields', 'freq'], **kwargs):
 
         md_list = []
 
@@ -383,19 +399,33 @@ class Market(object):
                 md_request_copy = MarketDataRequest(md_request=md_request)
 
             for col, val in row.items():
+
                 try:
-                    getattr(type(md_request_copy), col).fset(md_request_copy, val)
+                    if ',' in val:
+                        val = val.split(',')
                 except:
                     pass
 
+                # Only override the initial setting in md_request if they are None, or the user has specified this
+                if getattr(md_request_copy, col) is None or col not in keep_initial_md_request_att_cols:
+                    try:
+                        if isinstance(val, list):
+                            val = self.flatten_list_of_lists(val)
+
+                        getattr(type(md_request_copy), col).fset(md_request_copy, val)
+                    except:
+                        pass
+
             if start_date is not None: md_request_copy.start_date = start_date
             if finish_date is not None: md_request_copy.finish_date = finish_date
+
+            md_request_copy = self._kwargs_to_md_request(kwargs, md_request_copy)
 
             md_list.append(md_request_copy)
 
         return md_list
 
-    def create_md_request_from_dict(self, md_request_dict, md_request=None, start_date=None, finish_date=None):
+    def create_md_request_from_dict(self, md_request_dict, md_request=None, start_date=None, finish_date=None, **kwargs):
 
         if md_request is None:
             md_request = MarketDataRequest()
@@ -406,9 +436,59 @@ class Market(object):
         if start_date is not None: md_request.start_date = start_date
         if finish_date is not None: md_request.finish_date = finish_date
 
+        md_request = self._kwargs_to_md_request(kwargs, md_request)
+
         return md_request
 
-    def create_md_request_from_str(self, md_request_str, md_request=None, start_date=None, finish_date=None, best_match_only=False, smart_group=True):
+    def create_md_request_from_tickers(self, tickers, md_request=None, start_date=None, finish_date=None,
+                                       best_match_only=False, smart_group=True, **kwargs):
+        md_request_list = []
+
+        if isinstance(tickers, str):
+            tickers = [tickers]
+
+        for t in tickers:
+            md_request_copy = self.create_md_request_from_str(
+                '_.' + t, md_request=md_request, start_date=start_date, finish_date=finish_date, best_match_only=best_match_only, smart_group=smart_group)
+
+            md_request_copy = self._kwargs_to_md_request(kwargs, md_request_copy)
+            md_request_list.append(md_request_copy)
+
+        return self.flatten_list_of_lists(md_request_list)
+
+    def _kwargs_to_md_request(self, kw, md_request):
+
+        if not(isinstance(md_request, list)):
+            # Any kwargs are assumed to be to set MarketDataRequest attributes
+            if kw != {}:
+
+                if md_request is None:
+                    md_request = MarketDataRequest()
+
+                for k in kw.keys():
+                    setattr(md_request, k, kw[k])
+
+            return md_request
+
+        # Any kwargs are assumed to be to set MarketDataRequest attributes
+        if kw != {}:
+            md_request_mod_list = []
+
+            for md in md_request:
+                if md is None:
+                    md = MarketDataRequest()
+
+                for k in kw.keys():
+                    setattr(md, k, kw[k])
+
+                md_request_mod_list.append(md)
+
+            md_request = md_request_mod_list
+
+        return md_request
+
+    def create_md_request_from_str(self, md_request_str, md_request=None, start_date=None, finish_date=None, best_match_only=False,
+                                   smart_group=True, **kwargs):
 
         json_md_request = None
 
@@ -463,7 +543,10 @@ class Market(object):
                 if start_date is not None: md_request.start_date = start_date
                 if finish_date is not None: md_request.finish_date = finish_date
 
-                return self.create_md_request_from_freeform(md_request)
+                md_request = self.create_md_request_from_freeform(md_request)
+                md_request = self._kwargs_to_md_request(kwargs, md_request)
+
+                return md_request
 
             # Otherwise we do a partial match of predefined tickers
             elif environment == "_":
@@ -472,9 +555,15 @@ class Market(object):
                                                                                        best_match_only=best_match_only,
                                                                                        smart_group=smart_group)
 
-                return self.create_md_request_from_dataframe(md_request_df,
+                md_request_df = self.create_md_request_from_dataframe(md_request_df,
                                                              md_request=md_request, start_date=start_date,
                                                              finish_date=finish_date)
+
+                md_request_df = self._kwargs_to_md_request(kwargs, md_request_df)
+
+                # if best_match_only:
+                return md_request_df
+
 
             else:
                 i = -1
@@ -537,7 +626,7 @@ class Market(object):
 
         return md_request
 
-    def create_md_request_from_freeform(self, md_request, freeform_md_request=None, return_df=False):
+    def create_md_request_from_freeform(self, md_request, freeform_md_request=None, return_df=False, **kwargs):
 
         if freeform_md_request is None:
             freeform_md_request = md_request.freeform_md_request
@@ -598,6 +687,8 @@ class Market(object):
                     lst = self.remove_duplicates_and_flatten_list(f[k])
 
                 getattr(type(md_request_temp), k).fset(md_request_temp, lst)
+
+            md_request_temp = self._kwargs_to_md_request(kwargs, md_request_temp)
 
             md_request_list.append(md_request_temp)
 

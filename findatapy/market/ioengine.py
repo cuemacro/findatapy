@@ -594,7 +594,7 @@ class IOEngine(object):
         for fname_single in fname:
             logger.debug("Reading " + fname_single + "..")
 
-            if engine == 'parquet' and '.gzip' not in fname_single and '.parquet'  not in fname_single:
+            if engine == 'parquet' and '.gzip' not in fname_single and '.parquet' not in fname_single:
                 fname_single = fname_single + '.parquet'
 
             if (engine == 'bcolz'):
@@ -715,6 +715,9 @@ class IOEngine(object):
                 # data_frame = pd.read_parquet(fname_single)
 
             data_frame_list.append(data_frame)
+
+        if len(data_frame_list) == 0:
+            return None
 
         if len(data_frame_list) == 1:
             return data_frame_list[0]
@@ -1232,19 +1235,33 @@ class IOEngine(object):
             else:
                 return pd.read_csv(path, encoding=encoding)
 
-    def to_csv(self, df, path, cloud_credentials=None):
+    def to_csv(self, df, path, filename=None, cloud_credentials=None):
         if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
 
-        if "s3://" in path:
-            s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
-
-            path_in_s3 = self.sanitize_path(path).replace("s3://", "")
-
-            # Use 'w' for py3, 'wb' for py2
-            with s3.open(path_in_s3, 'w') as f:
-                df.to_csv(f)
+        if isinstance(path, list):
+            pass
         else:
-            df.to_csv(path)
+            path = [path]
+
+        if filename is not None:
+            new_path = []
+
+            for p in path:
+                new_path.append(self.path_join(p, filename))
+
+            path = new_path
+
+        for p in path:
+            if "s3://" in p:
+                s3 = self._create_cloud_filesystem(cloud_credentials, 's3_filesystem')
+
+                path_in_s3 = self.sanitize_path(p).replace("s3://", "")
+
+                # Use 'w' for py3, 'wb' for py2
+                with s3.open(path_in_s3, 'w') as f:
+                    df.to_csv(f)
+            else:
+                df.to_csv(p)
 
     def path_exists(self, path, cloud_credentials=None):
         if cloud_credentials is None: cloud_credentials = constants.cloud_credentials

@@ -317,6 +317,8 @@ class ConfigManager(object):
 
         if list_query and isinstance(free_form_query, list):
             free_form_query = free_form_query
+        elif ',' in free_form_query:
+            free_form_query = free_form_query.split(',')
         else:
             free_form_query = [free_form_query]
 
