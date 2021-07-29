@@ -138,6 +138,8 @@ class Market(object):
         data_frame = None
 
         if isinstance(md_request, list):
+            md_request = self.flatten_list_of_lists(md_request)
+
             if len(md_request) == 1:
                 md_request = md_request[0]
 

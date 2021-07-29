@@ -132,6 +132,8 @@ individual data providers)
 
 # Coding log
 
+* 29 Jul 2021
+  * Minor changes to `Market` for managing tickers
 * 28 Jul 2021
   * Improved freeform ticker queries and fixed bug with downloading whole categories
 * 22 Jul 2021
