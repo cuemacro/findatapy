@@ -119,7 +119,7 @@ class RetStats(object):
         dd2here = index_df / max2here - 1
 
         self._dd = dd2here.min()
-        self._yoy_rets = index_df.resample('A').mean().pct_change()
+        self._yoy_rets = index_df.resample('Y').last().pct_change()
 
         return self
 
