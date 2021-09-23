@@ -56,7 +56,7 @@ To appear
 # Requirements
 
 Major requirements
-* Required: Python 3.7 (Python 2 is not supported)
+* Required: Python 3.8 (Python 2 is not supported)
 * Required: pandas, numpy etc.
 * Recommended: blpapi - Bloomberg Python Open API
 * Recommended: chartpy - for funky interactive plots ([https://github.com/cuemacro/chartpy](https://github.com/cuemacro/chartpy)) and
@@ -132,6 +132,8 @@ individual data providers)
 
 # Coding log
 
+* 23 Sep 2021
+  * Fixed bug in YoY calculation
 * 29 Jul 2021
   * Minor changes to `Market` for managing tickers
 * 28 Jul 2021
