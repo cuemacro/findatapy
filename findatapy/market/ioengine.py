@@ -316,13 +316,17 @@ class IOEngine(object):
                                 # msgpack/blosc is deprecated
                                 # r.set(fname, data_frame.to_msgpack(compress='blosc'))
 
-                                # now uses pyarrow
-                                context = pa.default_serialization_context()
-
-                                ser = context.serialize(data_frame).to_buffer()
+                                # Now uses pyarrow
+                                try:
+                                    context = pa
+                                    ser = context.serialize(data_frame).to_buffer()
+                                except:
+                                    # For earlier pyarrow versions
+                                    context = pa.default_serialization_context()
+                                    ser = context.serialize(data_frame).to_buffer()
 
                                 if use_cache_compression:
-                                    comp = pa.compress(ser, codec='lz4', asbytes=True)
+                                    comp = pa.compress(ser, codec='gzip', asbytes=True)
                                     siz = len(ser)  # siz = 3912
 
                                     r.set('comp_' + str(siz) + '_' + fname, comp)
@@ -635,15 +639,31 @@ class IOEngine(object):
                         comp = r.get(k)
 
                         siz = int(k.split('_')[1])
-                        dec = pa.decompress(comp, codec='lz4', decompressed_size=siz)
+                        dec = pa.decompress(comp, codec='gzip', decompressed_size=siz)
 
-                        msg = context.deserialize(dec)
+                        # Now uses pyarrow
+                        try:
+                            context = pa
+                            msg = context.deserialize(dec)
+
+                        except:
+                            # For earlier pyarrow versions
+                            context = pa.default_serialization_context()
+                            msg = context.deserialize(dec)
                     else:
                         msg = r.get(fname_single)
 
                         # print(fname_single)
                         if msg is not None:
-                            msg = context.deserialize(msg)
+                            try:
+                                context = pa
+                                msg = context.deserialize(msg)
+
+                            except:
+                                # For earlier pyarrow versions
+                                context = pa.default_serialization_context()
+                                msg = context.deserialize(msg)
+
                             # logger.warning("Key " + fname_single + " not in Redis cache?")
 
                 except Exception as e:
