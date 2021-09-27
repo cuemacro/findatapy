@@ -2418,7 +2418,7 @@ class DataVendorFlatFile(DataVendor):
         super(DataVendorFlatFile, self).__init__()
 
     # implement method in abstract superclass
-    def load_ticker(self, market_data_request, index_col=0, max_workers=1):
+    def load_ticker(self, market_data_request, index_col=0, max_workers=1, col_names=None):
         logger = LoggerManager().getLogger(__name__)
 
         data_source_list = market_data_request.data_source
@@ -2475,25 +2475,48 @@ class DataVendorFlatFile(DataVendor):
             if ".zip" in data_source:
                 import zipfile
 
-                if "http" in full_path:
-                    from requests import get
-                    request = get(full_path)
-                    zf = zipfile.ZipFile(BytesIO(request.content))
-                else:
-                    zf = zipfile.ZipFile(full_path)
+                try:
+                    if "http" in full_path:
+                        from requests import get
+                        request = get(full_path)
+                        zf = zipfile.ZipFile(BytesIO(request.content))
+                    else:
+                        zf = zipfile.ZipFile(full_path)
 
-                name_list = zipfile.ZipFile.namelist(zf)
+                    name_list = zipfile.ZipFile.namelist(zf)
 
-                df_list = []
+                    df_list = []
 
-                for name in name_list:
-                    df_list.append(pd.read_csv(zf.open(name), index_col=index_col, parse_dates=True,
-                                             infer_datetime_format=True))
+                    for name in name_list:
 
-                data_frame = pd.concat(df_list)
+                        if col_names is None:
+                            df = pd.read_csv(zf.open(name), index_col=index_col, parse_dates=True,
+                                                 infer_datetime_format=True)
+                        else:
+                            df = pd.read_csv(zf.open(name), index_col=index_col, parse_dates=True,
+                                                 infer_datetime_format=True, names=col_names)
+
+                        df_list.append(df)
+
+                    data_frame = pd.concat(df_list)
+                except Exception as e:
+                    logger.warning("Problem fetching " + full_path + "... " + str(e))
+
+                    data_frame = None
+
             elif ".csv" in data_source:
-                data_frame = pandas.read_csv(full_path, index_col=index_col, parse_dates=True,
-                                             infer_datetime_format=True)
+                try:
+                    if col_names is None:
+                        data_frame = pd.read_csv(full_path, index_col=index_col, parse_dates=True,
+                                                     infer_datetime_format=True)
+                    else:
+                        data_frame = pd.read_csv(full_path, index_col=index_col, parse_dates=True,
+                                                     infer_datetime_format=True, names=col_names)
+                except Exception as e:
+                    logger.warning("Problem fetching " + full_path + "... " + str(e))
+
+                    data_frame = None
+
             elif ".h5" in data_source:
                 data_frame = IOEngine().read_time_series_cache_from_disk(full_path, engine='hdf5')
             elif ".parquet" in data_source or '.gzip' in data_source:
@@ -2540,7 +2563,13 @@ class DataVendorFlatFile(DataVendor):
                 if data_frame is not None:
                     data_frame_list_filtered.append(data_frame)
 
-            data_frame = pd.concat(data_frame_list)
+            try:
+                data_frame = pd.concat(data_frame_list)
+            except Exception as e:
+                logger.warning("Empty output: " + str(e))
+
+                return None
+
 
         return data_frame
 

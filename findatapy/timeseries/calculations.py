@@ -1904,6 +1904,8 @@ class Calculations(object):
                             data_frame[c] = data_frame[c].astype('float32', errors='coerce')
                         else:
                             failed_conversion_cols.append(c)
+                    elif c in numeric_columns:
+                        data_frame[c] = data_frame[c].astype('float32', errors='coerce')
                     else:
                         failed_conversion_cols.append(c)
 

@@ -132,6 +132,11 @@ individual data providers)
 
 # Coding log
 
+* 27 Sep 2021
+  * Fixed bug in numeric conversion in DataFrame
+  * Error trapping when downloading web pages to DataFrame
+  * Added ignore case in filter columns
+  * Removed lz4 compression for Arrow caching
 * 23 Sep 2021
   * Fixed bug in YoY calculation
 * 29 Jul 2021

@@ -566,7 +566,7 @@ class Filter(object):
 
         return self.filter_time_series_by_columns(columns, data_frame)
 
-    def filter_time_series_by_included_keyword(self, keyword, data_frame):
+    def filter_time_series_by_included_keyword(self, keyword, data_frame, ignore_case=False):
         """Filter time series to include columns which contain keyword
 
         Parameters
@@ -586,8 +586,12 @@ class Filter(object):
 
         columns = []
 
-        for k in keyword:
-            columns.append([elem for elem in data_frame.columns if k in elem])
+        if ignore_case:
+            for k in keyword:
+                columns.append([elem.lower() for elem in data_frame.columns if k.lower() in elem.lower()])
+        else:
+            for k in keyword:
+                columns.append([elem for elem in data_frame.columns if k in elem])
 
         columns = self._calendar.flatten_list_of_lists(columns)
 
