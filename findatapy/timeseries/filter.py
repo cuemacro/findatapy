@@ -250,14 +250,14 @@ class Filter(object):
             if data_frame.index.tz is not None:
 
                 # If the start/finish dates are timezone naive, overwrite with the DataFrame timezone
-                if not (isinstance(start_date, str)):
+                if not(isinstance(start_date, str)):
                     start_date = start_date.replace(tzinfo=data_frame.index.tz)
 
-                if not (isinstance(finish_date, str)):
+                if not(isinstance(finish_date, str)):
                     finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
             else:
                 # Otherwise remove timezone from start_date/finish_date
-                if not (isinstance(start_date, str)):
+                if not(isinstance(start_date, str)):
                     try:
                         start_date = start_date.replace(tzinfo=None)
                     except:
@@ -588,7 +588,7 @@ class Filter(object):
 
         if ignore_case:
             for k in keyword:
-                columns.append([elem.lower() for elem in data_frame.columns if k.lower() in elem.lower()])
+                columns.append([elem for elem in data_frame.columns if k.lower() in elem.lower()])
         else:
             for k in keyword:
                 columns.append([elem for elem in data_frame.columns if k in elem])
