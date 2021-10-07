@@ -117,6 +117,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.26 - findatapy (07 Oct 2021)
 * 0.1.25 - findatapy (07 Oct 2021)
 * 0.1.24 - findatapy (06 Oct 2021)
 * 0.1.23 - findatapy (03 Jun 2021)
@@ -135,6 +136,7 @@ individual data providers)
 # Coding log
 
 * 07 Oct 2021
+  * Fixed bug in downloading data for unusual categories 
   * Fixed missing ticker in time_series_tickers.csv
 * 27 Sep 2021
   * Fixed bug in numeric conversion in DataFrame

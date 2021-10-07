@@ -366,8 +366,8 @@ class Market(object):
             # the idea is that we do all the market data downloading here, rather than elsewhere
 
         # By default: pass the market data request to MarketDataGenerator
-        if data_frame is not None:
-            data_frame = None
+        # if data_frame is not None:
+        #    data_frame = None
 
         if data_frame is None:
             data_frame = self._market_data_generator.fetch_market_data(md_request)
@@ -378,7 +378,8 @@ class Market(object):
 
         # Push into cache
         if md_request.push_to_cache:
-            self.speed_cache.put_dataframe(key, data_frame)
+            if data_frame is not None:
+                self.speed_cache.put_dataframe(key, data_frame)
 
         return data_frame
 
