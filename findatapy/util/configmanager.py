@@ -167,8 +167,11 @@ class ConfigManager(object):
                                                                                            tickers] = expiry
 
                             # Conversion from vendor vendor_tickers to library tickers
-                            ConfigManager._dict_time_series_tickers_list_vendor_to_library[
-                                key + '.' + vendor_tickers] = tickers
+                            try:
+                                ConfigManager._dict_time_series_tickers_list_vendor_to_library[
+                                    key + '.' + vendor_tickers] = tickers
+                            except:
+                                logger.warning("Ticker not specified correctly (is some of this missing?) " + str(key) + '.' + str(vendor_tickers))
 
                             if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
                                 ConfigManager._dict_time_series_category_tickers_library_to_library[key].append(tickers)
