@@ -135,6 +135,8 @@ individual data providers)
 
 # Coding log
 
+* xx Oct 2021
+  * Patched ticker for EUR1Y deposit rate
 * 07 Oct 2021
   * Fixed bug in downloading data for unusual categories 
   * Fixed missing ticker in time_series_tickers.csv
