@@ -44,7 +44,7 @@ base-depos,bloomberg,daily,EUR3M,NYC,close,EUDRC CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,EUR4M,NYC,close,EUDRD CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,EUR6M,NYC,close,EUDRF CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,EUR9M,NYC,close,EUDRI CMPN Index,5:00pm NYC
-base-depos,bloomberg,daily,EUR1Y,NYC,close,EUDR1 CMPN Index,5:00pm NYC
+base-depos,bloomberg,daily,EUR1Y,NYC,close,EUDR1 CMPN Curncy,5:00pm NYC
 base-depos,bloomberg,daily,EUR2Y,NYC,close,EUDR2 CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,EUR3Y,NYC,close,EUDR3 CMPN Index,5:00pm NYC
 base-depos,bloomberg,daily,EUR5Y,NYC,close,EUDR5 CMPN Index,5:00pm NYC
@@ -221,7 +221,7 @@ base-depos,bloomberg,daily,EUR3M,LDN,close,EUDRC CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,EUR4M,LDN,close,EUDRD CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,EUR6M,LDN,close,EUDRF CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,EUR9M,LDN,close,EUDRI CMPL Index,6:00pm LDN
-base-depos,bloomberg,daily,EUR1Y,LDN,close,EUDR1 CMPL Index,6:00pm LDN
+base-depos,bloomberg,daily,EUR1Y,LDN,close,EUDR1 CMPL Curncy,6:00pm LDN
 base-depos,bloomberg,daily,EUR2Y,LDN,close,EUDR2 CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,EUR3Y,LDN,close,EUDR3 CMPL Index,6:00pm LDN
 base-depos,bloomberg,daily,EUR5Y,LDN,close,EUDR5 CMPL Index,6:00pm LDN
@@ -398,7 +398,7 @@ base-depos,bloomberg,daily,EUR3M,TOK,close,EUDRC CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR4M,TOK,close,EUDRD CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR6M,TOK,close,EUDRF CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR9M,TOK,close,EUDRI CMPT Index,8:00pm TOK
-base-depos,bloomberg,daily,EUR1Y,TOK,close,EUDR1 CMPT Index,8:00pm TOK
+base-depos,bloomberg,daily,EUR1Y,TOK,close,EUDR1 CMPT Curncy,8:00pm TOK
 base-depos,bloomberg,daily,EUR2Y,TOK,close,EUDR2 CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR3Y,TOK,close,EUDR3 CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR5Y,TOK,close,EUDR5 CMPT Index,8:00pm TOK
