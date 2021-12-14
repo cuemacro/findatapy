@@ -748,26 +748,24 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
         options.overrides = market_data_request.overrides
 
-        # options_copy = OptionsBBG(options_bbg=options)
-
         options_list = []
 
-        last_overide_combo = {}
+        override_dict = {}
 
         if market_data_request.old_tickers is not None:
 
             ticker_list = []
-            curr_options = OptionsBBG(options_bbg=options)
+            # curr_options = OptionsBBG(options_bbg=options)
+
+            ## Special case for GDP where the advance, final and preliminary releases (but can define more
+            # in DataConstants)
+            # have the same ticker but different overrides
+            bbg_keyword_dict_override = constants.bbg_keyword_dict_override
 
             for tick, old_tick in zip(market_data_request.tickers, market_data_request.old_tickers):
                 if old_tick is not None:
 
                     t = old_tick.lower()
-
-                    ## Special case for GDP where the advance, final and preliminary releases (but can define more
-                    # in DataConstants)
-                    # have the same ticker but different overrides
-                    bbg_keyword_dict_override = constants.bbg_keyword_dict_override
 
                     # eg. RELEASE_STAGE_OVERRIDE
                     for bbg_override in bbg_keyword_dict_override.keys():
@@ -779,27 +777,49 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
                             # eg. ['gdp', 'advance']
                             keyword = keyword_dict[bbg_keyword]
 
+                            # if this matches a case, we have override
                             if all(k.lower() in t for k in keyword):
 
-                                if bbg_override in last_overide_combo:
-                                    if last_overide_combo[bbg_override] != bbg_keyword:
-                                        curr_options.security = ticker_list
-                                        options_list.append(curr_options)
-
-                                        ticker_list = []
-
-                                        curr_options = OptionsBBG(options_bbg=options)
-
-                                last_overide_combo[bbg_override] = bbg_keyword
-                                curr_options.overrides[bbg_override] = bbg_keyword
+                                # In case we have multiple overrides for this ticker
+                                if tick in override_dict:
+                                    override_dict[tick][bbg_override] = bbg_keyword
+                                else:
+                                    override_dict[tick] = {bbg_override: bbg_keyword}
 
                     ## Add other special cases
-                    ticker_list.append(tick)
+                    if tick not in override_dict:
+                        override_dict[tick] = {}
 
-            if ticker_list != []:
-                curr_options.security = ticker_list
+            # if ticker_list != []:
+            #    curr_options.security = ticker_list
 
-            options_list.append(curr_options)
+            last_override = {}
+
+            def add_new_options(tick_):
+                curr_options = OptionsBBG(options_bbg=options)
+                curr_options.security = [tick_]
+
+                if override != {}:
+                    curr_options.overrides = override
+
+                options_list.append(curr_options)
+
+            # Combine the securities into a list of options (each with common
+            # overrides)
+            for tick, override in override_dict.items():
+                if override == last_override:
+
+                    if len(options_list) > 0:
+                        options_list[-1].security.append(tick)
+                    else:
+                        add_new_options(tick)
+                else:
+                    add_new_options(tick)
+
+                last_override = override
+
+            print('stop')
+            # options_list.append(curr_options)
         else:
             options.security = market_data_request.tickers
 

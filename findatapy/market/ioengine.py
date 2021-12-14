@@ -170,7 +170,8 @@ class IOEngine(object):
         return self.read_csv_data_frame(f_name, freq, cutoff=cutoff, dateparse=dateparse,
                                         postfix=postfix, intraday_tz=intraday_tz, excel_sheet=excel_sheet)
 
-    def remove_time_series_cache_on_disk(self, fname, engine='hdf5_fixed', db_server='127.0.0.1', db_port='6379',
+    def remove_time_series_cache_on_disk(self, fname, engine='hdf5_fixed', db_server=constants.db_server,
+                                         db_port=constants.db_port,
                                          timeout=10, username=None,
                                          password=None):
 
