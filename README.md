@@ -135,6 +135,8 @@ individual data providers)
 
 # Coding log
 
+* 15 Jan 2022
+  * Changed read/write on Redis to use Pickle instead of Arrow
 * 14 Dec 2021
   * Fixed bug in overrides for BBG
   * Patched ticker for EUR1Y deposit rate
