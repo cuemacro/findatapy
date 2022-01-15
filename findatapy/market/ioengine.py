@@ -11,6 +11,7 @@ __author__ = 'saeedamen'  # Saeed Amen
 #
 # See the License for the specific language governing permissions and limitations under the License.
 #
+import io
 
 import numpy as np
 import codecs
@@ -248,7 +249,10 @@ class IOEngine(object):
                                         use_cache_compression=constants.use_cache_compression,
                                         parquet_compression=constants.parquet_compression, use_pyarrow_directly=False,
                                         md_request=None, ticker=None, cloud_credentials=None):
-        """Writes Pandas data frame to disk as HDF5 format or bcolz format or in Arctic
+        """Writes Pandas data frame to disk as Parquet, HDF5 format or bcolz format, in Arctic or to Redis
+
+        Note, that Redis uses pickle (you must make sure that your Redis instance is not accessible
+        from unverified users, given you should not unpickle from unknown sources)
 
         Parmeters
         ---------
@@ -295,7 +299,7 @@ class IOEngine(object):
             bcolzpath = self.get_bcolz_filename(fname)
             shutil.rmtree(bcolzpath, ignore_errors=True)
             zlens = bcolz.ctable.fromdataframe(data_frame, rootdir=bcolzpath)
-        elif (engine == 'redis'):
+        elif engine == 'redis':
 
             fname = os.path.basename(fname).replace('.', '_')
 
@@ -317,22 +321,18 @@ class IOEngine(object):
                                 # msgpack/blosc is deprecated
                                 # r.set(fname, data_frame.to_msgpack(compress='blosc'))
 
-                                # Now uses pyarrow
-                                try:
-                                    context = pa
-                                    ser = context.serialize(data_frame).to_buffer()
-                                except:
-                                    # For earlier pyarrow versions
-                                    context = pa.default_serialization_context()
-                                    ser = context.serialize(data_frame).to_buffer()
+                                ser = io.BytesIO()
 
                                 if use_cache_compression:
-                                    comp = pa.compress(ser, codec='gzip', asbytes=True)
-                                    siz = len(ser)  # siz = 3912
+                                    data_frame.to_pickle(ser, compression="gzip")
+                                    ser.seek(0)
 
-                                    r.set('comp_' + str(siz) + '_' + fname, comp)
+                                    r.set('comp_' + fname, ser.read())
                                 else:
-                                    r.set(fname, ser.to_pybytes())
+                                    data_frame.to_pickle(ser)
+                                    ser.seek(0)
+
+                                    r.set(fname, ser.read())
 
                                 logger.info("Pushed " + fname + " to Redis")
                             else:
@@ -345,7 +345,7 @@ class IOEngine(object):
             except Exception as e:
                 logger.warning("Couldn't push " + fname + " to Redis: " + str(e))
 
-        elif (engine == 'arctic'):
+        elif engine == 'arctic':
             from arctic import Arctic
             import pymongo
 
@@ -380,7 +380,7 @@ class IOEngine(object):
             # Access the library
             library = store[fname]
 
-            if ('intraday' in fname):
+            if 'intraday' in fname:
                 data_frame = data_frame.astype('float32')
 
             if filter_out_matching is not None:
@@ -409,7 +409,7 @@ class IOEngine(object):
             except Exception as e:
                 logger.warning("Couldn't write MongoDB library: " + fname + " " + str(e))
 
-        elif (engine == 'hdf5'):
+        elif engine == 'hdf5':
             h5_filename = self.get_h5_filename(fname)
 
             # append data only works for HDF5 stored as tables (but this is much slower than fixed format)
@@ -466,7 +466,7 @@ class IOEngine(object):
 
             logger.info("Written HDF5: " + fname)
 
-        elif (engine == 'parquet'):
+        elif engine == 'parquet':
             if '.parquet' not in fname:
                 if fname[-5:] != '.gzip':
                     fname = fname + '.parquet'
@@ -624,48 +624,22 @@ class IOEngine(object):
                 msg = None
 
                 try:
-                    # for pyarrow
-                    context = pa.default_serialization_context()
-
                     r = redis.StrictRedis(host=db_server, port=db_port, db=0)
 
                     # is there a compressed key stored?)
-                    k = r.keys('comp_*_' + fname_single)
+                    k = r.keys('comp_' + fname_single)
 
                     # if so, then it means that we have stored it as a compressed object
                     # if have more than 1 element, take the last (which will be the latest to be added)
                     if (len(k) >= 1):
                         k = k[-1].decode('utf-8')
 
-                        comp = r.get(k)
-
-                        siz = int(k.split('_')[1])
-                        dec = pa.decompress(comp, codec='gzip', decompressed_size=siz)
-
-                        # Now uses pyarrow
-                        try:
-                            context = pa
-                            msg = context.deserialize(dec)
-
-                        except:
-                            # For earlier pyarrow versions
-                            context = pa.default_serialization_context()
-                            msg = context.deserialize(dec)
+                        msg = r.get(k)
+                        msg = io.BytesIO(msg)
+                        msg = pd.read_pickle(msg, compression="gzip")
                     else:
                         msg = r.get(fname_single)
-
-                        # print(fname_single)
-                        if msg is not None:
-                            try:
-                                context = pa
-                                msg = context.deserialize(msg)
-
-                            except:
-                                # For earlier pyarrow versions
-                                context = pa.default_serialization_context()
-                                msg = context.deserialize(msg)
-
-                            # logger.warning("Key " + fname_single + " not in Redis cache?")
+                        msg = pd.read_pickle(msg.read())
 
                 except Exception as e:
                     logger.info("Cache not existent for " + fname_single + " in Redis: " + str(e))

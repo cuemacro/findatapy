@@ -818,7 +818,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
                 last_override = override
 
-            print('stop')
+            # print('stop')
             # options_list.append(curr_options)
         else:
             options.security = market_data_request.tickers
