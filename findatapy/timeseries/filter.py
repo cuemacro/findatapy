@@ -1,15 +1,18 @@
-__author__ = 'saeedamen'  # Saeed Amen
+__author__ = "saeedamen"  # Saeed Amen
 
 #
-# Copyright 2016-2020 Cuemacro
+# Copyright 2016 Cuemacro
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on a "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
-# See the License for the specific language governing permissions and limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import numpy as np
@@ -21,19 +24,21 @@ from datetime import timedelta
 
 from findatapy.timeseries.calendar import Calendar
 
-
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.loggermanager import LoggerManager
 
 constants = DataConstants()
+
 
 class Filter(object):
     """Functions for filtering time series by dates and columns.
 
     This class is used extensively in both findatapy and finmarketpy.
 
-    Market holidays are collected from web sources such as https://www.timeanddate.com/holidays/ and also individual
-    exchange websites, and is manually updated from time to time to take into account newly instituted holidays, and stored
+    Market holidays are collected from web sources such as 
+    https://www.timeanddate.com/holidays/ and also individual
+    exchange websites, and is manually updated from time to time to take 
+    into account newly instituted holidays, and stored
     in conf/holidays_table.parquet - if you need to add your own holidays.
 
     """
@@ -43,12 +48,14 @@ class Filter(object):
     def __init__(self):
         self._calendar = Calendar()
 
-    def filter_time_series(self, market_data_request, data_frame, pad_columns=False):
-        """Filters a time series given a set of criteria (like start/finish date and tickers)
+    def filter_time_series(self, md_request, data_frame,
+                           pad_columns=False):
+        """Filters a time series given a set of criteria (like start/finish 
+        date and tickers)
 
         Parameters
         ----------
-        market_data_request : MarketDataRequest
+        md_request : MarketDataRequest
             defining time series filtering
         data_frame : DataFrame
             time series to be filtered
@@ -59,22 +66,25 @@ class Filter(object):
         -------
         DataFrame
         """
-        start_date = market_data_request.start_date
-        finish_date = market_data_request.finish_date
+        start_date = md_request.start_date
+        finish_date = md_request.finish_date
 
-        data_frame = self.filter_time_series_by_date(start_date, finish_date, data_frame)
+        data_frame = self.filter_time_series_by_date(start_date, finish_date,
+                                                     data_frame)
 
         # Filter by ticker.field combinations requested
-        columns = self.create_tickers_fields_list(market_data_request)
+        columns = self.create_tickers_fields_list(md_request)
 
-        if (pad_columns):
+        if pad_columns:
             data_frame = self.pad_time_series_columns(columns, data_frame)
         else:
-            data_frame = self.filter_time_series_by_columns(columns, data_frame)
+            data_frame = self.filter_time_series_by_columns(columns,
+                                                            data_frame)
 
         return data_frame
 
-    def filter_time_series_by_holidays(self, data_frame, cal='FX', holidays_list=[]):
+    def filter_time_series_by_holidays(self, data_frame, cal='FX',
+                                       holidays_list=[]):
         """Removes holidays from a given time series
 
         Parameters
@@ -94,9 +104,12 @@ class Filter(object):
             return data_frame[data_frame.index.dayofweek <= 4]
 
         # Select only those holidays in the sample
-        holidays_start = self._calendar.get_holidays(data_frame.index[0], data_frame.index[-1], cal, holidays_list=holidays_list)
+        holidays_start = self._calendar.get_holidays(
+            data_frame.index[0],
+            data_frame.index[-1], cal,
+            holidays_list=holidays_list)
 
-        if (holidays_start.size == 0):
+        if holidays_start.size == 0:
             return data_frame
 
         holidays_end = holidays_start + np.timedelta64(1, 'D')
@@ -134,8 +147,10 @@ class Filter(object):
         data_frame_filtered = []
 
         for i in range(0, len(holidays_start)):
-            data_frame_temp = data_frame_left[data_frame_left.index < holidays_start[i]]
-            data_frame_left = data_frame_left[data_frame_left.index >= holidays_end[i]]
+            data_frame_temp = data_frame_left[
+                data_frame_left.index < holidays_start[i]]
+            data_frame_left = data_frame_left[
+                data_frame_left.index >= holidays_end[i]]
 
             data_frame_filtered.append(data_frame_temp)
 
@@ -161,7 +176,8 @@ class Filter(object):
         """
         offset = 0  # inclusive
 
-        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset,
+        return self.filter_time_series_by_date_offset(start_date, finish_date,
+                                                      data_frame, offset,
                                                       exclude_start_end=False)
 
     def filter_time_series_by_days(self, days, data_frame):
@@ -185,10 +201,13 @@ class Filter(object):
         finish_date = datetime.datetime.utcnow()
         start_date = finish_date - timedelta(days=days)
 
-        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset)
+        return self.filter_time_series_by_date_offset(start_date, finish_date,
+                                                      data_frame, offset)
 
-    def filter_time_series_by_date_exc(self, start_date, finish_date, data_frame):
-        """Filter time series by start/finish dates (exclude start & finish dates)
+    def filter_time_series_by_date_exc(self, start_date, finish_date,
+                                       data_frame):
+        """Filter time series by start/finish dates (exclude start &
+        finish dates)
 
         Parameters
         ----------
@@ -205,7 +224,8 @@ class Filter(object):
         """
         offset = 1  # exclusive of start finish date
 
-        return self.filter_time_series_by_date_offset(start_date, finish_date, data_frame, offset,
+        return self.filter_time_series_by_date_offset(start_date, finish_date,
+                                                      data_frame, offset,
                                                       exclude_start_end=True)
 
         # try:
@@ -227,7 +247,9 @@ class Filter(object):
         #
         # return data_frame
 
-    def filter_time_series_by_date_offset(self, start_date, finish_date, data_frame, offset, exclude_start_end=False):
+    def filter_time_series_by_date_offset(self, start_date, finish_date,
+                                          data_frame, offset,
+                                          exclude_start_end=False):
         """Filter time series by start/finish dates (and an offset)
 
         Parameters
@@ -249,15 +271,17 @@ class Filter(object):
         if hasattr(data_frame.index, 'tz'):
             if data_frame.index.tz is not None:
 
-                # If the start/finish dates are timezone naive, overwrite with the DataFrame timezone
-                if not(isinstance(start_date, str)):
+                # If the start/finish dates are timezone naive, overwrite with
+                # the DataFrame timezone
+                if not (isinstance(start_date, str)):
                     start_date = start_date.replace(tzinfo=data_frame.index.tz)
 
-                if not(isinstance(finish_date, str)):
-                    finish_date = finish_date.replace(tzinfo=data_frame.index.tz)
+                if not (isinstance(finish_date, str)):
+                    finish_date = finish_date.replace(
+                        tzinfo=data_frame.index.tz)
             else:
                 # Otherwise remove timezone from start_date/finish_date
-                if not(isinstance(start_date, str)):
+                if not (isinstance(start_date, str)):
                     try:
                         start_date = start_date.replace(tzinfo=None)
                     except:
@@ -273,21 +297,24 @@ class Filter(object):
             return data_frame
 
         try:
-            data_frame = self.filter_time_series_aux(start_date, finish_date, data_frame, offset)
+            data_frame = self.filter_time_series_aux(start_date, finish_date,
+                                                     data_frame, offset)
         except:
             # start_date = start_date.date()
             # finish_date = finish_date.date()
             # if isinstance(start_date, str):
             #     # format expected 'Jun 1 2005 01:33', '%b %d %Y %H:%M'
             #     try:
-            #         start_date = datetime.datetime.strptime(start_date, '%b %d %Y %H:%M')
+            #         start_date = datetime.datetime.strptime(start_date,
+            #         '%b %d %Y %H:%M')
             #     except:
             #         i = 0
             #
             # if isinstance(finish_date, str):
             #     # format expected 'Jun 1 2005 01:33', '%b %d %Y %H:%M'
             #     try:
-            #         finish_date = datetime.datetime.strptime(finish_date, '%b %d %Y %H:%M')
+            #         finish_date = datetime.datetime.strptime(finish_date,
+            #         '%b %d %Y %H:%M')
             #     except:
             #         i = 0
 
@@ -299,34 +326,40 @@ class Filter(object):
             #     finish_date = finish_date.date()
             # except: pass
 
-            # if we have dates stored as opposed to TimeStamps (ie. daily data), we use a simple (slower) method
+            # if we have dates stored as opposed to TimeStamps (ie. daily data),
+            # we use a simple (slower) method
             # for filtering daily data
-            if (start_date is not None):
+            if start_date is not None:
                 if exclude_start_end:
                     data_frame = data_frame.loc[start_date < data_frame.index]
                 else:
                     data_frame = data_frame.loc[start_date <= data_frame.index]
 
-            if (finish_date is not None):
+            if finish_date is not None:
                 if exclude_start_end:
                     data_frame = data_frame.loc[data_frame.index < finish_date]
                 else:
                     # filter by start_date and finish_date
-                    data_frame = data_frame.loc[data_frame.index <= finish_date]
+                    data_frame = data_frame.loc[
+                        data_frame.index <= finish_date]
 
         return data_frame
 
-    def filter_time_series_aux(self, start_date, finish_date, data_frame, offset):
+    def filter_time_series_aux(self, start_date, finish_date, data_frame,
+                               offset):
         """Filter time series by start/finish dates (and an offset)
 
         Parameters
         ----------
         start_date : DateTime
             start date of calendar
+
         finish_date : DataTime
             finish date of calendar
+
         data_frame : DataFrame
             data frame to be filtered
+
         offset : int (not implemented!)
             offset to be applied
 
@@ -363,9 +396,12 @@ class Filter(object):
         # return data_frame.loc[start_date:finish_date]
 
         # Much faster, start and finish dates are inclusive
-        return data_frame[(data_frame.index >= start_date) & (data_frame.index <= finish_date)]
+        return data_frame[(data_frame.index >= start_date) & (
+                    data_frame.index <= finish_date)]
 
-    def filter_time_series_by_time_of_day_timezone(self, hour, minute, data_frame, timezone_of_snap='UTC'):
+    def filter_time_series_by_time_of_day_timezone(self, hour, minute,
+                                                   data_frame,
+                                                   timezone_of_snap='UTC'):
 
         old_tz = data_frame.index.tz
         data_frame = data_frame.tz_convert(pytz.timezone(timezone_of_snap))
@@ -377,7 +413,8 @@ class Filter(object):
 
         return data_frame
 
-    def filter_time_series_by_time_of_day(self, hour, minute, data_frame, in_tz=None, out_tz=None):
+    def filter_time_series_by_time_of_day(self, hour, minute, data_frame,
+                                          in_tz=None, out_tz=None):
         """Filter time series by time of day
 
         Parameters
@@ -414,7 +451,8 @@ class Filter(object):
 
         return data_frame
 
-    def filter_time_series_by_minute_of_hour(self, minute, data_frame, in_tz=None, out_tz=None):
+    def filter_time_series_by_minute_of_hour(self, minute, data_frame,
+                                             in_tz=None, out_tz=None):
         """Filter time series by minute of hour
 
         Parameters
@@ -445,7 +483,8 @@ class Filter(object):
 
         return data_frame
 
-    def filter_time_series_between_hours(self, start_hour, finish_hour, data_frame):
+    def filter_time_series_between_hours(self, start_hour, finish_hour,
+                                         data_frame):
         """Filter time series between hours of the day
 
         Parameters
@@ -487,7 +526,8 @@ class Filter(object):
         return None
 
     def pad_time_series_columns(self, columns, data_frame):
-        """Selects time series from a dataframe and if necessary creates empty columns
+        """Selects time series from a dataframe and if necessary creates
+        empty columns
 
         Parameters
         ----------
@@ -511,13 +551,16 @@ class Filter(object):
         if len(uncommon_columns) > 0:
             logger = LoggerManager().getLogger(__name__)
 
-            logger.info("Padding missing columns...")  # " + str(uncommon_columns))
+            logger.info(
+                "Padding missing columns...")  # " + str(uncommon_columns))
 
-            new_data_frame = pd.DataFrame(index=data_frame.index, columns=uncommon_columns)
+            new_data_frame = pd.DataFrame(index=data_frame.index,
+                                          columns=uncommon_columns)
 
             data_frame = pd.concat([data_frame, new_data_frame], axis=1)
 
-            # Force new columns to float NaNs (not objects which causes problems with newer pandas versions)
+            # Force new columns to float NaNs (not objects which causes
+            # problems with newer pandas versions)
             # or to NaT if they are date columns
             for u in uncommon_columns:
                 is_date = False
@@ -546,6 +589,7 @@ class Filter(object):
         ----------
         keyword : str
             columns to be excluded with this keyword
+
         data_frame : DataFrame
             data frame to be filtered
 
@@ -560,19 +604,22 @@ class Filter(object):
         columns = []
 
         for k in keyword:
-            columns.append([elem for elem in data_frame.columns if k not in elem])
+            columns.append(
+                [elem for elem in data_frame.columns if k not in elem])
 
         columns = self._calendar.flatten_list_of_lists(columns)
 
         return self.filter_time_series_by_columns(columns, data_frame)
 
-    def filter_time_series_by_included_keyword(self, keyword, data_frame, ignore_case=False):
+    def filter_time_series_by_included_keyword(self, keyword, data_frame,
+                                               ignore_case=False):
         """Filter time series to include columns which contain keyword
 
         Parameters
         ----------
         keyword : str
             columns to be included with this keyword
+
         data_frame : DataFrame
             data frame to be filtered
 
@@ -588,10 +635,12 @@ class Filter(object):
 
         if ignore_case:
             for k in keyword:
-                columns.append([elem for elem in data_frame.columns if k.lower() in elem.lower()])
+                columns.append([elem for elem in data_frame.columns if
+                                k.lower() in elem.lower()])
         else:
             for k in keyword:
-                columns.append([elem for elem in data_frame.columns if k in elem])
+                columns.append(
+                    [elem for elem in data_frame.columns if k in elem])
 
         columns = self._calendar.flatten_list_of_lists(columns)
 
@@ -604,6 +653,7 @@ class Filter(object):
         ----------
         freq : int
             minute frequency to be filtered
+
         data_frame : DataFrame
             data frame to be filtered
 
@@ -613,20 +663,21 @@ class Filter(object):
         """
         return data_frame.loc[data_frame.index.minute % freq == 0]
 
-    def create_tickers_fields_list(self, market_data_request):
-        """Creates a list of tickers concatenated with fields from a MarketDataRequest
+    def create_tickers_fields_list(self, md_request):
+        """Creates a list of tickers concatenated with fields from a
+        MarketDataRequest
 
         Parameters
         ----------
-        market_data_request : MarketDataRequest
+        md_request : MarketDataRequest
             request to be expanded
 
         Returns
         -------
         list(str)
         """
-        tickers = market_data_request.tickers
-        fields = market_data_request.fields
+        tickers = md_request.tickers
+        fields = md_request.fields
 
         if isinstance(tickers, str): tickers = [tickers]
         if isinstance(fields, str): fields = [fields]
@@ -644,7 +695,9 @@ class Filter(object):
         return data_frame.asfreq(freq, method='pad')
 
     def resample_time_series_frequency(self, data_frame, data_resample_freq,
-                                       data_resample_type='mean', fill_empties=False):
+                                       data_resample_type='mean',
+                                       fill_empties=False):
+
         # Should we take the mean, first, last in our resample
         if data_resample_type == 'mean':
             data_frame_r = data_frame.resample(data_resample_freq).mean()
@@ -657,7 +710,8 @@ class Filter(object):
             return
 
         if fill_empties == True:
-            data_frame, data_frame_r = data_frame.align(data_frame_r, join='left', axis=0)
+            data_frame, data_frame_r = data_frame.align(data_frame_r,
+                                                        join='left', axis=0)
             data_frame_r = data_frame_r.fillna(method='ffill')
 
         return data_frame_r
@@ -671,7 +725,8 @@ class Filter(object):
         return data_frame
 
     def remove_out_FX_out_of_hours(self, data_frame):
-        """Filtered a time series for FX hours (ie. excludes 22h GMT Fri - 19h GMT Sun and New Year's Day)
+        """Filtered a time series for FX hours (ie. excludes
+        22h GMT Fri - 19h GMT Sun and New Year's Day)
 
         Parameters
         ----------
@@ -688,10 +743,13 @@ class Filter(object):
         # remove Sun before 19:00 GMT
 
         # Monday = 0, ..., Sunday = 6
-        data_frame = data_frame[~((data_frame.index.dayofweek == 4) & (data_frame.index.hour > 22))]
+        data_frame = data_frame[~((data_frame.index.dayofweek == 4) & (
+                    data_frame.index.hour > 22))]
         data_frame = data_frame[~((data_frame.index.dayofweek == 5))]
-        data_frame = data_frame[~((data_frame.index.dayofweek == 6) & (data_frame.index.hour < 19))]
-        data_frame = data_frame[~((data_frame.index.day == 1) & (data_frame.index.month == 1))]
+        data_frame = data_frame[~((data_frame.index.dayofweek == 6) & (
+                    data_frame.index.hour < 19))]
+        data_frame = data_frame[
+            ~((data_frame.index.day == 1) & (data_frame.index.month == 1))]
 
         return data_frame
 
@@ -701,7 +759,8 @@ class Filter(object):
     def mask_time_series_by_time(self, df, time_list, time_zone):
         """ Mask a time series by time of day and time zone specified
         e.g. given a time series minutes data
-             want to keep data at specific time periods every day with a considered time zone
+             want to keep data at specific time periods every day with a
+             considered time zone
 
         Parameters
         ----------
@@ -709,7 +768,8 @@ class Filter(object):
             time series needed to be masked
         time_list : list of tuples
             deciding the time periods which we want to keep the data on each day
-            e.g. time_list = [('01:08', '03:02'),('12:24','12:55'),('17:31','19:24')]
+            e.g. time_list =
+                [('01:08', '03:02'),('12:24','12:55'),('17:31','19:24')]
             * Note: assume no overlapping of these tuples
         time_zone: str
             e.g. 'Europe/London'
@@ -732,22 +792,34 @@ class Filter(object):
 
             # E.g. if tuple is ('01:08', '03:02'),
             # take hours in target - take values in [01:00,04:00]
-            narray = np.where(df.index.hour.isin(range(start_hour, end_hour + 1)), 1, 0)
-            df_mask_temp = pd.DataFrame(index=df.index, columns=df_mask.columns.tolist(), data=narray)
+            narray = np.where(
+                df.index.hour.isin(range(start_hour, end_hour + 1)), 1, 0)
+            df_mask_temp = pd.DataFrame(index=df.index,
+                                        columns=df_mask.columns.tolist(),
+                                        data=narray)
 
-            # Remove minutes not in target - remove values in [01:00,01:07], [03:03,03:59]
-            narray = np.where(((df.index.hour == start_hour) & (df.index.minute < start_minute)), 0, 1)
-            df_mask_temp = df_mask_temp * pd.DataFrame(index=df.index, columns=df_mask.columns.tolist(),
-                                                           data=narray)
-            narray = np.where((df.index.hour == end_hour) & (df.index.minute > end_minute), 0, 1)
-            df_mask_temp = df_mask_temp * pd.DataFrame(index=df.index, columns=df_mask.columns.tolist(),
-                                                           data=narray)
+            # Remove minutes not in target -
+            # remove values in [01:00,01:07], [03:03,03:59]
+            narray = np.where(((df.index.hour == start_hour) & (
+                        df.index.minute < start_minute)), 0, 1)
+            df_mask_temp = df_mask_temp * pd.DataFrame(
+                index=df.index,
+                columns=df_mask.columns.tolist(),
+                data=narray)
+            narray = np.where(
+                (df.index.hour == end_hour) & (df.index.minute > end_minute),
+                0, 1)
+            df_mask_temp = df_mask_temp * pd.DataFrame(
+                index=df.index,
+                columns=df_mask.columns.tolist(),
+                data=narray)
 
             # Collect all the periods we want to keep the data
             df_mask = df_mask + df_mask_temp
 
         narray = np.where(df_mask == 1, df, 0)
-        df = pd.DataFrame(index=df.index, columns=df.columns.tolist(), data=narray)
+        df = pd.DataFrame(index=df.index, columns=df.columns.tolist(),
+                          data=narray)
         df.index = df.index.tz_convert('UTC')  # change the time zone to 'UTC'
 
         return df

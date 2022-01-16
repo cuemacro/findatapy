@@ -1,16 +1,18 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = "saeedamen"  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on a "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
-# See the License for the specific language governing permissions and limitations under the License.
-#the License for the specific language governing permissions and limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import datetime
@@ -25,13 +27,15 @@ from findatapy.timeseries.filter import Filter, Calendar
 
 from pandas import compat
 
+
 class DataQuality(object):
-    """Checks the data quality of a DataFrame, reporting statistics such as the percentage of NaN values by column and
-    through the whole DataFrame. Can also check by column between specific dates.
+    """Checks the data quality of a DataFrame, reporting statistics such as the
+    percentage of NaN values by column and through the whole DataFrame. Can
+    also check by column between specific dates.
 
     """
 
-    def percentage_nan(self, df, start_date = None):
+    def percentage_nan(self, df, start_date=None):
         """Calculates the percentage of NaN values in a DataFrame.
 
         Parameters
@@ -44,7 +48,8 @@ class DataQuality(object):
         Returns
         -------
         float
-            Between 0 and 100 representing the number of NaN values in a DataFrame (0 if the dataframe is None)
+            Between 0 and 100 representing the number of NaN values in a
+            DataFrame (0 if the dataframe is None)
         """
 
         if df is None:
@@ -62,8 +67,9 @@ class DataQuality(object):
 
         return round(100.0 * (nan / total), 1)
 
-    def percentage_nan_by_columns(self, df, start_date = None):
-        """Calculates the percentage of NaN values in a DataFrame and reports results by column. Likely, can do this
+    def percentage_nan_by_columns(self, df, start_date=None):
+        """Calculates the percentage of NaN values in a DataFrame and reports
+        results by column. Likely, can do this
         for whole dataframe in one operation.
 
         Parameters
@@ -76,7 +82,8 @@ class DataQuality(object):
         Returns
         -------
         dict
-            Dictionary of column names and percentage of NaN etween 0 and 100 representing the number of NaN values in each column
+            Dictionary of column names and percentage of NaN etween 0 and 100
+            representing the number of NaN values in each column
         """
 
         if start_date is not None:
@@ -89,16 +96,20 @@ class DataQuality(object):
 
         return nan_dict
 
-    def percentage_nan_between_start_finish_dates(self, df, df_properties, asset_field, start_date_field, finish_date_field):
-        """Calculates the percentage of NaN in a DataFrame in a customisable way. For each column it will only check the
-        NaNs between specific start and finish dates.
+    def percentage_nan_between_start_finish_dates(
+            self, df, df_properties, asset_field, start_date_field,
+            finish_date_field):
+        """Calculates the percentage of NaN in a DataFrame in a customisable
+        way. For each column it will only check the NaNs between specific start
+        and finish dates.
 
         Parameters
         ----------
         df : DataFrame
             Data to be checked for integrity
         df_properties : DataFrame
-            Record of each column and the start/finish dates that will be used for NaNs
+            Record of each column and the start/finish dates that will be
+            used for NaNs
         asset_field : str
             The column in df_properties which contains the column names
         start_date_field : str
@@ -115,8 +126,10 @@ class DataQuality(object):
 
         df_properties = df_properties.sort_values(asset_field)
 
-        df_dates = pandas.DataFrame(index=df_properties[asset_field].values, data=df_properties[[start_date_field, finish_date_field]].values,
-                                    columns=[start_date_field, finish_date_field])
+        df_dates = pandas.DataFrame(
+            index=df_properties[asset_field].values,
+            data=df_properties[[start_date_field, finish_date_field]].values,
+            columns=[start_date_field, finish_date_field])
 
         c_new = [x.split(".")[0] for x in df.columns]
 
@@ -127,14 +140,18 @@ class DataQuality(object):
         for i in range(0, len(df.columns)):
             df_sub = df[df.columns[i]]
 
-            percentage_nan[df.columns[i]] = self.percentage_nan(df_sub[start_date[i]:finish_date[i]])
+            percentage_nan[df.columns[i]] = self.percentage_nan(
+                df_sub[start_date[i]:finish_date[i]])
 
         return percentage_nan
 
-    def strip_dataframe_before_large_nan_section(self, df, freq = 'daily', max_nan_gap = 20):
-        """For each column in a dataframe, where there is a large gap (eg. 20 working days), all values before that
-        will be filled with NaN. This can for example be useful if we are constructing futures continuous time series
-        and we need a continual array of futures values to be available to back adjust.
+    def strip_dataframe_before_large_nan_section(self, df, freq='daily',
+                                                 max_nan_gap=20):
+        """For each column in a dataframe, where there is a large gap (eg.
+        20 working days), all values before that will be filled with NaN.
+        This can for example be useful if we are constructing futures
+        continuous time series and we need a continual array of futures
+        values to be available to back adjust.
 
         Parameters
         ----------
@@ -148,7 +165,8 @@ class DataQuality(object):
         Returns
         -------
         DataFrame
-            Overwritten earlier values with NaN, if they are before a large NaN section
+            Overwritten earlier values with NaN, if they are before a large
+            NaN section
         """
 
         if freq == 'daily':
@@ -156,20 +174,23 @@ class DataQuality(object):
             df_re = df.resample('B').mean()
 
             # calculate the rolling valid business days
-            df_re_nan_count = df_re.rolling(window = max_nan_gap).count()
+            df_re_nan_count = df_re.rolling(window=max_nan_gap).count()
 
             # if 20 business days in a row are invalid, then flag this
             strip = df_re_nan_count[df_re_nan_count == 0]
 
-            # for each column get the make everything before the last nan section, as equal to nan
-            # eg. if 2003 is all nan, but pre 2003 is populated by real values, we'll overwrite the pre 2003 values with
-            # nan, can cause issues with backtesting if we have large nan sections
+            # For each column get the make everything before the last nan
+            # section, as equal to nan
+            # eg. if 2003 is all nan, but pre 2003 is populated by real values,
+            # we'll overwrite the pre 2003 values with nan, can cause issues
+            # with backtesting if we have large nan sections
             for c in df.columns:
                 strip_index = strip[c].last_valid_index()
 
-                # only overwrite, if we have poor quality sections (if the data quality is good we won't have this issue)
+                # Only overwrite, if we have poor quality sections (if the data
+                # quality is good we won't have this issue)
                 if strip_index is not None:
-                    df.ix[:strip_index,c] = numpy.nan
+                    df.ix[:strip_index, c] = numpy.nan
 
         elif freq == 'intraday':
             pass
@@ -193,4 +214,3 @@ class DataQuality(object):
         duplicated = df.index.duplicated()
 
         return len(duplicated), df.index[duplicated]
-

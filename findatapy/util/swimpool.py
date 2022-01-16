@@ -1,26 +1,31 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = "saeedamen"  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on a "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
-# See the License for the specific language governing permissions and limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 from findatapy.util import DataConstants
 
+
 class SwimPool(object):
-    """Creating thread and process pools in a generic way. Allows users to specify the underlying thread or multiprocess library
+    """Creating thread and process pools in a generic way. Allows users to
+    specify the underlying thread or multiprocess library
     they wish to use. Note you can share Pool objects between processes.
 
     """
 
-    def __init__(self, multiprocessing_library = None):
+    def __init__(self, multiprocessing_library=None):
         self._pool = None
 
         if multiprocessing_library is None:
@@ -48,11 +53,12 @@ class SwimPool(object):
             except:
                 pass
 
-    def create_pool(self, thread_technique, thread_no, force_new = True, run_in_parallel = True):
+    def create_pool(self, thread_technique, thread_no, force_new=True,
+                    run_in_parallel=True):
 
         self._thread_technique = thread_technique
 
-        if not(force_new) and self._pool is not None:
+        if not (force_new) and self._pool is not None:
             return self._pool
 
         if thread_technique == "thread" or run_in_parallel == False:
@@ -69,7 +75,7 @@ class SwimPool(object):
                 from multiprocessing import Pool
             elif self._multiprocessing_library == 'pathos':
                 from pathos.multiprocessing import Pool
-                #from pathos.pools import ProcessPool as Pool
+                # from pathos.pools import ProcessPool as Pool
             elif self._multiprocessing_library == 'billiard':
                 from billiard.pool import Pool
 
@@ -81,7 +87,8 @@ class SwimPool(object):
 
     def close_pool(self, pool, force_process_respawn=False):
         if pool is not None:
-            if (self._thread_technique != 'multiprocessing' and self._multiprocessing_library != 'pathos') \
+            if (self._thread_technique != 'multiprocessing' and
+                self._multiprocessing_library != 'pathos') \
                     or force_process_respawn:
                 pool.close()
                 pool.join()

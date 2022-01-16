@@ -1,20 +1,28 @@
-__author__ = 'saeedamen'  # Saeed Amen
+__author__ = "saeedamen"  # Saeed Amen
 
 #
-# Copyright 2016-2020 Cuemacro
+# Copyright 2016 Cuemacro
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on a "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
-# See the License for the specific language governing permissions and limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
-# Note you'll need to "pip install s3fs" for this work which is not installed by default by findatapy
-# You'll also need to have setup your S3 bucket, and have all your AWS credentials set on your machine
-# This article explains how to give S3 rights to other/accounts-users https://stackoverflow.com/questions/45336781/amazon-s3-access-for-other-aws-accounts
+#
+
+# Note you"ll need to "pip install s3fs" for this work which is not installed 
+# by default by findatapy
+
+# You"ll also need to have setup your S3 bucket, and have all your AWS credentials set on your machine
+# This article explains how to give S3 rights to other/accounts-users 
+# https://stackoverflow.com/questions/45336781/amazon-s3-access-for-other-aws-accounts
 # See below for an example
 
 """
@@ -43,7 +51,8 @@ __author__ = 'saeedamen'  # Saeed Amen
 
 # It is recommended NOT to give your S3 access public in general
 
-# NOTE: you need to make sure you have the correct data licences before storing data on disk (and whether other
+# NOTE: you need to make sure you have the correct data licences before 
+# storing data on disk (and whether other
 # users can access it)
 
 from findatapy.market import Market, MarketDataRequest
@@ -58,17 +67,17 @@ from findatapy.market.ioengine import IOEngine
 
 run_example = 2
 
-folder = 's3://type_your_s3_bucket_here'
+folder = "s3://type_your_s3_bucket_here"
 
 if run_example == 1 or run_example == 0:
     md_request = MarketDataRequest(
-        start_date='04 Jan 2021',
-        finish_date='05 Jan 2021',
-        category='fx',
-        data_source='dukascopy',
-        freq='tick',
-        tickers=['EURUSD'],
-        fields=['bid', 'ask', 'bidv', 'askv'],
+        start_date="04 Jan 2021",
+        finish_date="05 Jan 2021",
+        category="fx",
+        data_source="dukascopy",
+        freq="tick",
+        tickers=["EURUSD"],
+        fields=["bid", "ask", "bidv", "askv"],
     )
 
     market = Market()
@@ -77,32 +86,38 @@ if run_example == 1 or run_example == 0:
 
     print(df)
 
-    # Save to disk in a format friendly for reading later (ie. s3://bla_bla_bla/backtest.fx.tick.dukascopy.NYC.EURUSD.parquet)
+    # Save to disk in a format friendly for reading later 
+    # (ie. s3://bla_bla_bla/backtest.fx.tick.dukascopy.NYC.EURUSD.parquet)
     # Here it will automatically generate the filename from the folder we gave
-    # and the MarketDataRequest we made (altenatively, we could have just given the filename directly)
-    IOEngine().write_time_series_cache_to_disk(folder, df, engine='parquet', md_request=md_request)
+    # and the MarketDataRequest we made (altenatively, we could have just given 
+    # the filename directly)
+    IOEngine().write_time_series_cache_to_disk(folder, df, engine="parquet",
+                                               md_request=md_request)
 
-    md_request.data_engine = folder + '/*.parquet'
+    md_request.data_engine = folder + "/*.parquet"
 
     df = market.fetch_market(md_request)
 
     print(df)
 
     # Or we could have just read it directly using
-    df = IOEngine().read_time_series_cache_from_disk(folder, df, engine='parquet', md_request=md_request)
+    df = IOEngine().read_time_series_cache_from_disk(folder, df,
+                                                     engine="parquet",
+                                                     md_request=md_request)
 
     # We can try this using daily data
     import os
 
-    quandl_api_key = os.environ['QUANDL_API_KEY']
+    quandl_api_key = os.environ["QUANDL_API_KEY"]
 
-    df = market.fetch_market(md_request_str='fx.quandl.daily.NYC',
-                             md_request=MarketDataRequest(start_date='01 Jan 2021', quandl_api_key=quandl_api_key))
+    df = market.fetch_market(md_request_str="fx.quandl.daily.NYC",
+                             md_request=MarketDataRequest(
+                                 start_date="01 Jan 2021",
+                                 quandl_api_key=quandl_api_key))
 
     print(df)
 
 if run_example == 2 or run_example == 0:
-
     io_engine = IOEngine()
 
     pattern = folder + "/*.parquet"

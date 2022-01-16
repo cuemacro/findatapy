@@ -135,6 +135,9 @@ individual data providers)
 
 # Coding log
 
+* 16 Jan 2022
+  * Started to refactor code for PEP8 standards
+  * Added BBG tests
 * 15 Jan 2022
   * Changed read/write on Redis to use Pickle instead of Arrow
 * 14 Dec 2021

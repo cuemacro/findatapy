@@ -9,7 +9,8 @@ Alternatively, we can set them manually in dataconstants.py or create a datacred
 import os
 import keyring
 
-service_names = ['Quandl', 'AlphaVantage', 'Twitter App Key', 'Twitter App Secret', 'Twitter OAUTH token',
+service_names = ['Quandl', 'AlphaVantage', 'Twitter App Key',
+                 'Twitter App Secret', 'Twitter OAUTH token',
                  'Twitter OAUTH token Secret', 'FRED']
 
 for s in service_names:
