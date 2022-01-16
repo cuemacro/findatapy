@@ -1,15 +1,18 @@
-__author__ = 'saeedamen' # Saeed Amen
+__author__ = "saeedamen"  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on a "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
-# See the License for the specific language governing permissions and limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import numpy
@@ -17,7 +20,8 @@ import pytz
 import pandas.tseries.offsets
 
 class Timezone(object):
-    """Various functions wrapping onto pandas and pytz for quickly converting timezones for dataframes.
+    """Various functions wrapping onto pandas and pytz for quickly converting
+    timezones for dataframes.
 
     """
 
@@ -138,7 +142,8 @@ class Timezone(object):
         tz_offset_td64 = numpy.timedelta64(tz_offset)
 
         # Now convert to naive DatetimeIndex
-        data_frame.index = pandas.DatetimeIndex(datetime_index.values + tz_offset_td64)
+        data_frame.index = pandas.DatetimeIndex(datetime_index.values
+                                                + tz_offset_td64)
 
         return None #data_frame #(doesn't work)
 
@@ -163,5 +168,3 @@ class Timezone(object):
         data_frame.index = pandas.DatetimeIndex(datetime_index.values)
 
         return None #(TODO fix as doesn't work)
-
-

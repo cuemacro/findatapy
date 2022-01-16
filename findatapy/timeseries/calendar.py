@@ -1,15 +1,18 @@
-__author__ = 'saeedamen'  # Saeed Amen
+__author__ = "saeedamen"  # Saeed Amen
 
 #
-# Copyright 2016-2020 Cuemacro
+# Copyright 2016 Cuemacro
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on a "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
-# See the License for the specific language governing permissions and limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import re
@@ -20,44 +23,47 @@ import pandas as pd
 import datetime
 from datetime import timedelta
 
-from pandas.tseries.offsets import BDay, CustomBusinessDay, Day, CustomBusinessMonthEnd, DateOffset
+from pandas.tseries.offsets import BDay, CustomBusinessDay, Day, \
+    CustomBusinessMonthEnd, DateOffset
 from findatapy.timeseries.timezone import Timezone
-
 
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.loggermanager import LoggerManager
 
 constants = DataConstants()
 
+
 class Calendar(object):
-    """Provides calendar based functions for working out options expiries, holidays etc. Note, that at present, the
-    expiry _calculations are approximate.
+    """Provides calendar based functions for working out options expiries,
+    holidays etc. Note, that at present, the expiry _calculations are
+    approximate.
 
     """
 
     # Approximate mapping from tenor to number of business days
-    _tenor_bus_day_dict = {'ON' : 1,
-        'TN' : 2,
-        '1W' : 5,
-        '2W' : 10,
-        '3W' : 15,
-        '1M' : 20,
-        '2M' : 40,
-        '3M' : 60,
-        '4M' : 80,
-        '6M' : 120,
-        '9M' : 180,
-        '1Y' : 252,
-        '2Y' : 252 * 2,
-        '3Y' : 252 * 3,
-        '5Y' : 252 * 5
-    }
+    _tenor_bus_day_dict = {'ON': 1,
+                           'TN': 2,
+                           '1W': 5,
+                           '2W': 10,
+                           '3W': 15,
+                           '1M': 20,
+                           '2M': 40,
+                           '3M': 60,
+                           '4M': 80,
+                           '6M': 120,
+                           '9M': 180,
+                           '1Y': 252,
+                           '2Y': 252 * 2,
+                           '3Y': 252 * 3,
+                           '5Y': 252 * 5
+                           }
 
     def __init__(self):
         self._holiday_df = pd.read_parquet(constants.holidays_parquet_table)
 
     def flatten_list_of_lists(self, list_of_lists):
-        """Flattens lists of obj, into a single list of strings (rather than characters, which is default behavior).
+        """Flattens lists of obj, into a single list of strings (rather than
+        characters, which is default behavior).
 
         Parameters
         ----------
@@ -84,13 +90,16 @@ class Calendar(object):
     def _get_full_cal(self, cal):
         holidays_list = []
 
-        # Calendars which have been hardcoded in the parquet file (which users may also edit)
+        # Calendars which have been hardcoded in the parquet file (which users
+        # may also edit)
         if len(cal) == 6:
             # Eg. EURUSD (load EUR and USD calendars and combine the holidays)
-            holidays_list.append([self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6])])
+            holidays_list.append(
+                [self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6])])
         elif len(cal) == 9:
             holidays_list.append(
-                [self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6]), self._get_full_cal(cal[6:9])])
+                [self._get_full_cal(cal[0:3]), self._get_full_cal(cal[3:6]),
+                 self._get_full_cal(cal[6:9])])
         else:
             if cal == 'FX' or cal == 'NYX':
                 # Filter for Christmas & New Year's Day
@@ -106,8 +115,10 @@ class Calendar(object):
             elif cal == 'WDY' or cal == 'WEEKDAY':
                 bday = CustomBusinessDay(weekmask='Sat Sun')
 
-                holidays_list.append([x for x in pd.date_range('01 Jan 1999', '31 Dec 2025', freq=bday)])
-            elif cal == 'WKD': #
+                holidays_list.append([x for x in pd.date_range('01 Jan 1999',
+                                                               '31 Dec 2025',
+                                                               freq=bday)])
+            elif cal == 'WKD':  #
                 pass
                 # holidays_list.append()
 
@@ -138,11 +149,14 @@ class Calendar(object):
         -------
         list
         """
-        hols = self.get_holidays(start_date=start_date, end_date=end_date, cal=cal)
+        hols = self.get_holidays(start_date=start_date, end_date=end_date,
+                                 cal=cal)
 
-        return pd.bdate_range(start=start_date, end=end_date, freq='D', holidays=hols)
+        return pd.bdate_range(start=start_date, end=end_date, freq='D',
+                              holidays=hols)
 
-    def get_holidays(self, start_date=None, end_date=None, cal='FX', holidays_list=[]):
+    def get_holidays(self, start_date=None, end_date=None, cal='FX',
+                     holidays_list=[]):
         """Gets the holidays for a given calendar
 
         Parameters
@@ -164,9 +178,12 @@ class Calendar(object):
         holidays_list = self._get_full_cal(cal)
         # .append(lst)
 
-        # Use 'set' so we don't have duplicate dates if we are incorporating multiple calendars
-        holidays_list = np.array(list(set(self.flatten_list_of_lists(holidays_list))))
-        holidays_list = pd.to_datetime(holidays_list).sort_values().tz_localize('UTC')
+        # Use 'set' so we don't have duplicate dates if we are incorporating
+        # multiple calendars
+        holidays_list = np.array(
+            list(set(self.flatten_list_of_lists(holidays_list))))
+        holidays_list = pd.to_datetime(
+            holidays_list).sort_values().tz_localize('UTC')
 
         # Floor start date
         if start_date is not None:
@@ -210,15 +227,18 @@ class Calendar(object):
         if unit == 'days':
             return (date2 - date1).days
 
-    def get_delivery_date_from_horizon_date(self, horizon_date, tenor, cal=None, asset_class='fx'):
+    def get_delivery_date_from_horizon_date(self, horizon_date, tenor,
+                                            cal=None, asset_class='fx'):
         if 'fx' in asset_class:
             tenor_unit = ''.join(re.compile(r'\D+').findall(tenor))
             asset_holidays = self.get_holidays(cal=cal)
 
             if tenor_unit == 'ON':
-                return horizon_date + CustomBusinessDay(n=1, holidays=asset_holidays)
+                return horizon_date + CustomBusinessDay(n=1,
+                                                        holidays=asset_holidays)
             elif tenor_unit == 'TN':
-                return horizon_date + CustomBusinessDay(n=2, holidays=asset_holidays)
+                return horizon_date + CustomBusinessDay(n=2,
+                                                        holidays=asset_holidays)
             elif tenor_unit == 'SP':
                 pass
             elif tenor_unit == 'SN':
@@ -227,20 +247,26 @@ class Calendar(object):
             else:
                 tenor_digit = int(''.join(re.compile(r'\d+').findall(tenor)))
 
-            horizon_date = self.get_spot_date_from_horizon_date(horizon_date, cal, asset_holidays=asset_holidays)
+            horizon_date = self.get_spot_date_from_horizon_date(
+                horizon_date, cal, asset_holidays=asset_holidays)
 
             if 'SP' in tenor_unit:
                 return horizon_date
             elif tenor_unit == 'D':
-                return horizon_date + CustomBusinessDay(n=tenor_digit, holidays=asset_holidays)
+                return horizon_date + CustomBusinessDay(
+                    n=tenor_digit, holidays=asset_holidays)
             elif tenor_unit == 'W':
-                return horizon_date + Day(n=tenor_digit * 7) + CustomBusinessDay(n=0, holidays=asset_holidays)
+                return horizon_date + Day(
+                    n=tenor_digit * 7) + CustomBusinessDay(
+                    n=0, holidays=asset_holidays)
             else:
                 if tenor_unit == 'Y':
                     tenor_digit = tenor_digit * 12
 
-                horizon_period_end = horizon_date + CustomBusinessMonthEnd(tenor_digit + 1)
-                horizon_floating = horizon_date + DateOffset(months=tenor_digit)
+                horizon_period_end = horizon_date + CustomBusinessMonthEnd(
+                    tenor_digit + 1)
+                horizon_floating = horizon_date + DateOffset(
+                    months=tenor_digit)
 
                 cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
 
@@ -252,7 +278,8 @@ class Calendar(object):
                 if isinstance(horizon_floating, pd.Timestamp):
                     horizon_floating = [horizon_floating]
 
-                for period_end, floating in zip(horizon_period_end, horizon_floating):
+                for period_end, floating in zip(horizon_period_end,
+                                                horizon_floating):
                     if floating < period_end:
                         delivery_date.append(floating - cbd + cbd)
                     else:
@@ -260,9 +287,10 @@ class Calendar(object):
 
                 return pd.DatetimeIndex(delivery_date)
 
-    def get_expiry_date_from_horizon_date(self, horizon_date, tenor, cal=None, asset_class='fx-vol'):
-        """Calculates the expiry date of FX options, based on the horizon date, the tenor and the holiday
-        calendar associated with the asset.
+    def get_expiry_date_from_horizon_date(self, horizon_date, tenor, cal=None,
+                                          asset_class='fx-vol'):
+        """Calculates the expiry date of FX options, based on the horizon date,
+        the tenor and the holiday calendar associated with the asset.
 
         Uses expiry rules from Iain Clark's FX option pricing book
 
@@ -291,16 +319,21 @@ class Calendar(object):
             asset_holidays = self.get_holidays(cal=cal)
 
             if tenor_unit == 'ON':
-                tenor_digit = 1; tenor_unit = 'D'
+                tenor_digit = 1;
+                tenor_unit = 'D'
             else:
-                tenor_digit = int(''.join(re.compile(r'\d+') .findall(tenor)))
+                tenor_digit = int(''.join(re.compile(r'\d+').findall(tenor)))
 
             if tenor_unit == 'D':
-                return horizon_date + CustomBusinessDay(n=tenor_digit, holidays=asset_holidays)
+                return horizon_date + CustomBusinessDay(
+                    n=tenor_digit, holidays=asset_holidays)
             elif tenor_unit == 'W':
-                return horizon_date + Day(n=tenor_digit * 7) + CustomBusinessDay(n=0, holidays=asset_holidays)
+                return horizon_date + Day(
+                    n=tenor_digit * 7) + CustomBusinessDay(
+                    n=0, holidays=asset_holidays)
             else:
-                horizon_date = self.get_spot_date_from_horizon_date(horizon_date, cal, asset_holidays=asset_holidays)
+                horizon_date = self.get_spot_date_from_horizon_date(
+                    horizon_date, cal, asset_holidays=asset_holidays)
 
                 if tenor_unit == 'M':
                     pass
@@ -309,8 +342,10 @@ class Calendar(object):
 
                 cbd = CustomBusinessDay(n=1, holidays=asset_holidays)
 
-                horizon_period_end = horizon_date + CustomBusinessMonthEnd(tenor_digit + 1)
-                horizon_floating = horizon_date + DateOffset(months=tenor_digit)
+                horizon_period_end = horizon_date + CustomBusinessMonthEnd(
+                    tenor_digit + 1)
+                horizon_floating = horizon_date + DateOffset(
+                    months=tenor_digit)
 
                 delivery_date = []
 
@@ -321,7 +356,8 @@ class Calendar(object):
                     horizon_floating = [horizon_floating]
 
                 # TODO: double check this!
-                for period_end, floating in zip(horizon_period_end, horizon_floating):
+                for period_end, floating in zip(horizon_period_end,
+                                                horizon_floating):
                     if floating < period_end:
                         delivery_date.append(floating - cbd + cbd)
                     else:
@@ -329,7 +365,8 @@ class Calendar(object):
 
                 delivery_date = pd.DatetimeIndex(delivery_date)
 
-                return self.get_expiry_date_from_delivery_date(delivery_date, cal)
+                return self.get_expiry_date_from_delivery_date(delivery_date,
+                                                               cal)
 
     def _get_settlement_T(self, asset):
         base = asset[0:3]
@@ -340,7 +377,8 @@ class Calendar(object):
 
         return 2
 
-    def get_spot_date_from_horizon_date(self, horizon_date, asset, asset_holidays=None):
+    def get_spot_date_from_horizon_date(self, horizon_date, asset,
+                                        asset_holidays=None):
         base = asset[0:3]
         terms = asset[3:6]
 
@@ -355,18 +393,23 @@ class Calendar(object):
                 horizon_date = horizon_date + BDay(1)
             else:
                 if base == 'USD':
-                    horizon_date = horizon_date + CustomBusinessDay(holidays=self.get_holidays(cal=terms))
+                    horizon_date = horizon_date + CustomBusinessDay(
+                        holidays=self.get_holidays(cal=terms))
                 elif terms == 'USD':
-                    horizon_date = horizon_date + CustomBusinessDay(holidays=self.get_holidays(cal=base))
+                    horizon_date = horizon_date + CustomBusinessDay(
+                        holidays=self.get_holidays(cal=base))
                 else:
-                    horizon_date = horizon_date + CustomBusinessDay(holidays=asset_holidays)
+                    horizon_date = horizon_date + CustomBusinessDay(
+                        holidays=asset_holidays)
 
         if 'USD' not in asset:
             asset_holidays = self.get_holidays(cal='USD' + asset)
 
-        # Second adjustment step - move forward if horizon_date isn't a good business day in base, terms or USD
+        # Second adjustment step - move forward if horizon_date isn't a good
+        # business day in base, terms or USD
         if settlement_T <= 2:
-            horizon_date = horizon_date + CustomBusinessDay(holidays=asset_holidays)
+            horizon_date = horizon_date + CustomBusinessDay(
+                holidays=asset_holidays)
 
         return horizon_date
 
@@ -378,15 +421,16 @@ class Calendar(object):
         terms = cal[3:6]
 
         if base == 'USD':
-             cal = terms
+            cal = terms
         elif terms == 'USD':
-             cal = base
+            cal = base
 
         hols = self.get_holidays(cal=cal + 'NYD')
 
         # cbd = CustomBusinessDay(1, holidays=self.get_holidays(cal=cal))
 
-        return delivery_date - CustomBusinessDay(self._get_settlement_T(cal), holidays=hols) # - cbd + cbd
+        return delivery_date - CustomBusinessDay(self._get_settlement_T(cal),
+                                                 holidays=hols)  # - cbd + cbd
 
     def align_to_NY_cut_in_UTC(self, date_time, hour_of_day=10):
 
@@ -406,19 +450,26 @@ class Calendar(object):
         if cal is None:
             return pd.bdate_range(start, end)
 
-        return pd.date_range(start, end, hols=self.get_holidays(start_date=start, end_date=end, cal=cal))
+        return pd.date_range(start, end,
+                             hols=self.get_holidays(start_date=start,
+                                                    end_date=end, cal=cal))
 
     def get_bus_day_of_month(self, date, cal='FX', tz=None):
-        """ Returns the business day of the month (ie. 3rd Jan, on a Monday, would be the 1st business day of the month)
+        """ Returns the business day of the month (ie. 3rd Jan, on a Monday,
+        would be the 1st business day of the month)
         """
 
         try:
-            date = date.normalize()  # strip times off the dates - for business dates just want dates!
+            # Strip times off the dates - for business dates just want dates!
+            date = date.normalize()
         except:
             pass
 
-        start = pd.to_datetime(datetime.datetime(date.year[0], date.month[0], 1))
-        end = pd.Timestamp(datetime.datetime.today())  # pd.to_datetime(datetime.datetime(date.year[-1], date.month[-1], date.day[-1]))
+        start = pd.to_datetime(
+            datetime.datetime(date.year[0], date.month[0], 1))
+        end = pd.Timestamp(
+            datetime.datetime.today())
+        # pd.to_datetime(datetime.datetime(date.year[-1], date.month[-1], date.day[-1]))
 
         holidays = self.get_holidays(start_date=start, end_date=end, cal=cal)
 
@@ -448,4 +499,3 @@ class Calendar(object):
 
     def set_market_holidays(self, holiday_df):
         self._holiday_df = holiday_df
-

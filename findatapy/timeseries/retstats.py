@@ -1,15 +1,18 @@
-__author__ = 'saeedamen'  # Saeed Amen
+__author__ = "saeedamen"  # Saeed Amen
 
 #
 # Copyright 2016 Cuemacro
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-# License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of
+# the License at http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on a "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
-# See the License for the specific language governing permissions and limitations under the License.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 import math
@@ -37,8 +40,9 @@ class RetStats(object):
         self._yoy_rets = None
 
     def split_into_dict(self):
-        """If we have multiple columns in our returns, we can opt to split up the RetStats object into a dictionary of
-        smaller RetStats object, one for each asset return
+        """If we have multiple columns in our returns, we can opt to split up
+        the RetStats object into a dictionary of smaller RetStats object, one
+        for each asset return
 
         Returns
         -------
@@ -80,10 +84,12 @@ class RetStats(object):
         """
         calculations = Calculations()
 
-        self.calculate_ret_stats(calculations.calculate_returns(prices_df), ann_factor)
+        self.calculate_ret_stats(calculations.calculate_returns(prices_df),
+                                 ann_factor)
 
     def calculate_ret_stats(self, returns_df=None, ann_factor=None):
-        """Calculates return statistics for an asset's returns including IR, vol, ret and drawdowns
+        """Calculates return statistics for an asset's returns including IR,
+        vol, ret and drawdowns
 
         Parameters
         ----------
@@ -204,10 +210,11 @@ class RetStats(object):
         stat_list = []
 
         for i in range(0, len(self._rets.index)):
-            stat_list.append(self._rets.index[i] + " Ret = " + str(round(self._rets[i] * 100, 1))
+            stat_list.append(self._rets.index[i] + " Ret = " + str(
+                round(self._rets[i] * 100, 1))
                              + "% Vol = " + str(round(self._vol[i] * 100, 1))
                              + "% IR = " + str(round(self._inforatio[i], 2))
                              + " Dr = " + str(round(self._dd[i] * 100, 1))
-                             + "%") # Kurt = " + str(round(self._kurtosis[i], 2)))
+                             + "%")  # Kurt = " + str(round(self._kurtosis[i], 2)))
 
         return stat_list
