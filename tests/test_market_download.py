@@ -42,9 +42,9 @@ def test_bbg_download():
             start_date="week",  # start date
             data_source="bloomberg",  # use Bloomberg as data source
             freq=fr,
-            tickers=["S&P 500"],  # ticker (findatapy)
+            tickers=["S&P 500", "EURUSD"],  # ticker (findatapy)
             fields=["close"],  # which fields to download
-            vendor_tickers=["SPX Index"],  # ticker (Yahoo)
+            vendor_tickers=["SPX Index", "EURUSD Curncy"],  # ticker (Yahoo)
             vendor_fields=["PX_LAST"])  # which Bloomberg fields to download)
 
         df = market.fetch_market(md_request)
