@@ -524,7 +524,7 @@ class BBGLowLevelTemplate:  # in order that the init function works in
         #    session = BBGLowLevelTemplate._session
 
         def download_data_frame(sess, eventQ, opt, ci):
-            if options.security is not None:
+            if opt.security is not None:
                 self.send_bar_request(sess, eventQ, opt, ci)
 
                 logger.info("Waiting for data to be returned...")

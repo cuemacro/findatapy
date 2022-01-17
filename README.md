@@ -135,6 +135,8 @@ individual data providers)
 
 # Coding log
 
+* 17 Jan 2022
+  * Fixed bug in BBG wrapper
 * 16 Jan 2022
   * Started to refactor code for PEP8 standards
   * Added BBG tests
