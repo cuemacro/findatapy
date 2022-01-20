@@ -135,6 +135,8 @@ individual data providers)
 
 # Coding log
 
+* 20 Jan 2022
+  * Fixed path join for s3
 * 17 Jan 2022
   * Fixed bug in BBG wrapper
 * 16 Jan 2022

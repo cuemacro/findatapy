@@ -1313,17 +1313,22 @@ class IOEngine(object):
     def path_join(self, folder, *file):
 
         file = list(file)
+
+        if file[0][0] == '/':
+            file[0] = file[0][1::]
+
         if 's3://' in folder:
+
             folder = folder.replace("s3://", "")
             folder = os.path.join(folder, *file)
 
             folder = folder.replace("//", "/")
+            folder = folder.replace("\\\\", "/")
+            folder = folder.replace("\\", "/")
 
             folder = "s3://" + folder
 
         else:
-            if file[0][0] == '/':
-                file[0] = file[0][1::]
 
             folder = os.path.join(folder, *file)
 
