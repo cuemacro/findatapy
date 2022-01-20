@@ -1268,6 +1268,19 @@ class IOEngine(object):
             else:
                 return pd.read_csv(path, encoding=encoding)
 
+    def to_csv_parquet(self, df, path, filename=None, cloud_credentials=None,
+                       parquet_compression=constants.parquet_compression,
+                       use_pyarrow_directly=False):
+
+        self.to_csv(df, path, filename=filename.replace(".parquet", ".csv"),
+                    cloud_credentials=cloud_credentials)
+
+        self.to_parquet(df, path,
+                        filename=filename.replace(".csv", ".parquet"),
+                        cloud_credentials=cloud_credentials,
+                        parquet_compression=parquet_compression,
+                        use_pyarrow_directly=use_pyarrow_directly)
+
     def to_csv(self, df, path, filename=None, cloud_credentials=None):
         if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
 
