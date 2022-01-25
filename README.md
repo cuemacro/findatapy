@@ -61,8 +61,6 @@ Major requirements
 * Recommended: blpapi - Bloomberg Python Open API
 * Recommended: chartpy - for funky interactive plots ([https://github.com/cuemacro/chartpy](https://github.com/cuemacro/chartpy)) and
 * Recommended: arctic - AHL library for managing time series in MongoDB
-* Recommended: multiprocessor_on_dill - standard multiprocessing library pickle causes issues ([https://github.com/sixty-north/multiprocessing_on_dill](https://github.com/sixty-north/multiprocessing_on_dill))
-* Recommended: fredapi - ALFRED/FRED has been rewritten and added to the project directly (from https://github.com/mortada/fredapi)
 
 # Installation
 
@@ -135,6 +133,8 @@ individual data providers)
 
 # Coding log
 
+* 25 Jan 2022
+  * Fixed delete key problem with Redis
 * 20 Jan 2022
   * Fixed path join for s3
 * 17 Jan 2022
