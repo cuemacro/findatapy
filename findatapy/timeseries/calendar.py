@@ -32,6 +32,8 @@ from findatapy.util.loggermanager import LoggerManager
 
 constants = DataConstants()
 
+# To speed up CustomBusinessDay
+# https://stackoverflow.com/questions/31523302/performance-of-pandas-custom-business-day-offset
 
 class Calendar(object):
     """Provides calendar based functions for working out options expiries,

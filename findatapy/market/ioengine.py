@@ -172,10 +172,7 @@ class IOEngine(object):
         if 'hdf5' in engine:
             engine = 'hdf5'
 
-        if (engine == 'bcolz'):
-            # convert invalid characters to substitutes (which Bcolz can't deal with)
-            pass
-        elif (engine == 'redis'):
+        if engine == 'redis':
 
             fname = os.path.basename(fname).replace('.', '_')
 
@@ -184,15 +181,20 @@ class IOEngine(object):
                                       socket_timeout=timeout,
                                       socket_connect_timeout=timeout)
 
-                if (fname == 'flush_all_keys'):
+                if fname == 'flush_all_keys':
                     r.flushall()
                 else:
-                    # allow deletion of keys by pattern matching
+                    # Allow deletion of keys by pattern matching
+                    matching_keys = r.keys('*' + fname)
 
-                    x = r.keys('*' + fname)
+                    if matching_keys:
+                        # Use pipeline to speed up command
+                        pipe = r.pipeline()
 
-                    if len(x) > 0:
-                        r.delete(x)
+                        for key in matching_keys:
+                            pipe.delete(key)
+
+                        pipe.execute()
 
                     # r.delete(fname)
 
@@ -230,7 +232,7 @@ class IOEngine(object):
 
             logger.info("Deleted MongoDB library: " + fname)
 
-        elif (engine == 'hdf5'):
+        elif engine == 'hdf5':
             h5_filename = self.get_h5_filename(fname)
 
             # delete the old copy
