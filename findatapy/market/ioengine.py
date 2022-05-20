@@ -17,6 +17,7 @@ __author__ = "saeedamen"  # Saeed Amen
 
 import io
 import datetime
+import json
 from dateutil.parser import parse
 
 import codecs
@@ -316,15 +317,17 @@ class IOEngine(object):
                                               3)
 
                             if mem_float < 500:
-                                ser = io.BytesIO()
+
 
                                 if use_cache_compression:
+                                    ser = io.BytesIO()
                                     data_frame.to_pickle(ser,
                                                          compression="gzip")
                                     ser.seek(0)
 
                                     r.set('comp_' + fname, ser.read())
                                 else:
+                                    ser = io.BytesIO()
                                     data_frame.to_pickle(ser)
                                     ser.seek(0)
 
@@ -1031,20 +1034,8 @@ class IOEngine(object):
         """
         logger = LoggerManager.getLogger(__name__)
 
-        if cloud_credentials is None: cloud_credentials = DataConstants().cloud_credentials
-
-        if isinstance(path, list):
-            pass
-        else:
-            path = [path]
-
-        if filename is not None:
-            new_path = []
-
-            for p in path:
-                new_path.append(self.path_join(p, filename))
-
-            path = new_path
+        path, cloud_credentials = self._get_cloud_path(
+            path, filename=filename, cloud_credentials=cloud_credentials)
 
         constants = DataConstants()
 
@@ -1283,7 +1274,7 @@ class IOEngine(object):
                         parquet_compression=parquet_compression,
                         use_pyarrow_directly=use_pyarrow_directly)
 
-    def to_csv(self, df, path, filename=None, cloud_credentials=None):
+    def _get_cloud_path(self, path, filename=None, cloud_credentials=None):
         if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
 
         if isinstance(path, list):
@@ -1299,6 +1290,13 @@ class IOEngine(object):
 
             path = new_path
 
+        return path, cloud_credentials
+
+    def to_csv(self, df, path, filename=None, cloud_credentials=None):
+
+        path, cloud_credentials = self._get_cloud_path(
+            path, filename=filename, cloud_credentials=cloud_credentials)
+
         for p in path:
             if "s3://" in p:
                 s3 = self._create_cloud_filesystem(cloud_credentials,
@@ -1311,6 +1309,30 @@ class IOEngine(object):
                     df.to_csv(f)
             else:
                 df.to_csv(p)
+
+    def to_json(self, dictionary, path, filename=None, cloud_credentials=None):
+
+        path, cloud_credentials = self._get_cloud_path(
+            path, filename=filename, cloud_credentials=cloud_credentials)
+
+        for p in path:
+            if "s3://" in p:
+                s3 = self._create_cloud_filesystem(cloud_credentials,
+                                                   's3_filesystem')
+
+                path_in_s3 = self.sanitize_path(p).replace("s3://", "")
+
+                # Use 'w' for py3, 'wb' for py2
+                with s3.open(path_in_s3, 'w') as f:
+                    if isinstance(dictionary, dict):
+                        json.dump(dictionary, f, indent=4)
+                    else:
+                        dictionary.to_json(f)
+            else:
+                if isinstance(dictionary, dict):
+                    json.dump(dictionary, p, indent=4)
+                elif isinstance(dictionary, pd.DataFrame):
+                    dictionary.to_json(p)
 
     def path_exists(self, path, cloud_credentials=None):
         if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
