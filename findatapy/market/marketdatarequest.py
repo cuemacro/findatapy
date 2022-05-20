@@ -79,7 +79,8 @@ class MarketDataRequest(object):
                                          ["logger", 
                                           "_MarketDataRequest__abstract_curve",
                                           "_MarketDataRequest__cache_algo",
-                                          "_MarketDataRequest__overrides"]) \
+                                          "_MarketDataRequest__overrides",
+                                          "_MarketDataRequest__data_vendor_custom"]) \
                + "_df"
 
     def __init__(self, data_source=None,
@@ -110,7 +111,8 @@ class MarketDataRequest(object):
                  eikon_api_key=data_constants.eikon_api_key,
                  push_to_cache=True,
                  overrides={},
-                 freeform_md_request={}):
+                 freeform_md_request={},
+                 data_vendor_custom=data_constants.data_vendor_custom):
 
         # Can deep copy MarketDataRequest (use a lock, so can be used with 
         # threading when downloading time series)
@@ -174,6 +176,7 @@ class MarketDataRequest(object):
                     copy.deepcopy(md_request.freeform_md_request)
 
                 self.tickers = copy.deepcopy(md_request.tickers)  # Need this after category in case have wildcard
+                self.data_vendor_custom = copy.deepcopy(md_request.data_vendor_custom)
         else:
             self.freq_mult = freq_mult
 
@@ -228,6 +231,7 @@ class MarketDataRequest(object):
                 self.tickers = vendor_tickers
 
             self.old_tickers = self.tickers
+            self.data_vendor_custom = data_vendor_custom
 
     def __str__(self):
         return "MarketDataRequest summary - " + self.generate_key()

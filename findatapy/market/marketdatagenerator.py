@@ -162,6 +162,8 @@ class MarketDataGenerator(object):
                 data_vendor = DataVendorHuobi()
             elif data_source in self._data_vendor_dict:
                 data_vendor = self._data_vendor_dict[data_source]
+            elif data_source in md_request.data_vendor_custom:
+                data_vendor = md_request.data_vendor_custom[data_source]
             else:
                 logger.warn(str(data_source) +
                             " is an unrecognized data source")

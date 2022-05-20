@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.27 - findatapy (20 May 2022)
 * 0.1.26 - findatapy (07 Oct 2021)
 * 0.1.25 - findatapy (07 Oct 2021)
 * 0.1.24 - findatapy (06 Oct 2021)
@@ -133,6 +134,8 @@ individual data providers)
 
 # Coding log
 
+* 20 May 2022
+  * Added more customisation for data vendors
 * 25 Jan 2022
   * Fixed delete key problem with Redis
 * 20 Jan 2022
