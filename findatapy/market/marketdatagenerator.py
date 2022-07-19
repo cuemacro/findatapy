@@ -211,6 +211,20 @@ class MarketDataGenerator(object):
                     md_request.category, md_request.data_source,
                     md_request.freq, md_request.cut)
 
+            if md_request.pretransformation is not None:
+                df_tickers = ConfigManager().get_instance()\
+                    .get_dataframe_tickers()
+
+                df_tickers = df_tickers[
+                    (df_tickers["category"] == md_request.category) &
+                    (df_tickers["data_source"] == md_request.data_source) &
+                    (df_tickers["freq"] == md_request.freq) &
+                    (df_tickers["cut"] == md_request.cut)]
+
+                if "pretransformation" in df_tickers.columns:
+                    md_request.pretransformation = \
+                        df_tickers["pretransformation"].tolist()
+
         # intraday or tick: only one ticker per cache file
         if md_request.freq in ["intraday", "tick", "second", "hour",
                                 "minute"]:
@@ -558,6 +572,10 @@ class MarketDataGenerator(object):
                 if md_request.vendor_tickers is not None:
                     md_request_single.vendor_tickers = \
                         md_request.vendor_tickers[i:i + group_size]
+
+                if md_request.pretransformation is not None:
+                    md_request_single.pretransformation = \
+                        md_request.pretransformation[i:i + group_size]
 
                 md_request_list.append(md_request_single)
 

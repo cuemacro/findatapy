@@ -88,6 +88,8 @@ class ConfigManager(object):
     @staticmethod
     def populate_time_series_dictionaries(data_constants=None):
 
+        logger = LoggerManager.getLogger(__name__)
+
         if data_constants is None:
             data_constants = DataConstants()
 
@@ -125,6 +127,7 @@ class ConfigManager(object):
                 # reader = csv.DictReader(open(tickers_list_file))
                 df = pd.read_csv(tickers_list_file)
                 df = df.dropna(how="all")
+
                 df_tickers.append(df)
 
                 for index, line in df.iterrows():
@@ -138,57 +141,61 @@ class ConfigManager(object):
                     for freq in freq_list:
                         tickers = line["tickers"]
                         cut = line["cut"]
-                        vendor_tickers = line["vendor_tickers"]
+                        vendor_tickers = str(line["vendor_tickers"])
                         expiry = None
 
-                        try:
-                            expiry = line["expiry"]
-                        except:
-                            pass
+                        # Skip row where the vendor ticker hasn't been
+                        # specified
+                        if vendor_tickers.strip().lower() != "nan" \
+                            or vendor_tickers.strip() != "" \
+                            or vendor_tickers.strip().lower() != "none":
 
-                        if category != "":
-                            # Conversion from library tickers to vendor vendor_tickers
-                            ConfigManager.\
-                            _dict_time_series_tickers_list_library_to_vendor[
-                                category + "." +
-                                data_source + "." +
-                                freq + "." +
-                                cut + "." +
-                                tickers] = vendor_tickers
+                            if "expiry" in line.keys():
+                                expiry = line["expiry"]
 
-                            try:
-                                if expiry != "":
-                                    expiry = parse(expiry)
+                            if category != "":
+                                # Conversion from library tickers to vendor vendor_tickers
+                                ConfigManager.\
+                                    _dict_time_series_tickers_list_library_to_vendor[
+                                        category + "." +
+                                        data_source + "." +
+                                        freq + "." +
+                                        cut + "." +
+                                        tickers] = vendor_tickers
+
+                                try:
+                                    if expiry != "":
+                                        expiry = parse(expiry)
+                                    else:
+                                        expiry = None
+                                except:
+                                    pass
+
+                                # Library of tickers by category
+                                key = category + "." + data_source + "." + freq \
+                                      + "." + cut
+
+                                # Conversion from library tickers to library expiry date
+                                ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
+                                    data_source + "." +
+                                    tickers] = expiry
+
+                                # Conversion from vendor vendor_tickers to library tickers
+                                try:
+                                    ConfigManager._dict_time_series_tickers_list_vendor_to_library[
+                                        key + "." + vendor_tickers] = tickers
+                                except:
+                                    logger.warning(
+                                        "Ticker not specified correctly (is some "
+                                        "of this missing?) " + str(
+                                            key) + "." + str(vendor_tickers))
+
+                                if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
+                                    ConfigManager._dict_time_series_category_tickers_library_to_library[
+                                        key].append(tickers)
                                 else:
-                                    expiry = None
-                            except:
-                                pass
-
-                            # Library of tickers by category
-                            key = category + "." + data_source + "." + freq \
-                                  + "." + cut
-
-                            # Conversion from library tickers to library expiry date
-                            ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
-                                data_source + "." +
-                                tickers] = expiry
-
-                            # Conversion from vendor vendor_tickers to library tickers
-                            try:
-                                ConfigManager._dict_time_series_tickers_list_vendor_to_library[
-                                    key + "." + vendor_tickers] = tickers
-                            except:
-                                logger.warning(
-                                    "Ticker not specified correctly (is some "
-                                    "of this missing?) " + str(
-                                        key) + "." + str(vendor_tickers))
-
-                            if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
-                                ConfigManager._dict_time_series_category_tickers_library_to_library[
-                                    key].append(tickers)
-                            else:
-                                ConfigManager._dict_time_series_category_tickers_library_to_library[
-                                    key] = [tickers]
+                                    ConfigManager._dict_time_series_category_tickers_library_to_library[
+                                        key] = [tickers]
 
         try:
             df_tickers = pd.concat(df_tickers).sort_values(
@@ -431,11 +438,14 @@ class ConfigManager(object):
     @staticmethod
     def smart_group_dataframe_tickers(df,
                                       ret_fields=["category", "data_source",
-                                                  "freq", "cut"]):
+                                                  "freq", "cut"],
+                                      data_constants=None):
         """Groups together a DataFrame of metadata associated with assets, 
         which can be used to create MarketDataRequest
         objects
         """
+        if data_constants is None:
+            data_constants = DataConstants()
 
         if ret_fields is None:
             ret_fields = df.columns.to_list()

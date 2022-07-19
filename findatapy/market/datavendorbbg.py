@@ -954,8 +954,7 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
             # names=['field', 'ticker'])
             data_frame.index = pd.to_datetime(data_frame.index)
             logger.info("Read: " + ticker + ' ' + str(
-                data_frame.index[0]) + ' - ' + str(data_frame.index[-1]))
-
+                data_frame.index.min()) + ' - ' + str(data_frame.index.max()))
 
         return data_frame
 

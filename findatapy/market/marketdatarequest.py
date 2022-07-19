@@ -109,6 +109,11 @@ class MarketDataRequest(object):
                  fred_api_key=data_constants.fred_api_key, 
                  alpha_vantage_api_key=data_constants.alpha_vantage_api_key,
                  eikon_api_key=data_constants.eikon_api_key,
+                 macrobond_client_id=data_constants.macrobond_client_id,
+                 macrobond_client_secret=data_constants.macrobond_client_secret,
+                 
+                 pretransformation=None,
+                 
                  push_to_cache=True,
                  overrides={},
                  freeform_md_request={},
@@ -170,6 +175,13 @@ class MarketDataRequest(object):
                 self.alpha_vantage_api_key = \
                     copy.deepcopy(md_request.alpha_vantage_api_key)
                 self.eikon_api_key = copy.deepcopy(md_request.eikon_api_key)
+                self.macrobond_client_id = \
+                    copy.deepcopy(md_request.macrobond_client_id)
+                self.macrobond_client_secret = \
+                    copy.deepcopy(md_request.macrobond_client_secret)
+                
+                self.pretransformation = copy.deepcopy(md_request.pretransformation)
+
                 self.overrides = copy.deepcopy(md_request.overrides)
                 self.push_to_cache = copy.deepcopy(md_request.push_to_cache)
                 self.freeform_md_request = \
@@ -219,6 +231,10 @@ class MarketDataRequest(object):
             self.fred_api_key = fred_api_key
             self.alpha_vantage_api_key = alpha_vantage_api_key
             self.eikon_api_key = eikon_api_key
+            self.macrobond_client_id = macrobond_client_id
+            self.macrobond_client_secret = macrobond_client_secret
+            
+            self.pretransformation = pretransformation
 
             self.overrides = overrides
             self.push_to_cache = push_to_cache
@@ -733,7 +749,34 @@ class MarketDataRequest(object):
     @eikon_api_key.setter
     def eikon_api_key(self, eikon_api_key):
         self.__eikon_api_key = eikon_api_key
+        
+    @property
+    def macrobond_client_id(self):
+        return self.__macrobond_client_id
 
+    @macrobond_client_id.setter
+    def macrobond_client_id(self, macrobond_client_id):
+        self.__macrobond_client_id = macrobond_client_id
+        
+    @property
+    def macrobond_client_secret(self):
+        return self.__macrobond_client_secret
+
+    @macrobond_client_secret.setter
+    def macrobond_client_secret(self, macrobond_client_secret):
+        self.__macrobond_client_secret = macrobond_client_secret
+
+    @property
+    def pretransformation(self):
+        return self.__pretransformation
+
+    @pretransformation.setter
+    def pretransformation(self, pretransformation):
+        if not isinstance(pretransformation, list):
+            pretransformation = [pretransformation]
+
+        self.__pretransformation = pretransformation
+        
     @property
     def overrides(self):
         return self.__overrides

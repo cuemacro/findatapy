@@ -55,7 +55,8 @@ class DataVendor(object):
     def kill_session(self):
         return
 
-    def construct_vendor_md_request(self, md_request):
+    def construct_vendor_md_request(self, md_request,
+                                    fill_vendors_tickers_only=False):
         """Creates a MarketDataRequest with the vendor tickers
 
         Parameters
@@ -64,21 +65,25 @@ class DataVendor(object):
             contains all the various parameters detailing time series start and
             finish, tickers etc
 
+        fill_vendors_tickers_only : bool
+            Only search for vendors tickers (and ignore fields etc.)
+
         Returns
         -------
         MarketDataRequest
         """
 
-        symbols_vendor = self.translate_to_vendor_ticker(md_request)
-        fields_vendor = self.translate_to_vendor_field(md_request)
-
         md_request_vendor = MarketDataRequest(
             md_request=md_request)
 
-        md_request_vendor.tickers = symbols_vendor
-        md_request_vendor.fields = fields_vendor
+        md_request_vendor.tickers = self.translate_to_vendor_ticker(md_request)
 
-        md_request_vendor.old_tickers = md_request.tickers
+        if not fill_vendors_tickers_only:
+            md_request_vendor.fields = \
+                self.translate_to_vendor_field(md_request)
+
+            md_request_vendor.old_tickers = \
+                md_request.tickers
 
         return md_request_vendor
 
