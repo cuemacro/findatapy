@@ -207,11 +207,15 @@ class DataConstants(object):
                           'cal-non-settle-dates': 'CALENDAR_NON_SETTLEMENT_DATES'
     }
 
-    # Depending on the ticker field inclusion of specific keywords, apply a particular BBG override (make sure all lowercase)
+    # Depending on the ticker field inclusion of specific keywords,
+    # apply a particular BBG override (make sure all lowercase)
     bbg_keyword_dict_override = {
-        'RELEASE_STAGE_OVERRIDE' : {'A' : ['gdp', 'advance'],
-                                    'F' : ['gdp', 'final'],
-                                    'P' : ['gdp', 'preliminary']}
+        'RELEASE_STAGE_OVERRIDE' : {'A': ['gdp', 'advance'],
+                                    'F': ['gdp', 'final'],
+                                    'P': ['gdp', 'preliminary'],
+                                    'F': ['cpi', 'final'],
+                                    'P': ['cpi', 'preliminary']
+                                    }
     }
 
     #######  Dukascopy settings
@@ -233,6 +237,10 @@ class DataConstants(object):
 
     #######  Eikon settings
     eikon_api_key = key_store("Eikon")
+
+    ####### Macrobond settings
+    macrobond_client_id = key_store("Macrobond_client_id")
+    macrobond_client_secret = key_store("Macrobond_client_secret")
 
     #######  Twitter settings (you need to set these up on Twitter)
     TWITTER_APP_KEY             = key_store("Twitter App Key")
