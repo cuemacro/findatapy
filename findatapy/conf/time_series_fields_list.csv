@@ -7,6 +7,7 @@ quandl,adj-close,adj-close
 quandl,close,settle
 quandl,prev-day-open-interest,prev-day-open-interest
 quandl,volume,volume
+yahoo,adj-close,Adj Close
 yahoo,close,Close
 yahoo,open,Open
 yahoo,high,High

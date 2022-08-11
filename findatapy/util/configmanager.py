@@ -243,7 +243,8 @@ class ConfigManager(object):
             data_source = line["data_source"]
             freq = line["freq"]
             cut = line["cut"]
-            fields = line["fields"].split(",")  # Can have multiple fields
+            fields = line["fields"].split(",")
+
             startdate = line["startdate"]
             revision_periods = line["revision_periods"]
 

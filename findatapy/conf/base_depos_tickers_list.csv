@@ -397,8 +397,8 @@ base-depos,bloomberg,daily,EUR2M,TOK,close,EUDRB CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR3M,TOK,close,EUDRC CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR4M,TOK,close,EUDRD CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR6M,TOK,close,EUDRF CMPT Index,8:00pm TOK
-base-depos,bloomberg,daily,EUR9M,TOK,close,EUDRI CMPT Index,8:00pm TOK
-base-depos,bloomberg,daily,EUR1Y,TOK,close,EUDR1 CMPT Curncy,8:00pm TOK
+base-depos,bloomberg,daily,EUR9M,TOK,close,EUDRI CMPT Curncy,8:00pm TOK
+base-depos,bloomberg,daily,EUR1Y,TOK,close,EUDR1 CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR2Y,TOK,close,EUDR2 CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR3Y,TOK,close,EUDR3 CMPT Index,8:00pm TOK
 base-depos,bloomberg,daily,EUR5Y,TOK,close,EUDR5 CMPT Index,8:00pm TOK

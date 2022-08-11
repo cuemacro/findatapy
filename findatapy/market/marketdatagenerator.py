@@ -75,7 +75,9 @@ class MarketDataGenerator(object):
         # Special case for files (csv, h5, parquet or zip)
         if ".csv" in str(data_source) or ".h5" in str(data_source) or \
                 ".parquet" in str(data_source) or ".zip" in str(data_source) \
-                or data_engine is not None:
+                or (data_engine is not None
+                    and md_request.category is not None
+                    and "internet_load" not in md_request.cache_algo):
             from findatapy.market.datavendorweb import DataVendorFlatFile
             data_vendor = DataVendorFlatFile()
         else:
