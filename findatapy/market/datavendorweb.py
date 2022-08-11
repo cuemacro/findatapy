@@ -46,6 +46,7 @@ import concurrent.futures
 import requests
 
 import pandas as pd
+import numpy as np
 
 # support Quandl 3.x.x
 try:
@@ -716,17 +717,19 @@ class DataVendorYahoo(DataVendor):
         if data_frame is None or data_frame.index is []:
             return None
 
-        # convert from vendor to findatapy tickers/fields
-        if data_frame is not None:
-            try:
-                if len(md_request.tickers) > 1:
-                    data_frame.columns = ['/'.join(col) for col in
-                                          data_frame.columns.values]
-            except:
-                pass
+        # Convert from vendor to findatapy tickers/fields
+        #if data_frame is not None:
+        #    try:
+        #        if len(md_request.tickers) > 1:
+        #            data_frame.columns = ['/'.join(col) for col in
+        #                                  data_frame.columns.values]
+        #    except:
+        #        pass
 
-            returned_tickers = data_frame.columns
+
         if data_frame is not None:
+            raw_tickers = data_frame.columns.values.tolist()
+
             # tidy up tickers into a format that is more easily translatable
             # we can often get multiple fields returned (even if we don't ask
             # for them!)
@@ -736,16 +739,20 @@ class DataVendorYahoo(DataVendor):
             # returned_fields = [x.replace('value', 'close') for x in
             # returned_fields]  # special case for close
 
-            returned_fields = [x.split('/')[0].lower() for x in
-                               returned_tickers]
-
             # returned_tickers = [x.replace('.', '/') for x in returned_tickers]
-            returned_tickers = [x.split('/')[1] for x in returned_tickers]
+
+            # Sometimes Yahoo tickers can have "." in them, so need to use
+            # rsplit
+            returned_tickers = [x.rsplit('.', 1)[0] for x in raw_tickers]
+
+            returned_fields = [x.rsplit('.', 1)[1] for x in
+                               raw_tickers]
+
+            tickers = self.translate_from_vendor_ticker(returned_tickers,
+                                                        md_request)
 
             fields = self.translate_from_vendor_field(returned_fields,
                                                       md_request)
-            tickers = self.translate_from_vendor_ticker(returned_tickers,
-                                                        md_request)
 
             ticker_combined = []
 
@@ -767,9 +774,9 @@ class DataVendorYahoo(DataVendor):
         data_frame = None
 
         ticker_list = ' '.join(md_request.tickers)
-        data_frame = yf.download(ticker_list,
-                                 start=md_request.start_date,
-                                 end=md_request.finish_date)
+        # data_frame = yf.download(ticker_list,
+        #                         start=md_request.start_date,
+        #                         end=md_request.finish_date)
 
         while (trials < 5):
 
@@ -780,17 +787,37 @@ class DataVendorYahoo(DataVendor):
 
                 break
             except Exception as e:
+                import time
+
                 print(str(e))
                 trials = trials + 1
+                time.sleep(1)
                 logger.info("Attempting... " + str(
                     trials) + " request to download from Yahoo")
 
         if trials == 5:
-            logger.error("Couldn't download from ONS after several attempts!")
+            logger.error("Couldn't download from Yahoo after several attempts!")
 
-        if len(md_request.tickers) == 1:
-            data_frame.columns = [x + '/' + md_request.tickers[0] for
-                                  x in data_frame.columns]
+        if data_frame is not None:
+            if len(md_request.tickers) == 1:
+                data_frame.columns = [md_request.tickers[0] + "." + x for
+                                      x in data_frame.columns]
+            else:
+                fields = data_frame.columns.levels[0]
+                tickers = data_frame.columns.levels[1]
+
+                new_cols = []
+
+                for fi in fields:
+                    for ti in tickers:
+                        new_cols.append(ti + "." + fi)
+
+                data_frame.columns = new_cols
+
+
+        # if len(md_request.tickers) == 1:
+        #    data_frame.columns = [x + '/' + md_request.tickers[0] for
+        #                          x in data_frame.columns]
 
         return data_frame
 
@@ -2660,7 +2687,12 @@ class DataVendorFlatFile(DataVendor):
         data_frame_list = []
 
         def download_data_frame(data_source):
-            if data_engine is not None:
+
+            file_types = ['.csv', '.parquet', '.zip', '.gzip', '.h5']
+
+            read_from_disk = np.all([x not in data_source for x in file_types])
+
+            if data_engine is not None and read_from_disk:
 
                 logger.info("Request " + str(
                     md_request.data_source) + " data via " + str(

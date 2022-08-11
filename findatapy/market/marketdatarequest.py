@@ -23,8 +23,6 @@ import datetime
 
 import copy
 
-data_constants = DataConstants()
-
 class MarketDataRequest(object):
     """Provides parameters for requesting market data.
 
@@ -73,15 +71,16 @@ class MarketDataRequest(object):
         else:
             ticker = self.tickers[0]
 
-        self.__category_key = self.create_category_key(md_request=self, ticker=ticker)
+        self.__category_key = self.create_category_key(
+            md_request=self, ticker=ticker)
 
-        return SpeedCache().generate_key(self, 
-                                         ["logger", 
-                                          "_MarketDataRequest__abstract_curve",
-                                          "_MarketDataRequest__cache_algo",
-                                          "_MarketDataRequest__overrides",
-                                          "_MarketDataRequest__data_vendor_custom"]) \
-               + "_df"
+        return SpeedCache().generate_key(
+                self,
+             ["logger",
+              "_MarketDataRequest__abstract_curve",
+              "_MarketDataRequest__cache_algo",
+              "_MarketDataRequest__overrides",
+              "_MarketDataRequest__data_vendor_custom"]) + "_df"
 
     def __init__(self, data_source=None,
                  start_date="year", finish_date=datetime.datetime.utcnow(),
@@ -89,35 +88,67 @@ class MarketDataRequest(object):
                  gran_freq=None, cut="NYC",
                  fields=["close"], cache_algo="internet_load_return",
                  vendor_tickers=None, vendor_fields=None,
-                 environment=data_constants.default_data_environment, 
+                 environment=None,
                  trade_side="trade", expiry_date=None, 
                  resample=None, resample_how="last",
 
                  split_request_chunks=0,
                  list_threads=1,
 
-                 fx_vol_part=data_constants.fx_vol_part, 
-                 fx_vol_tenor=data_constants.fx_vol_tenor,
-                 fx_forwards_tenor=data_constants.fx_forwards_tenor,
-                 base_depos_currencies=data_constants.base_depos_currencies,
-                 base_depos_tenor=data_constants.base_depos_tenor,
+                 fx_vol_part=None,
+                 fx_vol_tenor=None,
+                 fx_forwards_tenor=None,
+                 base_depos_currencies=None,
+                 base_depos_tenor=None,
 
-                 data_engine = data_constants.default_data_engine,
+                 data_engine=None,
 
                  md_request=None, abstract_curve=None, 
-                 quandl_api_key=data_constants.quandl_api_key,
-                 fred_api_key=data_constants.fred_api_key, 
-                 alpha_vantage_api_key=data_constants.alpha_vantage_api_key,
-                 eikon_api_key=data_constants.eikon_api_key,
-                 macrobond_client_id=data_constants.macrobond_client_id,
-                 macrobond_client_secret=data_constants.macrobond_client_secret,
+                 quandl_api_key=None,
+                 fred_api_key=None,
+                 alpha_vantage_api_key=None,
+                 eikon_api_key=None,
+                 macrobond_client_id=None,
+                 macrobond_client_secret=None,
                  
                  pretransformation=None,
+                 vintage_as_index=None,
                  
                  push_to_cache=True,
                  overrides={},
                  freeform_md_request={},
-                 data_vendor_custom=data_constants.data_vendor_custom):
+                 data_vendor_custom=None):
+
+        data_constants = DataConstants()
+
+        if environment is None:
+            environment = data_constants.default_data_environment
+        if fx_vol_part is None:
+            fx_vol_part = data_constants.fx_vol_part
+        if fx_vol_tenor is None:
+            fx_vol_tenor = data_constants.fx_vol_tenor
+        if fx_forwards_tenor is None:
+            fx_forwards_tenor = data_constants.fx_forwards_tenor
+        if base_depos_currencies is None:
+            base_depos_currencies = data_constants.base_depos_currencies
+        if base_depos_tenor is None:
+            base_depos_tenor = data_constants.base_depos_tenor
+        if data_engine is None:
+            data_engine = data_constants.default_data_engine
+        if quandl_api_key is None:
+            quandl_api_key = data_constants.quandl_api_key
+        if fred_api_key is None:
+            fred_api_key = data_constants.fred_api_key
+        if alpha_vantage_api_key is None:
+            alpha_vantage_api_key = data_constants.alpha_vantage_api_key
+        if eikon_api_key is None:
+            eikon_api_key = data_constants.eikon_api_key
+        if macrobond_client_id is None:
+            macrobond_client_id = data_constants.macrobond_client_id
+        if macrobond_client_secret is None:
+            macrobond_client_secret = data_constants.macrobond_client_secret
+        if data_vendor_custom is None:
+            data_vendor_custom = data_constants.data_vendor_custom
 
         # Can deep copy MarketDataRequest (use a lock, so can be used with 
         # threading when downloading time series)
@@ -181,6 +212,7 @@ class MarketDataRequest(object):
                     copy.deepcopy(md_request.macrobond_client_secret)
                 
                 self.pretransformation = copy.deepcopy(md_request.pretransformation)
+                self.vintage_as_index = copy.deepcopy(md_request.vintage_as_index)
 
                 self.overrides = copy.deepcopy(md_request.overrides)
                 self.push_to_cache = copy.deepcopy(md_request.push_to_cache)
@@ -188,7 +220,7 @@ class MarketDataRequest(object):
                     copy.deepcopy(md_request.freeform_md_request)
 
                 self.tickers = copy.deepcopy(md_request.tickers)  # Need this after category in case have wildcard
-                self.data_vendor_custom = copy.deepcopy(md_request.data_vendor_custom)
+                self.data_vendor_custom = md_request.data_vendor_custom
         else:
             self.freq_mult = freq_mult
 
@@ -235,6 +267,7 @@ class MarketDataRequest(object):
             self.macrobond_client_secret = macrobond_client_secret
             
             self.pretransformation = pretransformation
+            self.vintage_as_index = vintage_as_index
 
             self.overrides = overrides
             self.push_to_cache = push_to_cache
@@ -623,7 +656,7 @@ class MarketDataRequest(object):
     def environment(self, environment):
         environment = environment.lower()
 
-        valid_environment = data_constants.possible_data_environment
+        valid_environment = DataConstants().possible_data_environment
 
         if not environment in valid_environment:
             LoggerManager().getLogger(__name__).warning(
@@ -778,6 +811,14 @@ class MarketDataRequest(object):
         self.__pretransformation = pretransformation
         
     @property
+    def vintage_as_index(self):
+        return self.__vintage_as_index
+
+    @vintage_as_index.setter
+    def vintage_as_index(self, vintage_as_index):
+        self.__vintage_as_index = vintage_as_index
+        
+    @property
     def overrides(self):
         return self.__overrides
 
@@ -800,6 +841,14 @@ class MarketDataRequest(object):
     @freeform_md_request.setter
     def freeform_md_request(self, freeform_md_request):
         self.__freeform_md_request = freeform_md_request
+
+    @property
+    def data_vendor_custom(self):
+        return self.__data_vendor_custom
+
+    @data_vendor_custom.setter
+    def data_vendor_custom(self, data_vendor_custom):
+        self.__data_vendor_custom = data_vendor_custom
 
     def _flatten_list(self, list_of_lists):
         """Flattens list, particularly useful for combining baskets

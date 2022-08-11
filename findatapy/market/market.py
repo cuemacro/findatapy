@@ -61,7 +61,7 @@ class Market(object):
         self.md_request = md_request
 
     def fetch_market(self, md_request=None, md_request_df=None,
-                     md_request_str=None, tickers=None,
+                     md_request_str=None, md_request_dict=None, tickers=None,
                      start_date=None, finish_date=None, best_match_only=False,
                      **kwargs):
         """Fetches market data for specific tickers
@@ -104,6 +104,18 @@ class Market(object):
         if self.md_request is not None:
             md_request = self.md_request
 
+        if isinstance(md_request, str):
+            md_request_str = md_request
+            md_request = MarketDataRequest()
+
+        if isinstance(md_request, dict):
+            md_request_dict = md_request
+            md_request = MarketDataRequest()
+
+        if isinstance(md_request, pd.DataFrame):
+            md_request_df = md_request
+            md_request = MarketDataRequest()
+
         # Any kwargs are assumed to be to set MarketDataRequest attributes
         if kwargs != {}:
             md_request = self._kwargs_to_md_request(kwargs, md_request)
@@ -136,7 +148,7 @@ class Market(object):
             return self.fetch_market(md_request)
 
         # Or directly as a string
-        if isinstance(md_request, str):
+        if md_request_str is not None:
             md_request = self.create_md_request_from_str(
                 md_request, 
                 start_date=start_date, finish_date=finish_date,
@@ -145,16 +157,18 @@ class Market(object):
             return self.fetch_market(md_request)
 
         # Or directly as a dict
-        if isinstance(md_request, dict):
+        if md_request_dict is not None:
             md_request = self.create_md_request_from_dict(
-                md_request, start_date=start_date, finish_date=finish_date)
+                md_request_dict, md_request=md_request,
+                start_date=start_date, finish_date=finish_date)
 
             return self.fetch_market(md_request)
 
         # Or directly as a DataFrame
-        if isinstance(md_request, pd.DataFrame):
+        if md_request_df is not None:
             md_request = self.create_md_request_from_dataframe(
-                md_request, start_date=start_date, finish_date=finish_date,
+                md_request_df, md_request=md_request,
+                start_date=start_date, finish_date=finish_date,
                 **kwargs)
 
             return self.fetch_market(md_request)
@@ -678,16 +692,16 @@ class Market(object):
                     best_match_only=best_match_only,
                     smart_group=smart_group)
 
-                md_request_df = self.create_md_request_from_dataframe(
+                md_request = self.create_md_request_from_dataframe(
                     md_request_df,
                     md_request=md_request, start_date=start_date,
                     finish_date=finish_date)
 
-                md_request_df = self._kwargs_to_md_request(kwargs,
-                                                           md_request_df)
+                md_request = self._kwargs_to_md_request(kwargs,
+                                                           md_request)
 
                 # if best_match_only:
-                return md_request_df
+                return md_request
 
 
             else:
