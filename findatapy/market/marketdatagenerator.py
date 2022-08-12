@@ -258,8 +258,16 @@ class MarketDataGenerator(object):
             # TODO only do this for not daily data?
             try:
                 if df_agg is not None:
+                    filter_by_column_names = True
+
+                    for col in df_agg.columns:
+                        if "all-vintages" in col:
+                            filter_by_column_names = False
+
                     df_agg = self._filter.filter_time_series(
-                        md_request, df_agg, pad_columns=True)
+                        md_request, df_agg, pad_columns=True,
+                        filter_by_column_names=filter_by_column_names)
+
                     df_agg = df_agg.dropna(how="all")
 
                     # Resample data using pandas if specified in the 
