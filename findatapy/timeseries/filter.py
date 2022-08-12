@@ -49,7 +49,7 @@ class Filter(object):
         self._calendar = Calendar()
 
     def filter_time_series(self, md_request, data_frame,
-                           pad_columns=False):
+                           pad_columns=False, filter_by_column_names=True):
         """Filters a time series given a set of criteria (like start/finish 
         date and tickers)
 
@@ -75,11 +75,12 @@ class Filter(object):
         # Filter by ticker.field combinations requested
         columns = self.create_tickers_fields_list(md_request)
 
-        if pad_columns:
-            data_frame = self.pad_time_series_columns(columns, data_frame)
-        else:
-            data_frame = self.filter_time_series_by_columns(columns,
-                                                            data_frame)
+        if filter_by_column_names:
+            if pad_columns:
+                data_frame = self.pad_time_series_columns(columns, data_frame)
+            else:
+                data_frame = self.filter_time_series_by_columns(columns,
+                                                                data_frame)
 
         return data_frame
 

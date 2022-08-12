@@ -135,6 +135,8 @@ individual data providers)
 
 # Coding log
 
+* 12 Aug 2022
+  * Minor changes in MarketDataGenerator for non-standard columns
 * 11 Aug 2022
   * Fixed various bug in MarketDataRequest, when updating constants and 
   freeform str ticker queries with kwargs
