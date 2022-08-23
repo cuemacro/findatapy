@@ -108,9 +108,7 @@ class MarketDataRequest(object):
                  fred_api_key=None,
                  alpha_vantage_api_key=None,
                  eikon_api_key=None,
-                 macrobond_client_id=None,
-                 macrobond_client_secret=None,
-                 
+
                  pretransformation=None,
                  vintage_as_index=None,
                  
@@ -143,10 +141,6 @@ class MarketDataRequest(object):
             alpha_vantage_api_key = data_constants.alpha_vantage_api_key
         if eikon_api_key is None:
             eikon_api_key = data_constants.eikon_api_key
-        if macrobond_client_id is None:
-            macrobond_client_id = data_constants.macrobond_client_id
-        if macrobond_client_secret is None:
-            macrobond_client_secret = data_constants.macrobond_client_secret
         if data_vendor_custom is None:
             data_vendor_custom = data_constants.data_vendor_custom
 
@@ -206,10 +200,6 @@ class MarketDataRequest(object):
                 self.alpha_vantage_api_key = \
                     copy.deepcopy(md_request.alpha_vantage_api_key)
                 self.eikon_api_key = copy.deepcopy(md_request.eikon_api_key)
-                self.macrobond_client_id = \
-                    copy.deepcopy(md_request.macrobond_client_id)
-                self.macrobond_client_secret = \
-                    copy.deepcopy(md_request.macrobond_client_secret)
                 
                 self.pretransformation = copy.deepcopy(md_request.pretransformation)
                 self.vintage_as_index = copy.deepcopy(md_request.vintage_as_index)
@@ -263,8 +253,6 @@ class MarketDataRequest(object):
             self.fred_api_key = fred_api_key
             self.alpha_vantage_api_key = alpha_vantage_api_key
             self.eikon_api_key = eikon_api_key
-            self.macrobond_client_id = macrobond_client_id
-            self.macrobond_client_secret = macrobond_client_secret
             
             self.pretransformation = pretransformation
             self.vintage_as_index = vintage_as_index
@@ -782,22 +770,6 @@ class MarketDataRequest(object):
     @eikon_api_key.setter
     def eikon_api_key(self, eikon_api_key):
         self.__eikon_api_key = eikon_api_key
-        
-    @property
-    def macrobond_client_id(self):
-        return self.__macrobond_client_id
-
-    @macrobond_client_id.setter
-    def macrobond_client_id(self, macrobond_client_id):
-        self.__macrobond_client_id = macrobond_client_id
-        
-    @property
-    def macrobond_client_secret(self):
-        return self.__macrobond_client_secret
-
-    @macrobond_client_secret.setter
-    def macrobond_client_secret(self, macrobond_client_secret):
-        self.__macrobond_client_secret = macrobond_client_secret
 
     @property
     def pretransformation(self):

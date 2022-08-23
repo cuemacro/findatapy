@@ -135,6 +135,8 @@ individual data providers)
 
 # Coding log
 
+* 23 Aug 2022
+  * Simplified MarketDataRequest
 * 12 Aug 2022
   * Minor changes in MarketDataGenerator for non-standard columns
 * 11 Aug 2022
