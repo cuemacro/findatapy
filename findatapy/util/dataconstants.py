@@ -238,10 +238,6 @@ class DataConstants(object):
     #######  Eikon settings
     eikon_api_key = key_store("Eikon")
 
-    ####### Macrobond settings
-    macrobond_client_id = key_store("Macrobond_client_id")
-    macrobond_client_secret = key_store("Macrobond_client_secret")
-
     #######  Twitter settings (you need to set these up on Twitter)
     TWITTER_APP_KEY             = key_store("Twitter App Key")
     TWITTER_APP_SECRET          = key_store("Twitter App Secret")
