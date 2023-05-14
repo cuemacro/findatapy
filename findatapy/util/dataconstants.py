@@ -150,12 +150,12 @@ class DataConstants(object):
     # How many threads to use for loading external data (don't do too many on slow machines!)
     # also some data sources will complain if you start too many parallel threads to call data!
     # for some data providers might get better performance from 1 thread only!
-    market_thread_no = {             'quandl'      : 4,
-                                     'bloomberg'   : 4,
-                                     'yahoo'       : 1, # yfinance already threads requests, so don't do it twice!
-                                     'other'       : 4,
-                                     'dukascopy'   : 8,
-                                     'fxcm'        : 4}
+    market_thread_no = {'quandl'      : 4,
+                        'bloomberg'   : 4,
+                        'yahoo'       : 1, # yfinance already threads requests, so don't do it twice!
+                        'other'       : 4,
+                        'dukascopy'   : 3, # do not do too many!
+                        'fxcm'        : 4}
 
     # Seconds for timeout
     timeout_downloader = {'dukascopy' : 120}

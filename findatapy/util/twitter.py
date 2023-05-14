@@ -47,7 +47,7 @@ class Twitter(object):
         if link is not None: chars_lim = chars_lim - (22 * link)
         if picture is not None: chars_lim = chars_lim - 23
 
-        if (len(msg) > chars_lim):
+        if len(msg) > chars_lim:
             self.logger.info("Message too long for Twitter!")
 
         if picture is None:

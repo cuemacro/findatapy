@@ -243,22 +243,25 @@ class IOEngine(object):
                 pass
 
     ### functions to handle HDF5 on disk, arctic etc.
-    def write_time_series_cache_to_disk(self, fname, data_frame,
-                                        engine='hdf5_fixed', append_data=False,
-                                        db_server=constants.db_server,
-                                        db_port=constants.db_port,
-                                        username=constants.db_username,
-                                        password=constants.db_password,
-                                        filter_out_matching=None, timeout=10,
-                                        use_cache_compression=constants.use_cache_compression,
-                                        parquet_compression=constants.parquet_compression,
-                                        use_pyarrow_directly=False,
-                                        md_request=None, ticker=None,
-                                        cloud_credentials=None):
-        """Writes Pandas data frame to disk as Parquet, HDF5 format or bcolz format, in Arctic or to Redis
+    def write_time_series_cache_to_disk(
+            self, fname, data_frame,
+            engine='hdf5_fixed', append_data=False,
+            db_server=constants.db_server,
+            db_port=constants.db_port,
+            username=constants.db_username,
+            password=constants.db_password,
+            filter_out_matching=None, timeout=10,
+            use_cache_compression=constants.use_cache_compression,
+            parquet_compression=constants.parquet_compression,
+            use_pyarrow_directly=False,
+            md_request=None, ticker=None,
+            cloud_credentials=None):
+        """Writes Pandas data frame to disk as Parquet, HDF5 format or bcolz
+        format, in Arctic or to Redis
 
-        Note, that Redis uses pickle (you must make sure that your Redis instance is not accessible
-        from unverified users, given you should not unpickle from unknown sources)
+        Note, that Redis uses pickle (you must make sure that your Redis
+        instance is not accessible from unverified users, given you should not
+        unpickle from unknown sources)
 
         Parmeters
         ---------
@@ -283,7 +286,8 @@ class IOEngine(object):
 
         logger = LoggerManager().getLogger(__name__)
 
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if md_request is not None:
             fname = self.path_join(fname, md_request.create_category_key(
@@ -345,8 +349,18 @@ class IOEngine(object):
                         "Didn't push " + fname + " to Redis given not running")
 
             except Exception as e:
+                fname_msg = fname
+
+                if len(fname_msg) > 150:
+                    fname_msg = fname_msg[:149] + "..."
+
+                error_msg = str(e)
+
+                if len(error_msg) > 150:
+                    error_msg = error_msg[:149] + "..."
+
                 logger.warning(
-                    "Couldn't push " + fname + " to Redis: " + str(e))
+                    "Couldn't push " + fname_msg + " to Redis: " + error_msg)
 
         elif engine == 'arctic':
 
@@ -399,7 +413,8 @@ class IOEngine(object):
 
                 data_frame = data_frame[new_cols]
 
-            # Problems with Arctic when writing timezone to disk sometimes, so strip
+            # Problems with Arctic when writing timezone to disk sometimes,
+            # so strip
             data_frame = data_frame.copy().tz_localize(None)
 
             try:
@@ -418,8 +433,9 @@ class IOEngine(object):
         elif engine == 'hdf5':
             h5_filename = self.get_h5_filename(fname)
 
-            # append data only works for HDF5 stored as tables (but this is much slower than fixed format)
-            # removes duplicated entries at the end
+            # Append data only works for HDF5 stored as tables (but this is
+            # much slower than fixed format) removes duplicated entries at
+            # the end
             if append_data:
                 store = pd.HDFStore(h5_filename, format=hdf5_format,
                                     complib="zlib", complevel=9)
@@ -427,8 +443,8 @@ class IOEngine(object):
                 if ('intraday' in fname):
                     data_frame = data_frame.astype('float32')
 
-                # get last row which matches and remove everything after that (because append
-                # function doesn't check for duplicated rows
+                # get last row which matches and remove everything after that
+                # (because append function doesn't check for duplicated rows)
                 nrows = len(store['data'].index)
                 last_point = data_frame.index[-1]
 
@@ -442,7 +458,8 @@ class IOEngine(object):
 
                     i = i - 1
 
-                # remove rows at the end, which are duplicates of the incoming time series
+                # Remove rows at the end, which are duplicates of the
+                # incoming time series
                 store.remove(key='data', start=i, stop=nrows)
                 store.put(key='data', value=data_frame, format=hdf5_format,
                           append=True)
@@ -614,7 +631,8 @@ class IOEngine(object):
         for fname_single in fname:
             logger.debug("Reading " + fname_single + "..")
 
-            if engine == 'parquet' and '.gzip' not in fname_single and '.parquet' not in fname_single:
+            if engine == 'parquet' and '.gzip' not in fname_single \
+                    and '.parquet' not in fname_single:
                 fname_single = fname_single + '.parquet'
 
             if (engine == 'redis'):
@@ -628,8 +646,9 @@ class IOEngine(object):
                     # is there a compressed key stored?)
                     k = r.keys('comp_' + fname_single)
 
-                    # if so, then it means that we have stored it as a compressed object
-                    # if have more than 1 element, take the last (which will be the latest to be added)
+                    # If so, then it means that we have stored it as a
+                    # compressed object if have more than 1 element, take the
+                    # last (which will be the latest to be added)
                     if (len(k) >= 1):
                         k = k[-1].decode('utf-8')
 
@@ -642,13 +661,14 @@ class IOEngine(object):
 
                 except Exception as e:
                     logger.info(
-                        "Cache not existent for " + fname_single + " in Redis: " + str(
+                        "Cache not existent for " +
+                            fname_single + " in Redis: " + str(
                             e))
 
                 if msg is None:
                     data_frame = None
                 else:
-                    logger.info('Load Redis cache: ' + fname_single)
+                    logger.info("Load Redis cache: " + fname_single)
 
                     data_frame = msg  # pd.read_msgpack(msg)
 
@@ -660,7 +680,7 @@ class IOEngine(object):
 
                 fname_single = os.path.basename(fname_single).replace('.', '_')
 
-                logger.info('Load Arctic/MongoDB library: ' + fname_single)
+                logger.info("Load Arctic/MongoDB library: " + fname_single)
 
                 if username is not None and password is not None:
                     c = pymongo.MongoClient(
@@ -696,8 +716,8 @@ class IOEngine(object):
 
                 except Exception as e:
                     logger.warning(
-                        'Library may not exist or another error: ' + fname_single + ' & message is ' + str(
-                            e))
+                        'Library may not exist or another error: '
+                            + fname_single + ' & message is ' + str(e))
                     data_frame = None
 
             elif self.path_exists(self.get_h5_filename(fname_single)):
@@ -878,7 +898,8 @@ class IOEngine(object):
         self.write_time_series_cache_to_disk(category_f_name, data_frame)
 
     def clean_csv_file(self, f_name):
-        """Cleans up CSV file (removing empty characters) before writing back to disk
+        """Cleans up CSV file (removing empty characters) before writing back
+        to disk
 
         Parameters
         ----------
@@ -902,7 +923,8 @@ class IOEngine(object):
     def create_cache_file_name(self, filename):
         return constants.folder_time_series_data + "/" + filename
 
-    # TODO refactor IOEngine so that each database is implemented in a subclass of DBEngine
+    # TODO refactor IOEngine so that each database is implemented in a
+    #  subclass of DBEngine
 
     def get_engine(self, engine='hdf5_fixed'):
         pass
@@ -942,7 +964,8 @@ class IOEngine(object):
         -------
         DataFrame
         """
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if "s3://" in path:
             storage_options = self._convert_cred(cloud_credentials,
@@ -1064,15 +1087,17 @@ class IOEngine(object):
 
         cloud_credentials_ = self._convert_cred(cloud_credentials)
 
-        # Tends to be slower than using pandas/pyarrow directly, but for very large files, we might have to split
-        # before writing to disk
+        # Tends to be slower than using pandas/pyarrow directly, but for very
+        # large files, we might have to split before writing to disk
         def pyarrow_dump(df, path):
-            # Trying to convert large Pandas DataFrames in one go to Arrow tables can result in out-of-memory
-            # messages, so chunk them first, convert them one by one, and write to disk in chunks
+            # Trying to convert large Pandas DataFrames in one go to Arrow
+            # tables can result in out-of-memory messages, so chunk them first,
+            # convert them one by one, and write to disk in chunks
             df_list = self.chunk_dataframes(df)
 
-            # Using pandas.to_parquet, doesn't let us pass in parameters to allow coersion of timestamps
-            # hence have to do it this way, using underlying pyarrow interface (/)
+            # Using pandas.to_parquet, doesn't let us pass in parameters to
+            # allow coersion of timestamps hence have to do it this way,
+            # using underlying pyarrow interface (/)
             # ie. ns -> us
             if not (isinstance(df_list, list)):
                 df_list = [df_list]
@@ -1100,11 +1125,12 @@ class IOEngine(object):
                         table = pa.Table.from_pandas(df_)
 
                         if pqwriter is None:
-                            pqwriter = pq.ParquetWriter(p_in_s3, table.schema,
-                                                        compression=parquet_compression,
-                                                        coerce_timestamps=constants.default_time_units,
-                                                        allow_truncated_timestamps=True,
-                                                        filesystem=s3)
+                            pqwriter = pq.ParquetWriter(
+                                p_in_s3, table.schema,
+                                compression=parquet_compression,
+                                coerce_timestamps=constants.default_time_units,
+                                allow_truncated_timestamps=True,
+                                filesystem=s3)
 
                         pqwriter.write_table(table)
 
@@ -1118,10 +1144,11 @@ class IOEngine(object):
                         table = pa.Table.from_pandas(df_)
 
                         if pqwriter is None:
-                            pqwriter = pq.ParquetWriter(p, table.schema,
-                                                        compression=parquet_compression,
-                                                        coerce_timestamps=constants.default_time_units,
-                                                        allow_truncated_timestamps=True)
+                            pqwriter = pq.ParquetWriter(
+                                p, table.schema,
+                                compression=parquet_compression,
+                                coerce_timestamps=constants.default_time_units,
+                                allow_truncated_timestamps=True)
 
                         pqwriter.write_table(table)
 
@@ -1136,7 +1163,8 @@ class IOEngine(object):
         if use_pyarrow_directly:
             pyarrow_dump(df, path)
         else:
-            # First try to use Pandas/pyarrow, if fails, which can occur with large DataFrames use chunked write
+            # First try to use Pandas/pyarrow, if fails, which can occur with
+            # large DataFrames use chunked write
             try:
                 for p in path:
                     p = self.sanitize_path(p)
@@ -1145,20 +1173,22 @@ class IOEngine(object):
                         storage_options = self._convert_cred(cloud_credentials,
                                                              convert_to_s3fs=True)
 
-                        df.to_parquet(p, compression=parquet_compression,
-                                      coerce_timestamps=constants.default_time_units,
-                                      allow_truncated_timestamps=True,
-                                      storage_options=storage_options)
+                        df.to_parquet(
+                            p, compression=parquet_compression,
+                            coerce_timestamps=constants.default_time_units,
+                            allow_truncated_timestamps=True,
+                            storage_options=storage_options)
                     else:
 
-                        df.to_parquet(p, compression=parquet_compression,
-                                      coerce_timestamps=constants.default_time_units,
-                                      allow_truncated_timestamps=True)
+                        df.to_parquet(
+                            p, compression=parquet_compression,
+                            coerce_timestamps=constants.default_time_units,
+                            allow_truncated_timestamps=True)
 
             except pyarrow.lib.ArrowMemoryError as e:
                 logger.warning(
-                    "Couldn't dump using Pandas/pyarrow, will instead try chunking with pyarrow directly " + str(
-                        e))
+                    "Couldn't dump using Pandas/pyarrow, will instead try "
+                    "chunking with pyarrow directly " + str(e))
 
                 pyarrow_dump(df, path)
 
@@ -1210,7 +1240,8 @@ class IOEngine(object):
         return array
 
     def get_obj_size_mb(self, obj):
-        # Can sometime have very large dataframes, which need to be split, otherwise won't fit in a single Redis key
+        # Can sometime have very large dataframes, which need to be split,
+        # otherwise won't fit in a single Redis key
         mem = obj.memory_usage(deep='deep').sum()
         mem_float = round(float(mem) / (1024.0 * 1024.0), 3)
 
@@ -1219,7 +1250,8 @@ class IOEngine(object):
     def chunk_dataframes(self, obj, chunk_size_mb=constants.chunk_size_mb):
         logger = LoggerManager.getLogger(__name__)
 
-        # Can sometime have very large dataframes, which need to be split, otherwise won't fit in a single Redis key
+        # Can sometime have very large dataframes, which need to be split,
+        # otherwise won't fit in a single Redis key
         mem_float = self.get_obj_size_mb(obj)
         mem = '----------- ' + str(mem_float) + ' MB -----------'
 
@@ -1239,7 +1271,8 @@ class IOEngine(object):
 
     def read_csv(self, path, cloud_credentials=None, encoding='utf-8',
                  encoding_errors=None, errors='ignore'):
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
@@ -1275,7 +1308,8 @@ class IOEngine(object):
                         use_pyarrow_directly=use_pyarrow_directly)
 
     def _get_cloud_path(self, path, filename=None, cloud_credentials=None):
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if isinstance(path, list):
             pass
@@ -1335,7 +1369,8 @@ class IOEngine(object):
                     dictionary.to_json(p)
 
     def path_exists(self, path, cloud_credentials=None):
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
@@ -1366,7 +1401,6 @@ class IOEngine(object):
             folder = "s3://" + folder
 
         else:
-
             folder = os.path.join(folder, *file)
 
         folder = folder.replace("\\\\", "/")
@@ -1375,7 +1409,8 @@ class IOEngine(object):
         return folder
 
     def list_files(self, path, cloud_credentials=None):
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
@@ -1398,7 +1433,8 @@ class IOEngine(object):
         return files
 
     def delete(self, path, cloud_credentials=None):
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if not (isinstance(path, list)):
             path = [path]
@@ -1418,7 +1454,8 @@ class IOEngine(object):
 
     def copy(self, source, destination, cloud_credentials=None,
              infer_dest_filename=False):
-        if cloud_credentials is None: cloud_credentials = constants.cloud_credentials
+        if cloud_credentials is None:
+            cloud_credentials = constants.cloud_credentials
 
         if destination is None:
             destination = ""
@@ -1436,8 +1473,8 @@ class IOEngine(object):
                 if "s3://" in dest:
                     infer_dest_filename = True
 
-                list_files = self.list_files(so,
-                                             cloud_credentials=cloud_credentials)
+                list_files = self.list_files(
+                    so, cloud_credentials=cloud_credentials)
 
                 self.copy(list_files, dest,
                           infer_dest_filename=infer_dest_filename)
@@ -1466,12 +1503,14 @@ class IOEngine(object):
                                dest, recursive=True)
 
 
-#######################################################################################################################
+###############################################################################
 
 class SpeedCache(object):
-    """Wrapper for cache hosted in external in memory database (by default Redis, although in practice, can use
-    any database supported in this class). This allows us to share hash across Python instances, rather than having
-    repopulate each time we restart Python. Also can let us share cache easily across threads, without replicating.
+    """Wrapper for cache hosted in external in memory database (by default
+    Redis, although in practice, can use any database supported in this class).
+    This allows us to share hash across Python instances, rather than having
+    repopulate each time we restart Python. Also can let us share cache easily
+    across threads, without replicating.
 
     """
 
@@ -1515,16 +1554,18 @@ class SpeedCache(object):
         if self.engine == 'no_cache': return
 
         try:
-            return self.io_engine.remove_time_series_cache_on_disk(key,
-                                                                   engine=self.engine,
-                                                                   db_server=self.db_cache_server,
-                                                                   db_port=self.db_cache_port)
+            return self.io_engine.remove_time_series_cache_on_disk(
+                key,
+                engine=self.engine,
+                db_server=self.db_cache_server,
+                db_port=self.db_cache_port)
         except:
             pass
 
     def generate_key(self, obj, key_drop=[]):
-        """Create a unique hash key for object from its attributes (excluding those attributes in key drop), which can be
-        used as a hashkey in the Redis hashtable
+        """Create a unique hash key for object from its attributes (excluding
+        those attributes in key drop), which can be used as a hashkey in the
+        Redis hashtable
 
         Parameters
         ----------

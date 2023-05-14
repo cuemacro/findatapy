@@ -162,7 +162,8 @@ class DataVendorBBG(DataVendor):
                                                  md_request_vendor)
 
                 # if data_frame is not None:
-                #     # Convert fields with release-dt to dates (special case!) and assume everything else numerical
+                #     # Convert fields with release-dt to dates (special case!)
+                #     # and assume everything else numerical
                 #     for c in data_frame.columns:
                 #         try:
                 #             if 'release-dt' in c:
@@ -446,7 +447,7 @@ class DataVendorBBGOpen(DataVendorBBG):
         # Bloomberg OpenAPI implementation
         low_level_loader = BBGLowLevelIntraday()
 
-        # by default we download all available fields!
+        # By default we download all available fields!
         data_frame = low_level_loader.load_time_series(md_request)
 
         # self.kill_session() # need to forcibly kill_session since can't
@@ -472,7 +473,7 @@ class DataVendorBBGOpen(DataVendorBBG):
 
         md_request_vendor_selective = copy.copy(md_request)
 
-        # special case for future date releases
+        # Special case for future date releases
         # if 'release-date-time-full' in md_request.fields:
         #     md_request_vendor_selective.fields = ['ECO_FUTURE_RELEASE_DATE_LIST']
         #
@@ -706,7 +707,7 @@ class BBGLowLevelTemplate:  # in order that the init function works in
         logger = LoggerManager().getLogger(__name__)
 
         # Try up to 5 times to start a session
-        while (tries < 5):
+        while tries < 5:
             try:
                 # fill SessionOptions
                 sessionOptions = blpapi.SessionOptions()
