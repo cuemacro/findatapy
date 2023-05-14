@@ -117,7 +117,8 @@ class TickerFactory(object):
         for sh in sheets:
             logger.info("Reading from " + sh + " in " + excel_file)
 
-            df = pd.read_excel(excel_file, sheet_name=sh, skiprows=skiprows)
+            df = pd.read_excel(excel_file, sheet_name=sh, skiprows=skiprows,
+                               engine='openpyxl')
             df = df.dropna(how="all")
 
             if "maker" in sh:

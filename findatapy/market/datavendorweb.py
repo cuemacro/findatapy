@@ -1784,8 +1784,18 @@ class DataVendorDukasCopy(DataVendor):
                 # If URL has not been found try again
                 if tick_request.status_code == 404:
                     logger.warning(
-                        "Error downloading.. " + tick_url + " returned 404 "
-                                                            "URL not found message! Are you sure Dukascopy has this asset?")
+                        "Error downloading.. "
+                            + tick_url + " returned 404 " +
+                            "URL not found message! Are you sure Dukascopy has this asset?")
+
+                    tick_request_content = None
+                    tick_request.close()
+
+                    break
+                elif tick_request.status_code == 503:
+                    logger.warning(
+                        "Error downloading.. " + tick_url +
+                        " returned 503 and service unavailable")
 
                     tick_request_content = None
                     tick_request.close()
@@ -1798,13 +1808,13 @@ class DataVendorDukasCopy(DataVendor):
 
                     content_text = tick_request_content.decode("latin1")
 
-                    # Can sometimes get back an error HTML page, in which 
+                    # Can sometimes get back an error HTML page, in which
                     # case retry
                     if 'error' not in str(content_text):
                         break
                     else:
                         logger.warning(
-                            "Error downloading.. " + tick_url + " " 
+                            "Error downloading.. " + tick_url + " "
                             + content_text + " will try again "
                             + str(download_counter) + " occasion")
             except Exception as e:
@@ -2811,6 +2821,8 @@ class DataVendorFlatFile(DataVendor):
                 data_frame = IOEngine().read_time_series_cache_from_disk(
                     full_path, engine=data_engine)
 
+            # data_frame.to_csv("temp.csv")
+
             if data_frame is None or data_frame.index is []: return None
 
             if data_frame is not None:
@@ -2831,8 +2843,13 @@ class DataVendorFlatFile(DataVendor):
                 data_frame.columns = ticker_combined
                 data_frame.index.name = "Date"
 
+                msg = str(ticker_combined)
+
+                if len(msg) > 100:
+                    msg = msg[:99] + "...]"
+
                 logger.info("Completed request from " + str(
-                    data_source) + " for " + str(ticker_combined))
+                    data_source) + " for " + msg)
 
             return data_frame
 

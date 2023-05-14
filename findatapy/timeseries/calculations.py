@@ -1450,7 +1450,8 @@ class Calculations(object):
 
     def linear_regression_single_vars(self, df_y, df_x, y_vars, x_vars,
                                       use_stats_models=True):
-        """Do a linear regression of a number of y and x variable pairs in different dataframes, report back the coefficients.
+        """Do a linear regression of a number of y and x variable pairs in
+        different dataframes, report back the coefficients.
 
         Parameters
         ----------
@@ -1463,7 +1464,8 @@ class Calculations(object):
         x_vars : str (list)
             Which x variables should we regress
         use_stats_models : bool (default: True)
-            Should we use statsmodels library directly or pandas.stats.api.ols wrapper (warning: deprecated)
+            Should we use statsmodels library directly or
+            pandas.stats.api.ols wrapper (warning: deprecated)
 
         Returns
         -------
@@ -1481,7 +1483,8 @@ class Calculations(object):
                 if pd.__version__ < '0.17' or not (use_stats_models):
                     out = pd.stats.api.ols(y=y, x=x)
                 else:
-                    # pandas.stats.api is now being depreciated, recommended replacement package
+                    # pandas.stats.api is now being depreciated,
+                    # recommended replacement package
                     # http://www.statsmodels.org/stable/regression.html
 
                     # we follow the example from there - Fit and summarize OLS model
@@ -1492,7 +1495,8 @@ class Calculations(object):
                     # to remove NaN values (otherwise regression is undefined)
                     (y, x, a, b, c, d) = self._filter_data(y, x)
 
-                    # assumes we have a constant (remove add_constant wrapper to have no intercept reported)
+                    # Assumes we have a constant (remove add_constant
+                    # wrapper to have no intercept reported)
                     mod = sm.OLS(y.get_values(),
                                  statsmodels.tools.add_constant(
                                      x.get_values()))
@@ -1538,7 +1542,8 @@ class Calculations(object):
 
         return df
 
-    ##### Various methods for averaging time series by hours, mins and days (or specific columns) to create summary time series
+    ##### Various methods for averaging time series by hours, mins and days
+    # (or specific columns) to create summary time series
     def average_by_columns_list(self, data_frame, columns):
         return data_frame. \
             groupby(columns).mean()
@@ -1702,14 +1707,14 @@ class Calculations(object):
         try:
             return data_frame. \
                 groupby([date_index.month.rename('month'),
-                         Calendar().get_bus_day_of_month(date_index, cal,
-                                                         tz=data_frame.index.tz).rename(
-                             'day')]).mean()
+                         Calendar().get_bus_day_of_month(
+                             date_index, cal,
+                             tz=data_frame.index.tz).rename('day')]).mean()
         except:
             return data_frame. \
                 groupby([date_index.month,
-                         Calendar().get_bus_day_of_month(date_index, cal,
-                                                         tz=data_frame.index.tz)]).mean()
+                         Calendar().get_bus_day_of_month(
+                             date_index, cal, tz=data_frame.index.tz)]).mean()
 
     def average_by_month_day_by_day(self, data_frame):
         date_index = data_frame.index
@@ -1856,12 +1861,14 @@ class Calculations(object):
 
     def insert_sparse_time_series(self, df_sparse_time_series, pre_window_size,
                                   post_window_size, unit):
-        """  Given a sparse time series dataframe, return inserted dataframe with given unit/window
+        """Given a sparse time series dataframe, return inserted dataframe
+        with given unit/window
         e.g   for a given sparse time series df, df[30] = 4.0
               pre and post window sizes are 5
               then the function will insert 4.0 to df[26:30] and df[30:35]
 
-        *Note - may have chaotic results if df is not sparse enough (since the windows may overlap)
+        *Note - may have chaotic results if df is not sparse enough (since the
+        windows may overlap)
 
         Parameters
         ----------
@@ -1917,8 +1924,9 @@ class Calculations(object):
                                                data=narray)
 
             # now df should become [0 0 0 3 0 0 x 0 0 0 2 0 0 ]
-            # to make sure the final backward filling won't replace all elements to the first one
-            # we give a value at the backward_fill_bound (which is one unit before the pre window)
+            # to make sure the final backward filling won't replace all
+            # elements to the first one we give a value at the
+            # backward_fill_bound (which is one unit before the pre window)
             df[i].at[backward_fill_bound] = 4
 
             # now df should become [0 0 4 3 0 0 x 0 0 0 2 0 0]

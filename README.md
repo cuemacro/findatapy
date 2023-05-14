@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.29 - findatapy (14 May 2023)
 * 0.1.28 - findatapy (19 Jul 2022)
 * 0.1.27 - findatapy (20 May 2022)
 * 0.1.26 - findatapy (07 Oct 2021)
@@ -135,6 +136,10 @@ individual data providers)
 
 # Coding log
 
+* 12 May 2023
+  * Fixed Dukascopy downloader
+* 29 Aug 2022
+  * Reformatted text for line length
 * 23 Aug 2022
   * Simplified MarketDataRequest
 * 12 Aug 2022

@@ -80,8 +80,10 @@ class Market(object):
             vendor_ticker eg. EURUSD Curncy
             vendor_field eg. PX_LAST
 
-        We can also create MarketDataRequest objects, using strings eg. fx.quandl.daily.NYC.EURUSD (category.data_source.freq.cut.ticker),
-        as Python dict, as DataFrame with various properties (like ticker, category etc.)
+        We can also create MarketDataRequest objects, using strings
+        eg. fx.quandl.daily.NYC.EURUSD (category.data_source.freq.cut.ticker),
+        as Python dict, as DataFrame with various properties
+        (like ticker, category etc.)
 
         Parameters
         ----------
@@ -92,7 +94,8 @@ class Market(object):
             Another way to specify some of the data request properties
 
         md_request_str : str
-            We can specify part of the MarketDataRequest as a string, which gets converted later (or a JSON object)
+            We can specify part of the MarketDataRequest as a string, which
+            gets converted later (or a JSON object)
 
         Returns
         -------
