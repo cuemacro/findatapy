@@ -210,11 +210,13 @@ class DataConstants(object):
     # Depending on the ticker field inclusion of specific keywords,
     # apply a particular BBG override (make sure all lowercase)
     bbg_keyword_dict_override = {
-        'RELEASE_STAGE_OVERRIDE' : {'A': ['gdp', 'advance'],
-                                    'F': ['gdp', 'final'],
-                                    'P': ['gdp', 'preliminary'],
-                                    'F': ['cpi', 'final'],
-                                    'P': ['cpi', 'preliminary']
+        'RELEASE_STAGE_OVERRIDE' : {('gdp', 'advance') : 'A',
+                                    ('gdp', 'final') : 'F',
+                                    ('gdp', 'preliminary') : 'P',
+                                    ('cpi', 'final') : 'F',
+                                    ('cpi', 'preliminary') : 'P',
+                                    ('core', 'final'): 'F',
+                                    ('core', 'preliminary'): 'P'
                                     }
     }
 
