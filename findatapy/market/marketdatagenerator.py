@@ -417,12 +417,12 @@ class MarketDataGenerator(object):
             if expiry_date is not None:
                 expiry_date = pd.Timestamp(expiry_date)
 
-                if not (pd.isna(expiry_date)):
+                if not(pd.isna(expiry_date)):
                     # Use pandas Timestamp, a bit more robust with weird dates 
                     # (can fail if comparing date vs datetime)
                     # if the expiry is before the start date of our download 
                     # don"t bother downloading this ticker
-                    if expiry_date < start_date:
+                    if expiry_date < pd.Timestamp(start_date):
                         tickers[i] = None
 
                     # Special case for futures-contracts which are intraday
