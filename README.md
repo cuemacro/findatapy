@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.30 - findatapy (12 Oct 2023)
 * 0.1.29 - findatapy (14 May 2023)
 * 0.1.28 - findatapy (19 Jul 2022)
 * 0.1.27 - findatapy (20 May 2022)
@@ -136,6 +137,8 @@ individual data providers)
 
 # Coding log
 
+* 26 Jul 2023
+  * Fixed overrides for BBG
 * 12 May 2023
   * Fixed Dukascopy downloader
 * 29 Aug 2022

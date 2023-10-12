@@ -848,13 +848,13 @@ class BBGLowLevelDaily(BBGLowLevelTemplate):
 
                         keyword_dict = bbg_keyword_dict_override[bbg_override]
 
-                        for bbg_keyword in keyword_dict.keys():
+                        for keyword_list, bbg_keyword in keyword_dict.items():
 
                             # eg. ['gdp', 'advance']
-                            keyword = keyword_dict[bbg_keyword]
+                            # keyword = keyword_dict[bbg_keyword]
 
                             # if this matches a case, we have override
-                            if all(k.lower() in t for k in keyword):
+                            if all(k.lower() in t for k in keyword_list):
 
                                 # In case we have multiple overrides for
                                 # this ticker
