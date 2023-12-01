@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.31 - findatapy (01 Dec 2023)
 * 0.1.30 - findatapy (12 Oct 2023)
 * 0.1.29 - findatapy (14 May 2023)
 * 0.1.28 - findatapy (19 Jul 2022)
@@ -137,6 +138,9 @@ individual data providers)
 
 # Coding log
 
+* 01 Dec 2023
+  * Remove fxcmpy dependency (package no longer exists?)
+  * Added type hinting in ioengine.py
 * 26 Jul 2023
   * Fixed overrides for BBG
 * 12 May 2023

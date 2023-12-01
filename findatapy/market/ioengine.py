@@ -15,6 +15,7 @@ __author__ = "saeedamen"  # Saeed Amen
 # limitations under the License.
 #
 
+from typing import List
 import io
 import datetime
 import json
@@ -85,8 +86,11 @@ class IOEngine(object):
         pass
 
     ### functions to handle Excel on disk
-    def write_time_series_to_excel(self, fname, sheet, data_frame,
-                                   create_new=False):
+    def write_time_series_to_excel(self,
+                                   fname: str,
+                                   sheet: str,
+                                   data_frame: pd.DataFrame,
+                                   create_new: bool = False):
         """Writes Pandas data frame to disk in Excel format
 
         Parameters
@@ -117,7 +121,10 @@ class IOEngine(object):
         writer.save()
         writer.close()
 
-    def write_time_series_to_excel_writer(self, writer, sheet, data_frame):
+    def write_time_series_to_excel_writer(self,
+                                          writer,
+                                          sheet: str,
+                                          data_frame: pd.DataFrame):
         """Writes Pandas data frame to disk in Excel format for a writer
 
         Parameters
@@ -131,9 +138,13 @@ class IOEngine(object):
         """
         data_frame.to_excel(writer, sheet, engine='xlsxwriter')
 
-    def read_excel_data_frame(self, f_name, excel_sheet, freq, cutoff=None,
-                              dateparse=None,
-                              postfix='.close', intraday_tz='UTC'):
+    def read_excel_data_frame(self, f_name: str,
+                              excel_sheet: str,
+                              freq: str,
+                              cutoff: str = None,
+                              dateparse: str= None,
+                              postfix: str = '.close',
+                              intraday_tz: str = 'UTC'):
         """Reads Excel from disk into DataFrame
 
         Parameters
@@ -162,11 +173,14 @@ class IOEngine(object):
                                         intraday_tz=intraday_tz,
                                         excel_sheet=excel_sheet)
 
-    def remove_time_series_cache_on_disk(self, fname, engine='hdf5_fixed',
-                                         db_server=constants.db_server,
-                                         db_port=constants.db_port,
-                                         timeout=10, username=None,
-                                         password=None):
+    def remove_time_series_cache_on_disk(self,
+                                         fname: str,
+                                         engine: str = 'hdf5_fixed',
+                                         db_server: str = constants.db_server,
+                                         db_port: int = constants.db_port,
+                                         timeout: int = 10,
+                                         username: int = None,
+                                         password: int = None):
 
         logger = LoggerManager().getLogger(__name__)
 
@@ -244,18 +258,23 @@ class IOEngine(object):
 
     ### functions to handle HDF5 on disk, arctic etc.
     def write_time_series_cache_to_disk(
-            self, fname, data_frame,
-            engine='hdf5_fixed', append_data=False,
-            db_server=constants.db_server,
-            db_port=constants.db_port,
-            username=constants.db_username,
-            password=constants.db_password,
-            filter_out_matching=None, timeout=10,
-            use_cache_compression=constants.use_cache_compression,
-            parquet_compression=constants.parquet_compression,
-            use_pyarrow_directly=False,
-            md_request=None, ticker=None,
-            cloud_credentials=None):
+            self,
+            fname: str,
+            data_frame: pd.DataFrame,
+            engine: str = 'hdf5_fixed',
+            append_data: bool = False,
+            db_server: str = constants.db_server,
+            db_port: int = constants.db_port,
+            username: str = constants.db_username,
+            password: str = constants.db_password,
+            filter_out_matching: str = None,
+            timeout: int = 10,
+            use_cache_compression: bool = constants.use_cache_compression,
+            parquet_compression: str = constants.parquet_compression,
+            use_pyarrow_directly: bool =False,
+            md_request=None,
+            ticker: str =None,
+            cloud_credentials: dict = None):
         """Writes Pandas data frame to disk as Parquet, HDF5 format or bcolz
         format, in Arctic or to Redis
 
@@ -513,7 +532,7 @@ class IOEngine(object):
 
             logger.info("Written CSV: " + fname)
 
-    def get_h5_filename(self, fname):
+    def get_h5_filename(self, fname: str):
         """Strips h5 off filename returning first portion of filename
 
         Parameters
@@ -530,7 +549,7 @@ class IOEngine(object):
 
         return fname + ".h5"
 
-    def get_bcolz_filename(self, fname):
+    def get_bcolz_filename(self, fname: str):
         """Strips bcolz off filename returning first portion of filename
 
         Parameters
@@ -547,7 +566,10 @@ class IOEngine(object):
 
         return fname + ".bcolz"
 
-    def write_r_compatible_hdf_dataframe(self, data_frame, fname, fields=None):
+    def write_r_compatible_hdf_dataframe(self,
+                                         data_frame: pd.DataFrame,
+                                         fname: str,
+                                         fields: List[str]=None):
         """Write a DataFrame to disk in as an R compatible HDF5 file.
 
         Parameters
@@ -589,12 +611,14 @@ class IOEngine(object):
         store_export.put('df_for_r', data_frame32, data_columns=cols)
         store_export.close()
 
-    def read_time_series_cache_from_disk(self, fname, engine='hdf5',
-                                         start_date=None, finish_date=None,
-                                         db_server=constants.db_server,
-                                         db_port=constants.db_port,
-                                         username=constants.db_username,
-                                         password=constants.db_password):
+    def read_time_series_cache_from_disk(self, fname,
+                                         engine: str ='hdf5',
+                                         start_date: str = None,
+                                         finish_date: str = None,
+                                         db_server: str = constants.db_server,
+                                         db_port: int = constants.db_port,
+                                         username: str = constants.db_username,
+                                         password: str = constants.db_password):
         """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
@@ -635,7 +659,7 @@ class IOEngine(object):
                     and '.parquet' not in fname_single:
                 fname_single = fname_single + '.parquet'
 
-            if (engine == 'redis'):
+            if engine == 'redis':
                 fname_single = os.path.basename(fname_single).replace('.', '_')
 
                 msg = None
@@ -672,7 +696,7 @@ class IOEngine(object):
 
                     data_frame = msg  # pd.read_msgpack(msg)
 
-            elif (engine == 'arctic'):
+            elif engine == 'arctic':
                 socketTimeoutMS = 2 * 1000
 
                 import pymongo
@@ -779,7 +803,7 @@ class IOEngine(object):
         DataFrame
         """
 
-        if (freq == 'intraday'):
+        if freq == 'intraday':
 
             if dateparse is None:
                 dateparse = lambda x: datetime.datetime(
@@ -848,7 +872,7 @@ class IOEngine(object):
 
         # slower method: data_frame.index = pd.to_datetime(data_frame.index)
 
-        if (freq == 'intraday'):
+        if freq == 'intraday':
             # assume time series are already in UTC and assign this (can specify other time zones)
             data_frame = data_frame.tz_localize(intraday_tz)
 
@@ -949,7 +973,8 @@ class IOEngine(object):
 
         return path
 
-    def read_parquet(self, path, cloud_credentials=None):
+    def read_parquet(self, path: str,
+                     cloud_credentials: dict = None):
         """Reads a Pandas DataFrame from a local or s3 path
 
         Parameters
@@ -976,7 +1001,9 @@ class IOEngine(object):
         else:
             return pd.read_parquet(path)
 
-    def _create_cloud_filesystem(self, cloud_credentials, filesystem_type):
+    def _create_cloud_filesystem(self,
+                                 cloud_credentials: dict,
+                                 filesystem_type: str):
 
         cloud_credentials = self._convert_cred(cloud_credentials)
 
@@ -999,7 +1026,8 @@ class IOEngine(object):
                                 secret=cloud_credentials["aws_secret_key"],
                                 token=cloud_credentials["aws_session_token"])
 
-    def _convert_cred(self, cloud_credentials, convert_to_s3fs=False):
+    def _convert_cred(self, cloud_credentials: dict,
+                      convert_to_s3fs: bool = False):
         """Backfills the credential dictionary (usually for AWS login)
         """
 
@@ -1033,9 +1061,13 @@ class IOEngine(object):
 
         return cloud_credentials
 
-    def to_parquet(self, df, path, filename=None, cloud_credentials=None,
-                   parquet_compression=constants.parquet_compression,
-                   use_pyarrow_directly=False):
+    def to_parquet(self,
+                   df: pd.DataFrame,
+                   path: str,
+                   filename: str = None,
+                   cloud_credentials: str = None,
+                   parquet_compression: str = constants.parquet_compression,
+                   use_pyarrow_directly: bool = False):
         """Write a DataFrame to a local or s3 path as a Parquet file
 
         Parameters
@@ -1192,7 +1224,9 @@ class IOEngine(object):
 
                 pyarrow_dump(df, path)
 
-    def split_array_chunks(self, array, chunks=None, chunk_size=None):
+    def split_array_chunks(self, array,
+                           chunks: int = None,
+                           chunk_size: int = None):
         """Splits an array or DataFrame into a list of equally sized chunks
 
         Parameters
@@ -1247,7 +1281,7 @@ class IOEngine(object):
 
         return mem_float
 
-    def chunk_dataframes(self, obj, chunk_size_mb=constants.chunk_size_mb):
+    def chunk_dataframes(self, obj, chunk_size_mb: int = constants.chunk_size_mb):
         logger = LoggerManager.getLogger(__name__)
 
         # Can sometime have very large dataframes, which need to be split,
@@ -1269,8 +1303,11 @@ class IOEngine(object):
 
         return obj_list
 
-    def read_csv(self, path, cloud_credentials=None, encoding='utf-8',
-                 encoding_errors=None, errors='ignore'):
+    def read_csv(self, path,
+                 cloud_credentials: str = None,
+                 encoding: str = "utf-8",
+                 encoding_errors: str =None,
+                 errors: str = "ignore"):
         if cloud_credentials is None:
             cloud_credentials = constants.cloud_credentials
 
@@ -1294,9 +1331,13 @@ class IOEngine(object):
             else:
                 return pd.read_csv(path, encoding=encoding)
 
-    def to_csv_parquet(self, df, path, filename=None, cloud_credentials=None,
-                       parquet_compression=constants.parquet_compression,
-                       use_pyarrow_directly=False):
+    def to_csv_parquet(self,
+                       df,
+                       path: str,
+                       filename: str = None,
+                       cloud_credentials: dict = None,
+                       parquet_compression: str = constants.parquet_compression,
+                       use_pyarrow_directly: bool = False):
 
         self.to_csv(df, path, filename=filename.replace(".parquet", ".csv"),
                     cloud_credentials=cloud_credentials)
@@ -1307,7 +1348,9 @@ class IOEngine(object):
                         parquet_compression=parquet_compression,
                         use_pyarrow_directly=use_pyarrow_directly)
 
-    def _get_cloud_path(self, path, filename=None, cloud_credentials=None):
+    def _get_cloud_path(self, path: str,
+                        filename: str = None,
+                        cloud_credentials: str = None):
         if cloud_credentials is None:
             cloud_credentials = constants.cloud_credentials
 
@@ -1326,7 +1369,10 @@ class IOEngine(object):
 
         return path, cloud_credentials
 
-    def to_csv(self, df, path, filename=None, cloud_credentials=None):
+    def to_csv(self, df: pd.DataFrame,
+               path: str,
+               filename: str = None,
+               cloud_credentials: dict = None):
 
         path, cloud_credentials = self._get_cloud_path(
             path, filename=filename, cloud_credentials=cloud_credentials)
@@ -1368,7 +1414,8 @@ class IOEngine(object):
                 elif isinstance(dictionary, pd.DataFrame):
                     dictionary.to_json(p)
 
-    def path_exists(self, path, cloud_credentials=None):
+    def path_exists(self, path: str,
+                    cloud_credentials: dict = None):
         if cloud_credentials is None:
             cloud_credentials = constants.cloud_credentials
 
@@ -1382,7 +1429,7 @@ class IOEngine(object):
         else:
             return os.path.exists(path)
 
-    def path_join(self, folder, *file):
+    def path_join(self, folder: str, *file):
 
         file = list(file)
 
@@ -1408,7 +1455,8 @@ class IOEngine(object):
 
         return folder
 
-    def list_files(self, path, cloud_credentials=None):
+    def list_files(self, path: str,
+                   cloud_credentials: dict = None):
         if cloud_credentials is None:
             cloud_credentials = constants.cloud_credentials
 
@@ -1432,7 +1480,8 @@ class IOEngine(object):
 
         return files
 
-    def delete(self, path, cloud_credentials=None):
+    def delete(self, path: str,
+               cloud_credentials: dict = None):
         if cloud_credentials is None:
             cloud_credentials = constants.cloud_credentials
 
@@ -1452,8 +1501,10 @@ class IOEngine(object):
                 if self.path_exists(p, cloud_credentials=cloud_credentials):
                     os.remove(p)
 
-    def copy(self, source, destination, cloud_credentials=None,
-             infer_dest_filename=False):
+    def copy(self, source: str,
+             destination: str,
+             cloud_credentials: dict = None,
+             infer_dest_filename: bool = False):
         if cloud_credentials is None:
             cloud_credentials = constants.cloud_credentials
 
@@ -1514,7 +1565,8 @@ class SpeedCache(object):
 
     """
 
-    def __init__(self, db_cache_server=None, db_cache_port=None,
+    def __init__(self, db_cache_server: str = None,
+                 db_cache_port: int = None,
                  engine='redis'):
 
         if db_cache_server is None:
@@ -1526,7 +1578,7 @@ class SpeedCache(object):
         self.engine = engine
         self.io_engine = IOEngine()
 
-    def put_dataframe(self, key, obj):
+    def put_dataframe(self, key: str, obj):
         if self.engine != 'no_cache':
             try:
                 self.io_engine.write_time_series_cache_to_disk(
@@ -1536,7 +1588,7 @@ class SpeedCache(object):
             except:
                 pass
 
-    def get_dataframe(self, key):
+    def get_dataframe(self, key: str):
         if self.engine == 'no_cache': return None
 
         try:
@@ -1550,7 +1602,7 @@ class SpeedCache(object):
     def dump_all_keys(self):
         self.dump_key('flush_all_keys')
 
-    def dump_key(self, key):
+    def dump_key(self, key: str):
         if self.engine == 'no_cache': return
 
         try:
@@ -1562,7 +1614,7 @@ class SpeedCache(object):
         except:
             pass
 
-    def generate_key(self, obj, key_drop=[]):
+    def generate_key(self, obj, key_drop: List[str]=[]):
         """Create a unique hash key for object from its attributes (excluding
         those attributes in key drop), which can be used as a hashkey in the
         Redis hashtable

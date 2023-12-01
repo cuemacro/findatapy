@@ -5,7 +5,7 @@ Quandl, Bloomberg, Yahoo, Google etc. using a unified high level interface. User
 tickers, using configuration files. There is also functionality which is particularly useful for those downloading FX market data."""
 
 setup(name='findatapy',
-      version='0.1.30',
+      version='0.1.31',
       description='Market data library',
       author='Saeed Amen',
       author_email='saeed@cuemacro.com',
@@ -21,7 +21,6 @@ setup(name='findatapy',
                         'requests',
                         'numpy',
                         'pandas_datareader',
-                        'fxcmpy',
                         'alpha_vantage',
                         'eikon',
                         'financepy',
