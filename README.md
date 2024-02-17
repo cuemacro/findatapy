@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.32 - findatapy (17 Feb 2024)
 * 0.1.31 - findatapy (01 Dec 2023)
 * 0.1.30 - findatapy (12 Oct 2023)
 * 0.1.29 - findatapy (14 May 2023)
@@ -138,6 +139,8 @@ individual data providers)
 
 # Coding log
 
+* 17 Feb 2024
+  * Fixed ALFRED/FRED wrapper so now compatible with Python 3.10
 * 01 Dec 2023
   * Remove fxcmpy dependency (package no longer exists?)
   * Added type hinting in ioengine.py

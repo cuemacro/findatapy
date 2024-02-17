@@ -997,7 +997,8 @@ class IOEngine(object):
                                                  convert_to_s3fs=True)
 
             return pd.read_parquet(self.sanitize_path(path),
-                                   storage_options=storage_options)
+                                   storage_options=storage_options,
+                                   )
         else:
             return pd.read_parquet(path)
 
