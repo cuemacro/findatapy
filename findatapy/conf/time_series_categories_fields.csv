@@ -21,6 +21,7 @@ fx-implied-vol,bloomberg,daily,BGN,close,1-Jan-95,1D
 fx-implied-vol,bloomberg,daily,TOK,close,1-Jan-95,1D
 fx-implied-vol,bloomberg,daily,LDN,close,1-Jan-95,1D
 fx-implied-vol,bloomberg,daily,10AM,close,1-Jan-09,1D
+fund-indices,bloomberg,daily,LOC,close,1-Jan-80,1D
 base-depos,bloomberg,daily,NYC,close,1-Jan-95,1D
 base-depos,bloomberg,daily,TOK,close,1-Jan-95,1D
 base-depos,bloomberg,daily,LDN,close,1-Jan-95,1D

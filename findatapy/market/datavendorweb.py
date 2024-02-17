@@ -2285,9 +2285,11 @@ class Fred(object):
         if root is None:
             raise ValueError('No data exists for series id: ' + series_id)
         data = {}
-        for child in root.getchildren():
+        for child in root.iter():
             val = child.get('value')
-            if val == self.nan_char:
+            if val is None:
+                float('NaN')
+            elif val == self.nan_char:
                 val = float('NaN')
             else:
                 val = float(val)
@@ -2431,9 +2433,11 @@ class Fred(object):
             raise ValueError('No data exists for series id: ' + series_id)
         data = {}
         i = 0
-        for child in root.getchildren():
+        for child in root.iter():
             val = child.get('value')
-            if val == self.nan_char:
+            if val is None:
+                val = float("NaN")
+            elif val == self.nan_char:
                 val = float('NaN')
             else:
                 val = float(val)
