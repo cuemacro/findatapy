@@ -22,6 +22,7 @@ if __name__ == '__main__':
 
     SwimPool()
 
+    # The old Arctic/MongoDB is depreciated
     from findatapy.market import Market, MarketDataRequest, \
         MarketDataGenerator, IOEngine
 

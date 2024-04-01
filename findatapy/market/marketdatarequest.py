@@ -14,16 +14,15 @@ __author__ = "saeedamen"  # Saeed Amen
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from datetime import timedelta
+import datetime
+
+from typing import List
 
 from findatapy.util.dataconstants import DataConstants
 from findatapy.util.loggermanager import LoggerManager
 
-from datetime import timedelta
-import datetime
-
-import copy
-
-class MarketDataRequest(object):
+class MarketDataRequest:
     """Provides parameters for requesting market data.
 
     Includes parameters to define the ticker we'd like to fetch, the start and
@@ -54,7 +53,7 @@ class MarketDataRequest(object):
     # overrides (optional) - if you need to specify any data overrides 
     # (eg. for BBG)
 
-    def generate_key(self):
+    def generate_key(self) -> str:
         """Generate a key to describe this MarketDataRequest object, which can 
         be used in a cache, as a hash-style key
 
@@ -82,40 +81,47 @@ class MarketDataRequest(object):
               "_MarketDataRequest__overrides",
               "_MarketDataRequest__data_vendor_custom"]) + "_df"
 
-    def __init__(self, data_source=None,
+    def __init__(self, data_source: str = None,
                  start_date="year", finish_date=datetime.datetime.utcnow(),
-                 tickers=None, category=None, freq_mult=1, freq="daily",
-                 gran_freq=None, cut="NYC",
-                 fields=["close"], cache_algo="internet_load_return",
-                 vendor_tickers=None, vendor_fields=None,
-                 environment=None,
-                 trade_side="trade", expiry_date=None, 
-                 resample=None, resample_how="last",
+                 tickers: str | List[str] =None,
+                 category: str = None, freq_mult: int = 1, freq: str = "daily",
+                 gran_freq: str =None, cut: str ="NYC",
+                 fields: List[str] = ["close"],
+                 cache_algo: str ="internet_load_return",
+                 vendor_tickers: str | List[str] = None,
+                 vendor_fields: str | List[str] =None,
+                 environment: str = None,
+                 trade_side: str = "trade",
+                 expiry_date: str = None,
+                 resample: str = None,
+                 resample_how: str = "last",
 
-                 split_request_chunks=0,
-                 list_threads=1,
+                 split_request_chunks: int = 0,
+                 list_threads: int = 1,
 
-                 fx_vol_part=None,
-                 fx_vol_tenor=None,
-                 fx_forwards_tenor=None,
-                 base_depos_currencies=None,
-                 base_depos_tenor=None,
+                 fx_vol_part: List[str] = None,
+                 fx_vol_tenor: List[str] = None,
+                 fx_forwards_tenor: List[str] = None,
+                 base_depos_currencies: List[str] = None,
+                 base_depos_tenor: List[str] = None,
 
-                 data_engine=None,
+                 data_engine: str = None,
 
-                 md_request=None, abstract_curve=None, 
-                 quandl_api_key=None,
-                 fred_api_key=None,
-                 alpha_vantage_api_key=None,
-                 eikon_api_key=None,
-
-                 pretransformation=None,
-                 vintage_as_index=None,
-                 
-                 push_to_cache=True,
-                 overrides={},
-                 freeform_md_request={},
-                 data_vendor_custom=None):
+                 md_request = None,
+                 abstract_curve=None,
+                 quandl_api_key: str = None,
+                 fred_api_key: str = None,
+                 alpha_vantage_api_key: str = None,
+                 eikon_api_key: str = None,
+                 pretransformation: str = None,
+                 vintage_as_index: bool = None,
+                 push_to_cache: bool = True,
+                 overrides: dict = {},
+                 freeform_md_request: dict = {},
+                 data_vendor_custom=None,
+                 arcticdb_dict: dict = None,
+                 as_of: str = None
+                 ):
 
         data_constants = DataConstants()
 
@@ -143,6 +149,8 @@ class MarketDataRequest(object):
             eikon_api_key = data_constants.eikon_api_key
         if data_vendor_custom is None:
             data_vendor_custom = data_constants.data_vendor_custom
+        if arcticdb_dict is None:
+            arcticdb_dict = data_constants.arcticdb_dict
 
         # Can deep copy MarketDataRequest (use a lock, so can be used with 
         # threading when downloading time series)
@@ -211,6 +219,8 @@ class MarketDataRequest(object):
 
                 self.tickers = copy.deepcopy(md_request.tickers)  # Need this after category in case have wildcard
                 self.data_vendor_custom = md_request.data_vendor_custom
+                self.arcticdb_dict = copy.deepcopy(md_request.arcticdb_dict)
+                self.as_of = copy.deepcopy(md_request.as_of)
         else:
             self.freq_mult = freq_mult
 
@@ -269,6 +279,8 @@ class MarketDataRequest(object):
 
             self.old_tickers = self.tickers
             self.data_vendor_custom = data_vendor_custom
+            self.arcticdb_dict = arcticdb_dict
+            self.as_of = as_of
 
     def __str__(self):
         return "MarketDataRequest summary - " + self.generate_key()
@@ -406,11 +418,10 @@ class MarketDataRequest(object):
 
         for field_entry in fields:
             if not field_entry in valid_fields:
-                i = 0
+                pass
                 # self.logger.warning(field_entry + " is not a valid field.")
 
-        # add error checking
-
+        # Add error checking
         self.__fields = fields
 
     @property
@@ -572,46 +583,62 @@ class MarketDataRequest(object):
                 try:
                     date1 = datetime.datetime.strptime(date, "%b %d %Y %H:%M")
                 except:
-                    # self.logger.warning("Attempted to parse date")
-                    i = 0
+                    # logger.warning("Attempted to parse date")
+                    pass
 
                 # format expected "1 Jun 2005 01:33", "%d %b %Y %H:%M"
                 try:
                     date1 = datetime.datetime.strptime(date, "%d %b %Y %H:%M")
                 except:
-                    # self.logger.warning("Attempted to parse date")
-                    i = 0
+                    # logger.warning("Attempted to parse date")
+                    pass
 
                 # format expected "1 June 2005 01:33", "%d %B %Y %H:%M"
                 try:
                     date1 = datetime.datetime.strptime(date, "%d %B %Y %H:%M")
                 except:
-                    # self.logger.warning("Attempted to parse date")
-                    i = 0
+                    # logger.warning("Attempted to parse date")
+                    pass
+
+                # format expected "01:33 1 Jun 2005", "%H:%M %d %b %Y"
+                try:
+                    date1 = datetime.datetime.strptime(date,
+                                                       "%H:%M %d %b %Y")
+                except:
+                    # logger.warning("Attempted to parse date")
+                    pass
+
+                # format expected "01:33 1 June 2005", "%H:%M %d %B %Y"
+                try:
+                    date1 = datetime.datetime.strptime(date,
+                                                       "%H:%M %d %B %Y")
+                except:
+                    # logger.warning("Attempted to parse date")
+                    pass
 
                 try:
                     date1 = datetime.datetime.strptime(date, "%b %d %Y")
                 except:
-                    # self.logger.warning("Attempted to parse date")
-                    i = 0
+                    # logger.warning("Attempted to parse date")
+                    pass
 
                 try:
                     date1 = datetime.datetime.strptime(date, "%d %b %Y")
                 except:
-                    # self.logger.warning("Attempted to parse date")
-                    i = 0
+                    # logger.warning("Attempted to parse date")
+                    pass
 
                 try:
                     date1 = datetime.datetime.strptime(date, "%B %d %Y")
                 except:
-                    # self.logger.warning("Attempted to parse date")
-                    i = 0
+                    # logger.warning("Attempted to parse date")
+                    pass
 
                 try:
                     date1 = datetime.datetime.strptime(date, "%d %B %Y")
                 except:
-                    # self.logger.warning("Attempted to parse date")
-                    i = 0
+                    # logger.warning("Attempted to parse date")
+                    pass
         else:
             import pandas
 
@@ -821,6 +848,22 @@ class MarketDataRequest(object):
     @data_vendor_custom.setter
     def data_vendor_custom(self, data_vendor_custom):
         self.__data_vendor_custom = data_vendor_custom
+        
+    @property
+    def arcticdb_dict(self):
+        return self.__arcticdb_dict
+
+    @arcticdb_dict.setter
+    def arcticdb_dict(self, arcticdb_dict):
+        self.__arcticdb_dict = arcticdb_dict
+        
+    @property
+    def as_of(self):
+        return self.__as_of
+
+    @as_of.setter
+    def as_of(self, as_of):
+        self.__as_of = as_of
 
     def _flatten_list(self, list_of_lists):
         """Flattens list, particularly useful for combining baskets

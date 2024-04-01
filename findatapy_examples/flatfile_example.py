@@ -34,10 +34,9 @@ if __name__ == "__main__":
     # for EURUSD) and read back with MarketDataRequest
 
     # NOTE: you need to make sure you have the correct data licences before
-    # storing data on disk (and whether other
-    # users can access it)
+    # storing data on disk/distributing (and whether other users can access it)
 
-    run_example = 4
+    run_example = 0
 
     if run_example == 1 or run_example == 0:
         md_request = MarketDataRequest(

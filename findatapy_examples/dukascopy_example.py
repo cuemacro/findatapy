@@ -15,7 +15,7 @@ __author__ = "saeedamen"  # Saeed Amen
 # limitations under the License.
 #
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ###### below line CRUCIAL when running Windows, otherwise multiprocessing doesn't work! (not necessary on Linux)
     from findatapy.util import SwimPool;
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     if run_example == 1 or run_example == 0:
         ####### DukasCopy examples
-        # let's download data for 14 Jun 2016 for EUR/USD - the raw data has bid/ask, if we specify close, we calculate
+        # let"s download data for 14 Jun 2016 for EUR/USD - the raw data has bid/ask, if we specify close, we calculate
         # it as the average
 
         from findatapy.market import Market, MarketDataRequest, \
@@ -38,12 +38,12 @@ if __name__ == '__main__':
         market = Market(market_data_generator=MarketDataGenerator())
 
         # first we can do it by defining all the vendor fields, tickers etc. so we bypass the configuration file
-        md_request = MarketDataRequest(start_date='14 Jun 2016',
-                                       finish_date='20 Jun 2016',
-                                       fields=['bid'], vendor_fields=['bid'],
-                                       freq='tick', data_source='dukascopy',
-                                       tickers=['EURUSD'],
-                                       vendor_tickers=['EURUSD'])
+        md_request = MarketDataRequest(start_date="14 Jun 2016",
+                                       finish_date="20 Jun 2016",
+                                       fields=["bid"], vendor_fields=["bid"],
+                                       freq="tick", data_source="dukascopy",
+                                       tickers=["EURUSD"],
+                                       vendor_tickers=["EURUSD"])
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
@@ -55,13 +55,13 @@ if __name__ == '__main__':
 
         market = Market(market_data_generator=MarketDataGenerator())
 
-        md_request = MarketDataRequest(start_date='14 Jun 2016',
-                                       finish_date='15 Jun 2016',
-                                       fields=['bid', 'ask'],
-                                       vendor_fields=['bid', 'ask'],
-                                       freq='tick', data_source='dukascopy',
-                                       tickers=['S&P500'],
-                                       vendor_tickers=['USA500IDXUSD'])
+        md_request = MarketDataRequest(start_date="14 Jun 2016",
+                                       finish_date="15 Jun 2016",
+                                       fields=["bid", "ask"],
+                                       vendor_fields=["bid", "ask"],
+                                       freq="tick", data_source="dukascopy",
+                                       tickers=["S&P500"],
+                                       vendor_tickers=["USA500IDXUSD"])
 
         # Careful need to divide by 1000.0
         df = market.fetch_market(md_request) / 1000.0

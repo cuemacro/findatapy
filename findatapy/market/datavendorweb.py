@@ -2702,7 +2702,7 @@ class DataVendorFlatFile(DataVendor):
 
         def download_data_frame(data_source):
 
-            file_types = ['.csv', '.parquet', '.zip', '.gzip', '.h5']
+            file_types = [".csv", ".parquet", ".zip", ".gzip", ".h5"]
 
             read_from_disk = np.all([x not in data_source for x in file_types])
 
@@ -2721,8 +2721,8 @@ class DataVendorFlatFile(DataVendor):
 
                     # For intraday/tick files each ticker is stored in 
                     # a separate file
-                    if md_request.freq == 'intraday' or \
-                            md_request.freq == 'tick':
+                    if md_request.freq == "intraday" or \
+                            md_request.freq == "tick":
                         path = md_request.environment + "." \
                                + md_request.category + "." + data_source + \
                                "." + md_request.freq \
@@ -2737,11 +2737,11 @@ class DataVendorFlatFile(DataVendor):
 
                     full_path = os.path.join(folder, path)
                 else:
-                    # Otherwise a database like arctic has been specified
+                    # Otherwise a database like arcticdb has been specified
 
                     # For intraday/tick files each ticker is stored in a separate file
-                    if md_request.freq == 'intraday' or \
-                            md_request.freq == 'tick':
+                    if md_request.freq == "intraday" or \
+                            md_request.freq == "tick":
                         full_path = md_request.environment + "." \
                                     + md_request.category + "." + data_source \
                                     + "." + md_request.freq \
@@ -2754,7 +2754,7 @@ class DataVendorFlatFile(DataVendor):
                                     + "." + md_request.cut
 
             else:
-                logger.info("Request " + data_source + " data")
+                logger.info(f"Request {data_source} data")
 
                 full_path = data_source
 
@@ -2774,7 +2774,6 @@ class DataVendorFlatFile(DataVendor):
                     df_list = []
 
                     for name in name_list:
-
                         if col_names is None:
                             df = pd.read_csv(zf.open(name),
                                              index_col=index_col,
@@ -2822,8 +2821,19 @@ class DataVendorFlatFile(DataVendor):
                 data_frame = IOEngine().read_time_series_cache_from_disk(
                     full_path, engine="parquet")
             else:
+                columns = []
+
+                for t in md_request.tickers:
+                    for f in md_request.fields:
+                        columns.append(f"{t}.{f}")
+
                 data_frame = IOEngine().read_time_series_cache_from_disk(
-                    full_path, engine=data_engine)
+                    full_path, engine=data_engine,
+                    start_date=md_request.start_date,
+                    finish_date=md_request.finish_date,
+                    arcticdb_dict=md_request.arcticdb_dict,
+                    columns=columns,
+                    as_of=md_request.as_of)
 
             # data_frame.to_csv("temp.csv")
 
@@ -2852,8 +2862,7 @@ class DataVendorFlatFile(DataVendor):
                 if len(msg) > 100:
                     msg = msg[:99] + "...]"
 
-                logger.info("Completed request from " + str(
-                    data_source) + " for " + msg)
+                logger.info(f"Completed request from {str(data_source)} for {msg}")
 
             return data_frame
 
@@ -2877,7 +2886,7 @@ class DataVendorFlatFile(DataVendor):
             try:
                 data_frame = pd.concat(data_frame_list)
             except Exception as e:
-                logger.warning("Empty output: " + str(e))
+                logger.warning(f"Empty output: {str(e)}")
 
                 return None
 

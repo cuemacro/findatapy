@@ -72,7 +72,7 @@ class MarketDataGenerator(object):
         data_source = md_request.data_source
         data_engine = md_request.data_engine
 
-        # Special case for files (csv, h5, parquet or zip)
+        # Special case for files (csv, h5, parquet or zip) or arcticdb
         if ".csv" in str(data_source) or ".h5" in str(data_source) or \
                 ".parquet" in str(data_source) or ".zip" in str(data_source) \
                 or (data_engine is not None
