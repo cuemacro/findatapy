@@ -85,7 +85,7 @@ class DataConstants(object):
     ###### FOR ArcticDB
     arcticdb_dict = {
         "prune_previous_versions": False,
-        "write_style": "write", # "write" / "append"
+        "write_style": "write", # "write" / "append" / "update"
         "force_create_library": False,
         "allow_on_disk_filter": True,
         "query_builder": None
