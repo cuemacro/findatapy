@@ -745,15 +745,16 @@ class BBGLowLevelTemplate:  # in order that the init function works in
         override1.setElement("value", value)
 
     def add_override_dict(self, request, options):
-        if options.overrides != {}:
-            for k in options.overrides.keys():
-                new_k = k
+        if options.overrides is not None:
+            if options.overrides != {}:
+                for k in options.overrides.keys():
+                    new_k = k
 
-                # Is there a pretty name for this?
-                if k in self.convert_override_fields:
-                    new_k = self.convert_override_fields[k]
+                    # Is there a pretty name for this?
+                    if k in self.convert_override_fields:
+                        new_k = self.convert_override_fields[k]
 
-                self.add_override(request, new_k, options.overrides[k])
+                    self.add_override(request, new_k, options.overrides[k])
 
     @abc.abstractmethod
     def fill_options(self, md_request):

@@ -32,9 +32,16 @@ import math
 import numpy as np
 import pandas as pd
 
+# For deprecated Arctic
 try:
     from arctic import Arctic
     import pymongo
+except:
+    pass
+
+# For ArcticDB
+try:
+    import arcticdb as adb
 except:
     pass
 
@@ -50,7 +57,7 @@ try:
 except:
     pass
 
-# for reading and writing to S3
+# For reading and writing to S3
 try:
     import pyarrow.fs
     import pyarrow.parquet as pq
@@ -64,7 +71,7 @@ try:
 except:
     pass
 
-
+# For accessing Excel
 from openpyxl import load_workbook
 
 from findatapy.util.dataconstants import DataConstants
@@ -72,20 +79,24 @@ from findatapy.util.loggermanager import LoggerManager
 
 constants = DataConstants()
 
-
 class IOEngine(object):
-    """Write and reads time series data to disk in various formats, CSV, HDF5 (fixed and table formats) and MongoDB/Arctic.
+    """Write and reads time series data to disk in various formats, CSV, HDF5
+    (fixed and table formats), MongoDB/Arctic and ArcticDB are supported.
 
-    Can be used to save down output of finmarketpy backtests and also to cache market data locally.
+    Can be used to save down output of finmarketpy backtests and also to cache
+    market data locally.
 
-    Also supports BColz (but not currently stable). Planning to add other interfaces such as SQL etc.
-
+    Also supports BColz (but not currently stable). Planning to add other
+    interfaces such as SQL etc.
     """
 
     def __init__(self):
         pass
 
-    ### functions to handle Excel on disk
+    @staticmethod
+
+
+    # Functions to handle Excel on disk
     def write_time_series_to_excel(self,
                                    fname: str,
                                    sheet: str,
@@ -98,7 +109,7 @@ class IOEngine(object):
         fname : str
             Excel filename to be written to
         sheet : str
-            sheet in excel
+            sheet in Excel
         data_frame : DataFrame
             data frame to be written
         create_new : boolean
@@ -106,17 +117,17 @@ class IOEngine(object):
         """
 
         if (create_new):
-            writer = pd.ExcelWriter(fname, engine='xlsxwriter')
+            writer = pd.ExcelWriter(fname, engine="xlsxwriter")
         else:
             if self.path_exists(fname):
                 book = load_workbook(fname)
-                writer = pd.ExcelWriter(fname, engine='xlsxwriter')
+                writer = pd.ExcelWriter(fname, engine="xlsxwriter")
                 writer.book = book
                 writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
             else:
-                writer = pd.ExcelWriter(fname, engine='xlsxwriter')
+                writer = pd.ExcelWriter(fname, engine="xlsxwriter")
 
-        data_frame.to_excel(writer, sheet_name=sheet, engine='xlsxwriter')
+        data_frame.to_excel(writer, sheet_name=sheet, engine="xlsxwriter")
 
         writer.save()
         writer.close()
@@ -132,19 +143,20 @@ class IOEngine(object):
         writer : ExcelWriter
             File handle to use for writing Excel file to disk
         sheet : str
-            sheet in excel
+            sheet in Excel
         data_frame : DataFrame
             data frame to be written
         """
-        data_frame.to_excel(writer, sheet, engine='xlsxwriter')
+        data_frame.to_excel(writer, sheet, engine="xlsxwriter")
 
-    def read_excel_data_frame(self, f_name: str,
+    def read_excel_data_frame(self,
+                              f_name: str,
                               excel_sheet: str,
                               freq: str,
                               cutoff: str = None,
                               dateparse: str= None,
-                              postfix: str = '.close',
-                              intraday_tz: str = 'UTC'):
+                              postfix: str = ".close",
+                              intraday_tz: str = "UTC") -> pd.DataFrame:
         """Reads Excel from disk into DataFrame
 
         Parameters
@@ -175,7 +187,7 @@ class IOEngine(object):
 
     def remove_time_series_cache_on_disk(self,
                                          fname: str,
-                                         engine: str = 'hdf5_fixed',
+                                         engine: str = "hdf5_fixed",
                                          db_server: str = constants.db_server,
                                          db_port: int = constants.db_port,
                                          timeout: int = 10,
@@ -184,23 +196,23 @@ class IOEngine(object):
 
         logger = LoggerManager().getLogger(__name__)
 
-        if 'hdf5' in engine:
-            engine = 'hdf5'
+        if "hdf5" in engine:
+            engine = "hdf5"
 
-        if engine == 'redis':
+        if engine == "redis":
 
-            fname = os.path.basename(fname).replace('.', '_')
+            fname = os.path.basename(fname).replace(".", "_")
 
             try:
                 r = redis.StrictRedis(host=db_server, port=db_port, db=0,
                                       socket_timeout=timeout,
                                       socket_connect_timeout=timeout)
 
-                if fname == 'flush_all_keys':
+                if fname == "flush_all_keys":
                     r.flushall()
                 else:
                     # Allow deletion of keys by pattern matching
-                    matching_keys = r.keys('*' + fname)
+                    matching_keys = r.keys("*" + fname)
 
                     if matching_keys:
                         # Use pipeline to speed up command
@@ -215,26 +227,39 @@ class IOEngine(object):
 
             except Exception as e:
                 logger.warning(
-                    "Cannot delete non-existent key " + fname + " in Redis: " + str(
-                        e))
+                    f"Cannot delete non-existent key {fname} in Redis: {str(e)}")
+        elif engine.startswith("arcticdb:"):
+            arcticdb_conn_str = engine.replace("arcticdb:", "", 1)
+            ac = adb.Arctic(arcticdb_conn_str)
 
-        elif (engine == 'arctic'):
+            # fname = os.path.basename(fname).replace(".", "_")
+            try:
+                database = ac[fname]
+            except:
+                pass
+
+            if database is None:
+                ac.delete_library(fname)
+                logger.info(f"Deleted ArcticDB library: {fname}")
+            else:
+                logger.info(f"Got ArcticDB library: {fname}")
+
+        elif engine == "arctic":
             from arctic import Arctic
             import pymongo
 
             socketTimeoutMS = 30 * 1000
-            fname = os.path.basename(fname).replace('.', '_')
+            fname = os.path.basename(fname).replace(".", "_")
 
-            logger.info('Load MongoDB library: ' + fname)
+            logger.info(f"Load MongoDB library: {fname}")
 
             if username is not None and password is not None:
                 c = pymongo.MongoClient(
-                    host="mongodb://" + username + ":" + password + "@" + str(
-                        db_server) + ":" + str(db_port),
+                    host=f"mongodb://{username}:{password}@{str(db_server)}:{str(db_port)}",
                     connect=False)  # , username=username, password=password)
             else:
                 c = pymongo.MongoClient(
-                    host="mongodb://" + str(db_server) + ":" + str(db_port),
+                    host=f"mongodb://{str(db_server)}:{str(db_port)}",
                     connect=False)
 
             store = Arctic(c, socketTimeoutMS=socketTimeoutMS,
@@ -245,9 +270,8 @@ class IOEngine(object):
 
             c.close()
 
-            logger.info("Deleted MongoDB library: " + fname)
-
-        elif engine == 'hdf5':
+            logger.info(f"Deleted MongoDB library: {fname}")
+        elif engine == "hdf5":
             h5_filename = self.get_h5_filename(fname)
 
             # delete the old copy
@@ -256,12 +280,41 @@ class IOEngine(object):
             except:
                 pass
 
+    @staticmethod
+    def _populate_arcticdb_dict(arcticdb_dict: dict = None):
+        default_arcticdb_dict = copy.deepcopy(DataConstants().arcticdb_dict)
+
+        if arcticdb_dict is None:
+            return default_arcticdb_dict
+        else:
+            for k in default_arcticdb_dict.keys():
+                if k not in arcticdb_dict.keys():
+                    arcticdb_dict[k] = default_arcticdb_dict[k]
+
+        return arcticdb_dict
+
+    @staticmethod
+    def _filter_out_matching(data_frame: pd.DataFrame,
+                             filter_out_matching: str = None):
+        if filter_out_matching is not None:
+            cols = data_frame.columns
+
+            new_cols = []
+
+            for col in cols:
+                if filter_out_matching not in col:
+                    new_cols.append(col)
+
+            data_frame = data_frame[new_cols]
+
+        return data_frame
+
     ### functions to handle HDF5 on disk, arctic etc.
     def write_time_series_cache_to_disk(
             self,
-            fname: str,
-            data_frame: pd.DataFrame,
-            engine: str = 'hdf5_fixed',
+            fname: str = None,
+            data_frame: pd.DataFrame = None,
+            engine: str = "hdf5_fixed",
             append_data: bool = False,
             db_server: str = constants.db_server,
             db_port: int = constants.db_port,
@@ -271,10 +324,11 @@ class IOEngine(object):
             timeout: int = 10,
             use_cache_compression: bool = constants.use_cache_compression,
             parquet_compression: str = constants.parquet_compression,
-            use_pyarrow_directly: bool =False,
+            use_pyarrow_directly: bool = False,
             md_request=None,
-            ticker: str =None,
-            cloud_credentials: dict = None):
+            ticker: str = None,
+            cloud_credentials: dict = None,
+            arcticdb_dict: dict = None):
         """Writes Pandas data frame to disk as Parquet, HDF5 format or bcolz
         format, in Arctic or to Redis
 
@@ -282,23 +336,24 @@ class IOEngine(object):
         instance is not accessible from unverified users, given you should not
         unpickle from unknown sources)
 
-        Parmeters
+        Parameters
         ---------
         fname : str
             path of file
         data_frame : DataFrame
             data frame to be written to disk
         engine : str
-            'hdf5_fixed' - use HDF5 fixed format, very quick, but cannot append to this
-            'hdf5_table' - use HDF5 table format, slower but can append to
-            'parquet' - use Parquet
-            'arctic' - use Arctic/MongoDB database
-            'redis' - use Redis
+            "hdf5_fixed" - use HDF5 fixed format, very quick, but cannot append to this
+            "hdf5_table" - use HDF5 table format, slower but can append to
+            "parquet" - use Parquet
+            "arctic" - use deprecated Arctic/MongoDB database
+            "arcticdb:conn_str" - use ArcticDB (on disk)
+            "redis" - use Redis
         append_data : bool
             False - write a fresh copy of data on disk each time
             True - append data to disk
         db_server : str
-            Database server for arctic (default: '127.0.0.1')
+            Database server for arctic (default: "127.0.0.1")
         timeout : int
             Number of seconds to do timeout
         """
@@ -309,19 +364,24 @@ class IOEngine(object):
             cloud_credentials = constants.cloud_credentials
 
         if md_request is not None:
+            if fname is None:
+                fname = ""
+
             fname = self.path_join(fname, md_request.create_category_key(
                 ticker=ticker))
 
-        # default HDF5 format
-        hdf5_format = 'fixed'
+            if md_request.arcticdb_dict is not None:
+                arcticdb_dict = md_request.arcticdb_dict
 
-        if 'hdf5' in engine:
-            hdf5_format = engine.split('_')[1]
-            engine = 'hdf5'
+        # Default HDF5 format
+        hdf5_format = "fixed"
 
-        if engine == 'redis':
+        if "hdf5" in engine:
+            hdf5_format = engine.split("_")[1]
+            engine = "hdf5"
 
-            fname = os.path.basename(fname).replace('.', '_')
+        if engine == "redis":
+            fname = os.path.basename(fname).replace(".", "_")
 
             # Will fail if Redis is not installed
             try:
@@ -335,7 +395,7 @@ class IOEngine(object):
                 if ping:
                     if data_frame is not None:
                         if isinstance(data_frame, pd.DataFrame):
-                            mem = data_frame.memory_usage(deep='deep').sum()
+                            mem = data_frame.memory_usage(deep="deep").sum()
                             mem_float = round(float(mem) / (1024.0 * 1024.0),
                                               3)
 
@@ -348,7 +408,7 @@ class IOEngine(object):
                                                          compression="gzip")
                                     ser.seek(0)
 
-                                    r.set('comp_' + fname, ser.read())
+                                    r.set("comp_" + fname, ser.read())
                                 else:
                                     ser = io.BytesIO()
                                     data_frame.to_pickle(ser)
@@ -362,10 +422,10 @@ class IOEngine(object):
                                     "Did not push " + fname + " to Redis, given size")
                     else:
                         logger.info(
-                            "Object " + fname + " is empty, not pushed to Redis.")
+                            f"Object {fname} is empty, not pushed to Redis.")
                 else:
                     logger.warning(
-                        "Didn't push " + fname + " to Redis given not running")
+                        f"Did not push {fname} to Redis given not running")
 
             except Exception as e:
                 fname_msg = fname
@@ -379,14 +439,70 @@ class IOEngine(object):
                     error_msg = error_msg[:149] + "..."
 
                 logger.warning(
-                    "Couldn't push " + fname_msg + " to Redis: " + error_msg)
+                    f"Could not push {fname_msg} to Redis: {error_msg}")
 
-        elif engine == 'arctic':
+        elif engine.startswith("arcticdb:"):
+            arcticdb_conn_str = engine.replace("arcticdb:", "", 1)
+            ac = adb.Arctic(arcticdb_conn_str)
 
+            arcticdb_dict = IOEngine._populate_arcticdb_dict(
+                arcticdb_dict=arcticdb_dict)
+
+            database = None
+
+            try:
+                database = ac[fname]
+            except:
+                pass
+
+            if database is None:
+                ac.create_library(fname)
+                logger.info(f"Created ArcticDB library: {fname}")
+            elif arcticdb_dict["force_create_library"]:
+                ac.delete_library(fname)
+                ac.create_library(fname)
+                logger.info(f"Deleted old library and created ArcticDB library: {fname}")
+            else:
+                logger.info(f"Loading existing ArcticDB library: {fname}")
+
+            # Access the library
+            library = ac[fname]
+            logger.info(f"Got ArcticDB library: {fname}")
+
+            data_frame = IOEngine._filter_out_matching(
+                data_frame, filter_out_matching=filter_out_matching)
+
+            try:
+                if arcticdb_dict["write_style"] == "write":
+                    library.write(
+                        fname, data_frame,
+                        prune_previous_versions=arcticdb_dict["prune_previous_versions"])
+
+                    logger.info(f"Written ArcticDB library: {fname}")
+                elif arcticdb_dict["write_style"] == "append":
+                    library.append(
+                        fname, data_frame,
+                        prune_previous_versions=arcticdb_dict["prune_previous_versions"])
+
+                    logger.info(f"Appended ArcticDB library: {fname}")
+                elif arcticdb_dict["write_style"] == "update":
+                    library.update(
+                        fname, data_frame,
+                        prune_previous_versions=arcticdb_dict[
+                            "prune_previous_versions"])
+
+                    logger.info(f"Updated ArcticDB library: {fname}")
+
+
+            except Exception as e:
+                logger.warning(
+                    f"Could not write to ArcticDB library: {fname} {str(e)}")
+
+        elif engine == "arctic":
             socketTimeoutMS = 30 * 1000
-            fname = os.path.basename(fname).replace('.', '_')
+            fname = os.path.basename(fname).replace(".", "_")
 
-            logger.info('Load Arctic/MongoDB library: ' + fname)
+            logger.info(f"Load Arctic/MongoDB library: {fname}...")
 
             if username is not None and password is not None:
                 c = pymongo.MongoClient(
@@ -413,24 +529,16 @@ class IOEngine(object):
                 store.initialize_library(fname, audit=False)
                 logger.info("Created MongoDB library: " + fname)
             else:
-                logger.info("Got MongoDB library: " + fname)
+                logger.info(f"Got MongoDB library: {fname}")
 
             # Access the library
             library = store[fname]
 
-            if 'intraday' in fname:
-                data_frame = data_frame.astype('float32')
+            if "intraday" in fname:
+                data_frame = data_frame.astype("float32")
 
-            if filter_out_matching is not None:
-                cols = data_frame.columns
-
-                new_cols = []
-
-                for col in cols:
-                    if filter_out_matching not in col:
-                        new_cols.append(col)
-
-                data_frame = data_frame[new_cols]
+            data_frame = IOEngine._filter_out_matching(
+               data_frame, filter_out_matching=filter_out_matching)
 
             # Problems with Arctic when writing timezone to disk sometimes,
             # so strip
@@ -444,12 +552,12 @@ class IOEngine(object):
                     library.write(fname, data_frame)
 
                 c.close()
-                logger.info("Written MongoDB library: " + fname)
+                logger.info(f"Written MongoDB library: {fname}")
             except Exception as e:
                 logger.warning(
-                    "Couldn't write MongoDB library: " + fname + " " + str(e))
+                    f"Could not write MongoDB library: {fname} {str(e)}")
 
-        elif engine == 'hdf5':
+        elif engine == "hdf5":
             h5_filename = self.get_h5_filename(fname)
 
             # Append data only works for HDF5 stored as tables (but this is
@@ -459,28 +567,28 @@ class IOEngine(object):
                 store = pd.HDFStore(h5_filename, format=hdf5_format,
                                     complib="zlib", complevel=9)
 
-                if ('intraday' in fname):
-                    data_frame = data_frame.astype('float32')
+                if "intraday" in fname:
+                    data_frame = data_frame.astype("float32")
 
                 # get last row which matches and remove everything after that
-                # (because append function doesn't check for duplicated rows)
-                nrows = len(store['data'].index)
+                # (because append function does not check for duplicated rows)
+                nrows = len(store["data"].index)
                 last_point = data_frame.index[-1]
 
                 i = nrows - 1
 
                 while (i > 0):
                     read_index = \
-                    store.select('data', start=i, stop=nrows).index[0]
+                    store.select("data", start=i, stop=nrows).index[0]
 
-                    if (read_index <= last_point): break
+                    if read_index <= last_point: break
 
                     i = i - 1
 
                 # Remove rows at the end, which are duplicates of the
                 # incoming time series
-                store.remove(key='data', start=i, stop=nrows)
-                store.put(key='data', value=data_frame, format=hdf5_format,
+                store.remove(key="data", start=i, stop=nrows)
+                store.put(key="data", value=data_frame, format=hdf5_format,
                           append=True)
                 store.close()
             else:
@@ -495,10 +603,10 @@ class IOEngine(object):
                 store = pd.HDFStore(h5_filename_temp, complib="zlib",
                                     complevel=9)
 
-                if ('intraday' in fname):
-                    data_frame = data_frame.astype('float32')
+                if "intraday" in fname:
+                    data_frame = data_frame.astype("float32")
 
-                store.put(key='data', value=data_frame, format=hdf5_format)
+                store.put(key="data", value=data_frame, format=hdf5_format)
                 store.close()
 
                 # delete the old copy
@@ -512,10 +620,10 @@ class IOEngine(object):
 
             logger.info("Written HDF5: " + fname)
 
-        elif engine == 'parquet':
-            if '.parquet' not in fname:
-                if fname[-5:] != '.gzip':
-                    fname = fname + '.parquet'
+        elif engine == "parquet":
+            if ".parquet" not in fname:
+                if fname[-5:] != ".gzip":
+                    fname = fname + ".parquet"
 
             self.to_parquet(data_frame, fname,
                             cloud_credentials=cloud_credentials,
@@ -523,14 +631,14 @@ class IOEngine(object):
                             use_pyarrow_directly=use_pyarrow_directly)
             # data_frame.to_parquet(fname, compression=parquet_compression)
 
-            logger.info("Written Parquet: " + fname)
-        elif engine == 'csv':
-            if '.csv' not in fname:
-                fname = fname + '.csv'
+            logger.info(f"Written Parquet: {fname}")
+        elif engine == "csv":
+            if ".csv" not in fname:
+                fname = fname + ".csv"
 
             data_frame.to_csv(fname)
 
-            logger.info("Written CSV: " + fname)
+            logger.info(f"Written CSV: {fname}")
 
     def get_h5_filename(self, fname: str):
         """Strips h5 off filename returning first portion of filename
@@ -544,7 +652,7 @@ class IOEngine(object):
         -------
         str
         """
-        if fname[-3:] == '.h5':
+        if fname[-3:] == ".h5":
             return fname
 
         return fname + ".h5"
@@ -561,7 +669,7 @@ class IOEngine(object):
         -------
         str
         """
-        if fname[-6:] == '.bcolz':
+        if fname[-6:] == ".bcolz":
             return fname
 
         return fname + ".bcolz"
@@ -586,39 +694,42 @@ class IOEngine(object):
 
         fname_r = self.get_h5_filename(fname)
 
-        logger.info("About to dump R binary HDF5 - " + fname_r)
-        data_frame32 = data_frame.astype('float32')
+        logger.info(f"About to dump R binary HDF5 - {fname_r}")
+        data_frame32 = data_frame.astype("float32")
 
         if fields is None:
             fields = data_frame32.columns.values
 
         # decompose date/time into individual fields (easier to pick up in R)
-        data_frame32['Year'] = data_frame.index.year
-        data_frame32['Month'] = data_frame.index.month
-        data_frame32['Day'] = data_frame.index.day
-        data_frame32['Hour'] = data_frame.index.hour
-        data_frame32['Minute'] = data_frame.index.minute
-        data_frame32['Second'] = data_frame.index.second
-        data_frame32['Millisecond'] = data_frame.index.microsecond / 1000
+        data_frame32["Year"] = data_frame.index.year
+        data_frame32["Month"] = data_frame.index.month
+        data_frame32["Day"] = data_frame.index.day
+        data_frame32["Hour"] = data_frame.index.hour
+        data_frame32["Minute"] = data_frame.index.minute
+        data_frame32["Second"] = data_frame.index.second
+        data_frame32["Millisecond"] = data_frame.index.microsecond / 1000
 
         data_frame32 = data_frame32[
-            ['Year', 'Month', 'Day', 'Hour', 'Minute', 'Second',
-             'Millisecond'] + fields]
+            ["Year", "Month", "Day", "Hour", "Minute", "Second",
+             "Millisecond"] + fields]
 
         cols = data_frame32.columns
 
         store_export = pd.HDFStore(fname_r)
-        store_export.put('df_for_r', data_frame32, data_columns=cols)
+        store_export.put("df_for_r", data_frame32, data_columns=cols)
         store_export.close()
 
-    def read_time_series_cache_from_disk(self, fname,
-                                         engine: str ='hdf5',
+    def read_time_series_cache_from_disk(self, fname: str | List[str],
+                                         engine: str ="hdf5",
                                          start_date: str = None,
                                          finish_date: str = None,
+                                         columns: List[str] = None,
                                          db_server: str = constants.db_server,
                                          db_port: int = constants.db_port,
                                          username: str = constants.db_username,
-                                         password: str = constants.db_password):
+                                         password: str = constants.db_password,
+                                         arcticdb_dict: dict = None,
+                                         as_of=None):
         """Reads time series cache from disk in either HDF5 or bcolz
 
         Parameters
@@ -626,16 +737,17 @@ class IOEngine(object):
         fname : str (or list)
             file to be read from
         engine : str (optional)
-            'hd5' - reads HDF5 files (default)
-            'arctic' - reads from Arctic/MongoDB database
-            'bcolz' - reads from bcolz file (not fully implemented)
-            'parquet' - reads from Parquet
+            "hd5" - reads HDF5 files (default)
+            "arctic" - reads from deprecated Arctic/MongoDB database
+            "arcticdb" - reads from ArcticDB (on disk storage)
+            "bcolz" - reads from bcolz file (not fully implemented)
+            "parquet" - reads from Parquet
         start_date : str/datetime (optional)
             Start date
         finish_date : str/datetime (optional)
             Finish data
         db_server : str
-            IP address of MongdDB (default '127.0.0.1')
+            IP address of MongoDB (default "127.0.0.1")
 
         Returns
         -------
@@ -647,20 +759,20 @@ class IOEngine(object):
         data_frame_list = []
 
         if not (isinstance(fname, list)):
-            if '*' in fname:
+            if "*" in fname:
                 fname = glob.glob(fname)
             else:
                 fname = [fname]
 
         for fname_single in fname:
-            logger.debug("Reading " + fname_single + "..")
+            logger.debug(f"Reading {fname_single}..")
 
-            if engine == 'parquet' and '.gzip' not in fname_single \
-                    and '.parquet' not in fname_single:
-                fname_single = fname_single + '.parquet'
+            if engine == "parquet" and ".gzip" not in fname_single \
+                    and ".parquet" not in fname_single:
+                fname_single = f"{fname_single}.parquet"
 
-            if engine == 'redis':
-                fname_single = os.path.basename(fname_single).replace('.', '_')
+            if engine == "redis":
+                fname_single = os.path.basename(fname_single).replace(".", "_")
 
                 msg = None
 
@@ -668,13 +780,13 @@ class IOEngine(object):
                     r = redis.StrictRedis(host=db_server, port=db_port, db=0)
 
                     # is there a compressed key stored?)
-                    k = r.keys('comp_' + fname_single)
+                    k = r.keys("comp_" + fname_single)
 
                     # If so, then it means that we have stored it as a
                     # compressed object if have more than 1 element, take the
                     # last (which will be the latest to be added)
-                    if (len(k) >= 1):
-                        k = k[-1].decode('utf-8')
+                    if len(k) >= 1:
+                        k = k[-1].decode("utf-8")
 
                         msg = r.get(k)
                         msg = io.BytesIO(msg)
@@ -685,36 +797,67 @@ class IOEngine(object):
 
                 except Exception as e:
                     logger.info(
-                        "Cache not existent for " +
-                            fname_single + " in Redis: " + str(
-                            e))
+                        f"Cache not existent for {fname_single} in Redis: {str(e)}")
 
                 if msg is None:
                     data_frame = None
                 else:
-                    logger.info("Load Redis cache: " + fname_single)
+                    logger.info(f"Load Redis cache: {fname_single}")
 
                     data_frame = msg  # pd.read_msgpack(msg)
 
-            elif engine == 'arctic':
+            elif engine.startswith("arcticdb:"):
+                arcticdb_conn_str = engine.replace("arcticdb:", "", 1)
+                ac = adb.Arctic(arcticdb_conn_str)
+
+                arcticdb_dict = IOEngine._populate_arcticdb_dict(arcticdb_dict)
+
+                # Access the library
+                try:
+                    library = ac[fname_single]
+
+                    if arcticdb_dict["allow_on_disk_filter"]:
+                        date_range = None
+
+                        if start_date is not None and finish_date is not None:
+                            date_range = (start_date, finish_date)
+
+                        item = library.read(fname_single,
+                                            as_of=as_of,
+                                            date_range=date_range,
+                                            columns=columns,
+                                            query_builder=arcticdb_dict["query_builder"])
+
+                        logger.info(f"Read {fname_single} as of {str(as_of)}, between {str(date_range)}")
+                    else:
+                        item = library.read(fname_single, as_of=as_of)
+
+                        logger.info(f"Read {fname_single}")
+
+                    data_frame = item.data
+
+                except Exception as e:
+                    logger.warning(
+                        f"Library may not exist or another error: {fname_single} & message is {str(e)}")
+                    data_frame = None
+
+            elif engine == "arctic":
                 socketTimeoutMS = 2 * 1000
 
                 import pymongo
                 from arctic import Arctic
 
-                fname_single = os.path.basename(fname_single).replace('.', '_')
+                fname_single = os.path.basename(fname_single).replace(".", "_")
 
-                logger.info("Load Arctic/MongoDB library: " + fname_single)
+                logger.info(f"Load Arctic/MongoDB library: {fname_single}")
 
                 if username is not None and password is not None:
                     c = pymongo.MongoClient(
-                        host="mongodb://" + username + ":" + password + "@" + str(
-                            db_server) + ":" + str(db_port),
+                        host=f"mongodb://{username}:{password}@{str(db_server)}:{str(db_port)}",
                         connect=False)  # , username=username, password=password)
                 else:
                     c = pymongo.MongoClient(
-                        host="mongodb://" + str(db_server) + ":" + str(
-                            db_port), connect=False)
+                        host=f"mongodb://{str(db_server)}:{str(db_port)}", connect=False)
 
                 store = Arctic(c, socketTimeoutMS=socketTimeoutMS,
                                serverSelectionTimeoutMS=socketTimeoutMS)
@@ -734,32 +877,31 @@ class IOEngine(object):
 
                     c.close()
 
-                    logger.info('Read ' + fname_single)
+                    logger.info(f"Read {fname_single}")
 
                     data_frame = item.data
 
                 except Exception as e:
                     logger.warning(
-                        'Library may not exist or another error: '
-                            + fname_single + ' & message is ' + str(e))
+                        f"Library may not exist or another error: {fname_single} & message is {str(e)}")
                     data_frame = None
 
             elif self.path_exists(self.get_h5_filename(fname_single)):
                 store = pd.HDFStore(self.get_h5_filename(fname_single))
                 data_frame = store.select("data")
 
-                if ('intraday' in fname_single):
-                    data_frame = data_frame.astype('float32')
+                if "intraday" in fname_single:
+                    data_frame = data_frame.astype("float32")
 
                 store.close()
 
-            elif self.path_exists(fname_single) and '.csv' in fname_single:
-                data_frame = pd.read_csv(fname_single, index_col=0)
+            elif self.path_exists(fname_single) and ".csv" in fname_single:
+                data_frame = pd.read_csv(fname_single, index_col=0, usecols=columns)
 
                 data_frame.index = pd.to_datetime(data_frame.index)
 
             elif self.path_exists(fname_single):
-                data_frame = self.read_parquet(fname_single)
+                data_frame = self.read_parquet(fname_single, columns=columns)
                 # data_frame = pd.read_parquet(fname_single)
 
             data_frame_list.append(data_frame)
@@ -777,7 +919,7 @@ class IOEngine(object):
         data_frame.to_csv(csv_path)
 
     def read_csv_data_frame(self, f_name, freq, cutoff=None, dateparse=None,
-                            postfix='.close', intraday_tz='UTC',
+                            postfix=".close", intraday_tz="UTC",
                             excel_sheet=None):
         """Reads CSV/Excel from disk into DataFrame
 
@@ -803,17 +945,17 @@ class IOEngine(object):
         DataFrame
         """
 
-        if freq == 'intraday':
+        if freq == "intraday":
 
             if dateparse is None:
                 dateparse = lambda x: datetime.datetime(
                     *map(int, [x[6:10], x[3:5], x[0:2],
                                x[11:13], x[14:16], x[17:19]]))
-            elif dateparse == 'dukascopy':
+            elif dateparse == "dukascopy":
                 dateparse = lambda x: datetime.datetime(
                     *map(int, [x[0:4], x[5:7], x[8:10],
                                x[11:13], x[14:16], x[17:19]]))
-            elif dateparse == 'c':
+            elif dateparse == "c":
                 # use C library for parsing dates, several hundred times quicker
                 # requires compilation of library to install
                 import ciso8601
@@ -824,27 +966,27 @@ class IOEngine(object):
                                          date_parser=dateparse)
             else:
                 data_frame = pd.read_excel(f_name, excel_sheet, index_col=0,
-                                           na_values=['NA'])
+                                           na_values=["NA"])
 
-            data_frame = data_frame.astype('float32')
-            data_frame.index.names = ['Date']
+            data_frame = data_frame.astype("float32")
+            data_frame.index.names = ["Date"]
 
             old_cols = data_frame.columns
             new_cols = []
 
-            # add '.close' to each column name
+            # add ".close" to each column name
             for col in old_cols:
                 new_cols.append(col + postfix)
 
             data_frame.columns = new_cols
         else:
-            # daily data
-            if 'events' in f_name:
+            # Daily data
+            if "events" in f_name:
 
                 data_frame = pd.read_csv(f_name)
 
                 # very slow conversion
-                data_frame = data_frame.convert_objects(convert_dates='coerce')
+                data_frame = data_frame.convert_objects(convert_dates="coerce")
 
             else:
                 if excel_sheet is None:
@@ -858,27 +1000,27 @@ class IOEngine(object):
                                                  date_parser=dateparse)
                 else:
                     data_frame = pd.read_excel(f_name, excel_sheet,
-                                               index_col=0, na_values=['NA'])
+                                               index_col=0, na_values=["NA"])
 
         # convert Date to Python datetime
-        # datetime data_frame['Date1'] = data_frame.index
+        # datetime data_frame["Date1"] = data_frame.index
 
-        # slower method: lambda x: pd.datetime.strptime(x, '%d/%m/%Y %H:%M:%S')
-        # data_frame['Date1'].apply(lambda x: datetime.datetime(int(x[6:10]), int(x[3:5]), int(x[0:2]),
+        # slower method: lambda x: pd.datetime.strptime(x, "%d/%m/%Y %H:%M:%S")
+        # data_frame["Date1"].apply(lambda x: datetime.datetime(int(x[6:10]), int(x[3:5]), int(x[0:2]),
         #                                        int(x[12:13]), int(x[15:16]), int(x[18:19])))
 
-        # data_frame.index = data_frame['Date1']
-        # data_frame.drop('Date1')
+        # data_frame.index = data_frame["Date1"]
+        # data_frame.drop("Date1")
 
         # slower method: data_frame.index = pd.to_datetime(data_frame.index)
 
-        if freq == 'intraday':
-            # assume time series are already in UTC and assign this (can specify other time zones)
+        if freq == "intraday":
+            # Assume time series are already in UTC and assign this (can specify other time zones)
             data_frame = data_frame.tz_localize(intraday_tz)
 
-        # end cutoff date
+        # End cutoff date
         if cutoff is not None:
-            if (isinstance(cutoff, str)):
+            if isinstance(cutoff, str):
                 cutoff = parse(cutoff)
 
             data_frame = data_frame.loc[data_frame.index < cutoff]
@@ -912,7 +1054,7 @@ class IOEngine(object):
 
         logger = LoggerManager().getLogger(__name__)
 
-        logger.info("About to read... " + f_name)
+        logger.info(f"About to read... {f_name}")
 
         data_frame = self.read_csv_data_frame(f_name, freq, cutoff=cutoff,
                                               dateparse=dateparse)
@@ -932,25 +1074,25 @@ class IOEngine(object):
         """
         logger = LoggerManager().getLogger(__name__)
 
-        with codecs.open(f_name, 'rb', 'utf-8') as file:
+        with codecs.open(f_name, "rb", "utf-8") as file:
             data = file.read()
 
-            # clean file first if dirty
-            if data.count('\x00'):
-                logger.info('Cleaning CSV...')
+            # Clean file first if dirty
+            if data.count("\x00"):
+                logger.info("Cleaning CSV...")
 
-                with codecs.open(f_name + '.tmp', 'w', 'utf-8') as of:
-                    of.write(data.replace('\x00', ''))
+                with codecs.open(f_name + ".tmp", "w", "utf-8") as of:
+                    of.write(data.replace("\x00", ""))
 
-                shutil.move(f_name + '.tmp', f_name)
+                shutil.move(f"{f_name}.tmp", f_name)
 
     def create_cache_file_name(self, filename):
-        return constants.folder_time_series_data + "/" + filename
+        return f"{constants.folder_time_series_data}/{filename}"
 
     # TODO refactor IOEngine so that each database is implemented in a
     #  subclass of DBEngine
 
-    def get_engine(self, engine='hdf5_fixed'):
+    def get_engine(self, engine="hdf5_fixed"):
         pass
 
     def sanitize_path(self, path):
@@ -974,6 +1116,7 @@ class IOEngine(object):
         return path
 
     def read_parquet(self, path: str,
+                     columns: List[str] = None,
                      cloud_credentials: dict = None):
         """Reads a Pandas DataFrame from a local or s3 path
 
@@ -998,9 +1141,10 @@ class IOEngine(object):
 
             return pd.read_parquet(self.sanitize_path(path),
                                    storage_options=storage_options,
+                                   columns=columns
                                    )
         else:
-            return pd.read_parquet(path)
+            return pd.read_parquet(path, columns=columns)
 
     def _create_cloud_filesystem(self,
                                  cloud_credentials: dict,
@@ -1008,9 +1152,9 @@ class IOEngine(object):
 
         cloud_credentials = self._convert_cred(cloud_credentials)
 
-        # os.environ["AWS_ACCESS_KEY_ID"] = cloud_credentials['aws_access_key']
-        # os.environ["AWS_SECRET_ACCESS_KEY"] = cloud_credentials['aws_secret_key']
-        # os.environ["AWS_SESSION_TOKEN"] = cloud_credentials['aws_session_token']
+        # os.environ["AWS_ACCESS_KEY_ID"] = cloud_credentials["aws_access_key"]
+        # os.environ["AWS_SECRET_ACCESS_KEY"] = cloud_credentials["aws_secret_key"]
+        # os.environ["AWS_SESSION_TOKEN"] = cloud_credentials["aws_session_token"]
 
         if "s3_pyarrow" == filesystem_type:
             return pyarrow.fs.S3FileSystem(anon=cloud_credentials["aws_anon"],
@@ -1034,12 +1178,12 @@ class IOEngine(object):
 
         cloud_credentials = copy.copy(cloud_credentials)
 
-        boolean_keys = {'aws_anon': False}
+        boolean_keys = {"aws_anon": False}
 
-        mappings = {'aws_anon': 'anon',
-                    'aws_access_key': 'key',
-                    'aws_secret_key': 'secret',
-                    'aws_session_token': 'token'
+        mappings = {"aws_anon": "anon",
+                    "aws_access_key": "key",
+                    "aws_secret_key": "secret",
+                    "aws_session_token": "token"
                     }
 
         for m in mappings.keys():
@@ -1100,15 +1244,15 @@ class IOEngine(object):
         # # Force any date columns to default time units (Parquet with pyarrow has problems with ns dates)
         # for c in df.columns:
         #
-        #     # If it's a date column don't append to convert to a float
+        #     # If it's a date column don"t append to convert to a float
         #     for d in constants.always_date_columns:
-        #         if d in c or 'release-dt' in c:
+        #         if d in c or "release-dt" in c:
         #             is_date = True
         #             break
         #
         #     if is_date:
         #         try:
-        #             df[c] = pd.to_datetime(df[c], errors='coerce', unit=constants.default_time_units)
+        #             df[c] = pd.to_datetime(df[c], errors="coerce", unit=constants.default_time_units)
         #         except:
         #             pass
 
@@ -1122,21 +1266,21 @@ class IOEngine(object):
 
         # Tends to be slower than using pandas/pyarrow directly, but for very
         # large files, we might have to split before writing to disk
-        def pyarrow_dump(df, path):
+        def pyarrow_dump(df_dump, dump_path):
             # Trying to convert large Pandas DataFrames in one go to Arrow
             # tables can result in out-of-memory messages, so chunk them first,
             # convert them one by one, and write to disk in chunks
-            df_list = self.chunk_dataframes(df)
+            df_list = self.chunk_dataframes(df_dump)
 
-            # Using pandas.to_parquet, doesn't let us pass in parameters to
-            # allow coersion of timestamps hence have to do it this way,
+            # Using pandas.to_parquet, does not let us pass in parameters to
+            # allow coercion of timestamps hence have to do it this way,
             # using underlying pyarrow interface (/)
             # ie. ns -> us
             if not (isinstance(df_list, list)):
                 df_list = [df_list]
 
-            for p in path:
-                p = self.sanitize_path(p)
+            for path_ in dump_path:
+                path_ = self.sanitize_path(path_)
 
                 # Reference:
                 # https://stackoverflow.com/questions/47113813/using-pyarrow-how-do-you-append-to-parquet-file
@@ -1145,21 +1289,20 @@ class IOEngine(object):
                 pqwriter = None
                 counter = 1
 
-                if 's3://' in p:
+                if "s3://" in path_:
                     s3 = self._create_cloud_filesystem(cloud_credentials_,
-                                                       's3_pyarrow')
+                                                       "s3_pyarrow")
 
-                    p_in_s3 = p.replace("s3://", "")
+                    path_in_s3 = path_.replace("s3://", "")
 
                     for df_ in df_list:
                         logger.info(
-                            "S3 chunk... " + str(counter) + " of " + str(
-                                len(df_list)))
+                            f"S3 chunk... {str(counter)} of {str(len(df_list))}")
                         table = pa.Table.from_pandas(df_)
 
                         if pqwriter is None:
                             pqwriter = pq.ParquetWriter(
-                                p_in_s3, table.schema,
+                                path_in_s3, table.schema,
                                 compression=parquet_compression,
                                 coerce_timestamps=constants.default_time_units,
                                 allow_truncated_timestamps=True,
@@ -1172,13 +1315,12 @@ class IOEngine(object):
                 else:
                     for df_ in df_list:
                         logger.info(
-                            "Local chunk... " + str(counter) + " of " + str(
-                                len(df_list)))
+                            f"Local chunk... {str(counter)} of {str(len(df_list))}")
                         table = pa.Table.from_pandas(df_)
 
                         if pqwriter is None:
                             pqwriter = pq.ParquetWriter(
-                                p, table.schema,
+                                path_, table.schema,
                                 compression=parquet_compression,
                                 coerce_timestamps=constants.default_time_units,
                                 allow_truncated_timestamps=True)
@@ -1220,8 +1362,7 @@ class IOEngine(object):
 
             except pyarrow.lib.ArrowMemoryError as e:
                 logger.warning(
-                    "Couldn't dump using Pandas/pyarrow, will instead try "
-                    "chunking with pyarrow directly " + str(e))
+                    f"Could not dump using Pandas/pyarrow, will instead try chunking with pyarrow directly {str(e)}")
 
                 pyarrow_dump(df, path)
 
@@ -1276,8 +1417,8 @@ class IOEngine(object):
 
     def get_obj_size_mb(self, obj):
         # Can sometime have very large dataframes, which need to be split,
-        # otherwise won't fit in a single Redis key
-        mem = obj.memory_usage(deep='deep').sum()
+        # otherwise will not fit in a single Redis key
+        mem = obj.memory_usage(deep="deep").sum()
         mem_float = round(float(mem) / (1024.0 * 1024.0), 3)
 
         return mem_float
@@ -1286,9 +1427,9 @@ class IOEngine(object):
         logger = LoggerManager.getLogger(__name__)
 
         # Can sometime have very large dataframes, which need to be split,
-        # otherwise won't fit in a single Redis key
+        # otherwise will not fit in a single Redis key
         mem_float = self.get_obj_size_mb(obj)
-        mem = '----------- ' + str(mem_float) + ' MB -----------'
+        mem = f"----------- {str(mem_float)} MB -----------"
 
         chunks = int(math.ceil(mem_float / chunk_size_mb))
 
@@ -1299,12 +1440,12 @@ class IOEngine(object):
             obj_list = [obj]
 
         if obj_list != []:
-            logger.info("Pandas dataframe of size: " + mem + " in " + str(
-                chunks) + " chunk(s)")
+            logger.info(f"Pandas dataframe of size: {mem} in {str(chunks)} chunk(s)")
 
         return obj_list
 
     def read_csv(self, path,
+                 columns: List[str] = None,
                  cloud_credentials: str = None,
                  encoding: str = "utf-8",
                  encoding_errors: str =None,
@@ -1314,23 +1455,27 @@ class IOEngine(object):
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
-                                               's3_filesystem')
+                                               "s3_filesystem")
 
             path_in_s3 = self.sanitize_path(path).replace("s3://", "")
 
-            # Use 'w' for py3, 'wb' for py2
-            with s3.open(path_in_s3, 'r', errors=errors) as f:
+            # Use "w" for py3, "wb" for py2
+            with s3.open(path_in_s3, "r", errors=errors) as f:
                 if encoding_errors is not None:
                     return pd.read_csv(f, encoding=encoding,
-                                       encoding_errors=encoding_errors)
+                                       encoding_errors=encoding_errors,
+                                       usecols=columns)
                 else:
-                    return pd.read_csv(f, encoding=encoding)
+                    return pd.read_csv(f, encoding=encoding,
+                                       usecols=columns)
         else:
             if encoding_errors is not None:
                 return pd.read_csv(path, encoding=encoding,
-                                   encoding_errors=encoding_errors)
+                                   encoding_errors=encoding_errors,
+                                   usecols=columns)
             else:
-                return pd.read_csv(path, encoding=encoding)
+                return pd.read_csv(path, encoding=encoding,
+                                   usecols=columns)
 
     def to_csv_parquet(self,
                        df,
@@ -1381,12 +1526,12 @@ class IOEngine(object):
         for p in path:
             if "s3://" in p:
                 s3 = self._create_cloud_filesystem(cloud_credentials,
-                                                   's3_filesystem')
+                                                   "s3_filesystem")
 
                 path_in_s3 = self.sanitize_path(p).replace("s3://", "")
 
-                # Use 'w' for py3, 'wb' for py2
-                with s3.open(path_in_s3, 'w') as f:
+                # Use "w" for py3, "wb" for py2
+                with s3.open(path_in_s3, "w") as f:
                     df.to_csv(f)
             else:
                 df.to_csv(p)
@@ -1399,12 +1544,12 @@ class IOEngine(object):
         for p in path:
             if "s3://" in p:
                 s3 = self._create_cloud_filesystem(cloud_credentials,
-                                                   's3_filesystem')
+                                                   "s3_filesystem")
 
                 path_in_s3 = self.sanitize_path(p).replace("s3://", "")
 
-                # Use 'w' for py3, 'wb' for py2
-                with s3.open(path_in_s3, 'w') as f:
+                # Use "w" for py3, "wb" for py2
+                with s3.open(path_in_s3, "w") as f:
                     if isinstance(dictionary, dict):
                         json.dump(dictionary, f, indent=4)
                     else:
@@ -1422,7 +1567,7 @@ class IOEngine(object):
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
-                                               's3_filesystem')
+                                               "s3_filesystem")
 
             path_in_s3 = path.replace("s3://", "")
 
@@ -1434,10 +1579,10 @@ class IOEngine(object):
 
         file = list(file)
 
-        if file[0][0] == '/':
+        if file[0][0] == "/":
             file[0] = file[0][1::]
 
-        if 's3://' in folder:
+        if "s3://" in folder:
 
             folder = folder.replace("s3://", "")
             folder = os.path.join(folder, *file)
@@ -1472,7 +1617,7 @@ class IOEngine(object):
             if path_in_s3 in list_files:
                 list_files.remove(path_in_s3)
 
-            files = ['s3://' + x for x in list_files]
+            files = ["s3://" + x for x in list_files]
 
         else:
             files = glob.glob(path)
@@ -1492,7 +1637,7 @@ class IOEngine(object):
         for p in path:
             if "s3://" in p:
                 s3 = self._create_cloud_filesystem(cloud_credentials,
-                                                   's3_filesystem')
+                                                   "s3_filesystem")
 
                 path_in_s3 = self.sanitize_path(p).replace("s3://", "")
 
@@ -1538,7 +1683,7 @@ class IOEngine(object):
                     shutil.copy(so, dest)
                 else:
                     s3 = self._create_cloud_filesystem(cloud_credentials,
-                                                       's3_filesystem')
+                                                       "s3_filesystem")
 
                     if "s3://" in dest and "s3://" in so:
                         s3.cp(self.sanitize_path(so).replace("s3://", ""),
@@ -1568,7 +1713,7 @@ class SpeedCache(object):
 
     def __init__(self, db_cache_server: str = None,
                  db_cache_port: int = None,
-                 engine='redis'):
+                 engine: str = "redis"):
 
         if db_cache_server is None:
             self.db_cache_server = constants.db_cache_server
@@ -1580,31 +1725,32 @@ class SpeedCache(object):
         self.io_engine = IOEngine()
 
     def put_dataframe(self, key: str, obj):
-        if self.engine != 'no_cache':
+        if self.engine != "no_cache":
             try:
                 self.io_engine.write_time_series_cache_to_disk(
-                    key.replace('/', '_'), obj,
+                    key.replace("/", "_"), obj,
                     engine=self.engine, db_server=self.db_cache_server,
                     db_port=self.db_cache_port)
             except:
                 pass
 
     def get_dataframe(self, key: str):
-        if self.engine == 'no_cache': return None
+        if self.engine == "no_cache": return None
 
         try:
             return self.io_engine.read_time_series_cache_from_disk(
-                key.replace('/', '_'),
+                key.replace("/", "_"),
                 engine=self.engine, db_server=self.db_cache_server,
                 db_port=self.db_cache_port)
         except:
             pass
 
     def dump_all_keys(self):
-        self.dump_key('flush_all_keys')
+        self.dump_key("flush_all_keys")
 
     def dump_key(self, key: str):
-        if self.engine == 'no_cache': return
+        if self.engine == "no_cache":
+            return
 
         try:
             return self.io_engine.remove_time_series_cache_on_disk(
@@ -1615,7 +1761,7 @@ class SpeedCache(object):
         except:
             pass
 
-    def generate_key(self, obj, key_drop: List[str]=[]):
+    def generate_key(self, obj, key_drop: List[str] = []):
         """Create a unique hash key for object from its attributes (excluding
         those attributes in key drop), which can be used as a hashkey in the
         Redis hashtable
@@ -1633,25 +1779,25 @@ class SpeedCache(object):
         """
 
         # never want to include Logger object!
-        key_drop.append('logger')
+        key_drop.append("logger")
         key = []
 
         for k in obj.__dict__:
 
-            if 'api_key' not in k:
+            if "api_key" not in k:
                 # provided the key is not in one of the dropped keys
                 if not (any(a == k for a in key_drop)):
                     add = obj.__dict__[k]
 
                     if add is not None:
-                        if isinstance(add, list): add = '_'.join(
-                            str(e) for e in add)
+                        if isinstance(add, list):
+                            add = "_".join(str(e) for e in add)
 
-                    key.append(str(k) + '-' + str(add))
+                    key.append(f"{str(k)}-{str(add)}")
 
         key.sort()
-        key = '_'.join(str(e) for e in key).replace(type(obj).__name__,
-                                                    '').replace('___', '_')
+        key = "_".join(str(e) for e in key).replace(type(obj).__name__,
+                                                    "").replace("___", "_")
 
         return type(obj).__name__ + "_" + str(len(str(key))) + "_" + str(key)
 

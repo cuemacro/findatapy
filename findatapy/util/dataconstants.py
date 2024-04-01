@@ -77,22 +77,31 @@ class DataConstants(object):
     default_data_engine = None
 
     ###### FOR DATABASE (Arctic/MongoDB)
-    db_server = '127.0.0.1'
-    db_port = '27017'
+    db_server = "127.0.0.1"
+    db_port = "27017"
     db_username = None
     db_password = None
 
+    ###### FOR ArcticDB
+    arcticdb_dict = {
+        "prune_previous_versions": False,
+        "write_style": "write", # "write" / "append"
+        "force_create_library": False,
+        "allow_on_disk_filter": True,
+        "query_builder": None
+    }
+
     ###### FOR TEMPORARY IN-MEMORY CACHE (Redis)
-    db_cache_server = '127.0.0.1'
-    db_cache_port = '6379'
-    write_cache_engine = 'redis'  # 'redis' or 'no_cache' means we don't use cache
+    db_cache_server = "127.0.0.1"
+    db_cache_port = "6379"
+    write_cache_engine = "redis"  # 'redis' or 'no_cache' means we don't use cache
 
     use_cache_compression = True
 
-    parquet_compression = 'gzip' # 'gzip' or 'snappy'
+    parquet_compression = "gzip" # 'gzip' or 'snappy'
 
     # Note for AWS you can set these globally without having to specify here with AWS CLI
-    cloud_credentials = {'aws_anon' : False}
+    cloud_credentials = {"aws_anon" : False}
 
     ## eg. {
     # {
