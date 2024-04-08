@@ -115,6 +115,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.34 - findatapy (08 Apr 2024)
 * 0.1.33 - findatapy (01 Apr 2024)
 * 0.1.32 - findatapy (17 Feb 2024)
 * 0.1.31 - findatapy (01 Dec 2023)
@@ -140,6 +141,8 @@ individual data providers)
 
 # Coding log
 
+* 08 Apr 2024
+  * Removed list typecheck (to make code Python 3.8 compatible)
 * 01 Apr 2024
   * Added support for ArcticDB to store market data with findatapy
 * 17 Feb 2024
