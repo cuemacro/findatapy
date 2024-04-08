@@ -83,7 +83,7 @@ class MarketDataRequest:
 
     def __init__(self, data_source: str = None,
                  start_date="year", finish_date=datetime.datetime.utcnow(),
-                 tickers: str | List[str] =None,
+                 tickers: str =None,
                  category: str = None, freq_mult: int = 1, freq: str = "daily",
                  gran_freq: str =None, cut: str ="NYC",
                  fields: List[str] = ["close"],
