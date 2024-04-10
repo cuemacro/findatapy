@@ -901,7 +901,10 @@ class IOEngine(object):
                 data_frame.index = pd.to_datetime(data_frame.index)
 
             elif self.path_exists(fname_single):
-                data_frame = self.read_parquet(fname_single, columns=columns)
+                data_frame = self.read_parquet(fname_single)
+
+                # Can be too restrictive selecting columns
+                # data_frame = self.read_parquet(fname_single, columns=columns)
                 # data_frame = pd.read_parquet(fname_single)
 
             data_frame_list.append(data_frame)
