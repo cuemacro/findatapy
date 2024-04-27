@@ -719,7 +719,7 @@ class IOEngine(object):
         store_export.put("df_for_r", data_frame32, data_columns=cols)
         store_export.close()
 
-    def read_time_series_cache_from_disk(self, fname: str | List[str],
+    def read_time_series_cache_from_disk(self, fname: str,
                                          engine: str ="hdf5",
                                          start_date: str = None,
                                          finish_date: str = None,
