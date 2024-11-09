@@ -912,6 +912,8 @@ class Market(object):
                 md_request_default.arcticdb_dict)
             md_request_ind.quandl_api_key = copy.deepcopy(
                 md_request_default.quandl_api_key)
+            md_request_ind.databento_api_key = copy.deepcopy(
+                md_request_default.databento_api_key)
             md_request_ind.fred_api_key = copy.deepcopy(
                 md_request_default.fred_api_key)
             md_request_ind.eikon_api_key = copy.deepcopy(

@@ -51,7 +51,7 @@ if __name__ == "__main__":
         # fields contains ["close","volume"]
         # return tick data
 
-        md_request = MarketDataRequest(start_date="11 Nov 2015",
+        md_request = MarketDataRequest(start_date="11 Jan 2018",
                                        finish_date="02 Feb 2018", cut="LOC",
                                        freq="tick",
                                        data_source="bitcoincharts",

@@ -85,6 +85,7 @@ class MarketDataRequest:
                  start_date="year", finish_date=datetime.datetime.utcnow(),
                  tickers: str =None,
                  category: str = None, freq_mult: int = 1, freq: str = "daily",
+                 dataset: str = None,
                  gran_freq: str =None, cut: str ="NYC",
                  fields: List[str] = ["close"],
                  cache_algo: str = "internet_load_return",
@@ -110,6 +111,7 @@ class MarketDataRequest:
                  md_request = None,
                  abstract_curve=None,
                  quandl_api_key: str = None,
+                 databento_api_key: str = None,
                  fred_api_key: str = None,
                  alpha_vantage_api_key: str = None,
                  eikon_api_key: str = None,
@@ -143,6 +145,8 @@ class MarketDataRequest:
             quandl_api_key = data_constants.quandl_api_key
         if fred_api_key is None:
             fred_api_key = data_constants.fred_api_key
+        if databento_api_key is None:
+            databento_api_key = data_constants.databento_api_key
         if alpha_vantage_api_key is None:
             alpha_vantage_api_key = data_constants.alpha_vantage_api_key
         if eikon_api_key is None:
@@ -174,6 +178,7 @@ class MarketDataRequest:
                 self.finish_date = copy.deepcopy(md_request.finish_date)
 
                 self.category = copy.deepcopy(md_request.category)  # special predefined categories
+                self.dataset = copy.deepcopy(md_request.dataset)
 
                 self.cut = copy.deepcopy(md_request.cut)  # closing time of the data (eg. NYC, LDN, TOK etc)
                 self.fields = copy.deepcopy(md_request.fields)  # fields, eg. close, high, low, open
@@ -204,7 +209,9 @@ class MarketDataRequest:
 
                 self.abstract_curve = copy.deepcopy(md_request.abstract_curve)
                 self.quandl_api_key = copy.deepcopy(md_request.quandl_api_key)
+                self.databento_api_key = copy.deepcopy(md_request.databento_api_key)
                 self.fred_api_key = copy.deepcopy(md_request.fred_api_key)
+                self.databento_api_key = copy.deepcopy(md_request.databento_api_key)
                 self.alpha_vantage_api_key = \
                     copy.deepcopy(md_request.alpha_vantage_api_key)
                 self.eikon_api_key = copy.deepcopy(md_request.eikon_api_key)
@@ -234,6 +241,7 @@ class MarketDataRequest:
             self.start_date = start_date
             self.finish_date = finish_date
             self.category = category  # special predefined categories
+            self.dataset = dataset
 
             self.cut = cut  # closing time of the data (eg. NYC, LDN, TOK etc)
             self.fields = fields  # fields, eg. close, high, low, open
@@ -260,6 +268,7 @@ class MarketDataRequest:
             self.abstract_curve = abstract_curve
             
             self.quandl_api_key = quandl_api_key
+            self.databento_api_key = databento_api_key
             self.fred_api_key = fred_api_key
             self.alpha_vantage_api_key = alpha_vantage_api_key
             self.eikon_api_key = eikon_api_key
@@ -354,6 +363,14 @@ class MarketDataRequest:
     @category.setter
     def category(self, category):
         self.__category = category
+        
+    @property
+    def dataset(self):
+        return self.__dataset
+
+    @dataset.setter
+    def dataset(self, dataset):
+        self.__dataset = dataset
 
     @property
     def tickers(self):
@@ -773,6 +790,14 @@ class MarketDataRequest:
     @quandl_api_key.setter
     def quandl_api_key(self, quandl_api_key):
         self.__quandl_api_key = quandl_api_key
+
+    @property
+    def databento_api_key(self):
+        return self.__databento_api_key
+
+    @databento_api_key.setter
+    def databento_api_key(self, databento_api_key):
+        self.__databento_api_key = databento_api_key
 
     @property
     def fred_api_key(self):

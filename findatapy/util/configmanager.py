@@ -133,6 +133,7 @@ class ConfigManager(object):
                 for index, line in df.iterrows():
                     category = line["category"]
                     data_source = line["data_source"]
+
                     freq_list = line["freq"].split(",")
 
                     if isinstance(freq_list, str):
