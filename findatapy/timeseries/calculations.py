@@ -635,7 +635,7 @@ class Calculations(object):
                                                                   join='left',
                                                                   axis='index')
 
-            tc_costs = tc_costs.fillna(method='ffill')
+            tc_costs = tc_costs.ffill()
 
             # Calculate the transaction costs by multiplying by trades
             tc_costs = (numpy.abs(signal_data_frame.shift(
@@ -681,8 +681,11 @@ class Calculations(object):
                 signal_data_frame, rc_costs = signal_data_frame.align(rc_costs,
                                                                       join='left',
                                                                       axis='index')
-
-                rc_costs = rc_costs.fillna(0)
+                
+                # Given depreciated in later Pandas
+                # rc_costs = rc_costs.fillna(0)
+                rc_costs = rc_costs.replace(np.nan, 0)
+                rc_costs = rc_costs.replace(None, 0)
 
                 # Calculate the roll costs by multiplying by our position (eg. if position is zero, then no roll cost)
                 rc_costs = (numpy.abs(signal_data_frame.shift(
@@ -1159,7 +1162,7 @@ class Calculations(object):
 
         # first do an outer join then fill down our right signal
         df_left_1, df_right = df_left.align(df_right, join='outer', axis=0)
-        df_right = df_right.fillna(method='ffill')
+        df_right = df_right.ffill()
 
         # now realign back to days when we trade
         # df_left.to_csv('left.csv'); df_right.to_csv('right.csv')
@@ -2039,7 +2042,8 @@ class Calculations(object):
                         failed_conversion_cols.append(c)
 
                 try:
-                    data_frame[c] = data_frame[c].fillna(value=np.nan)
+                    data_frame[c] = data_frame[c].replace(None, np.nan)
+                    # data_frame[c] = data_frame[c].fillna(value=np.nan)
                 except:
                     pass
 

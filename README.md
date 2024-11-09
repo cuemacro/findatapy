@@ -154,6 +154,7 @@ individual data providers)
   * Refactored out crypto downloaders into datavendorcrypto.py
   * Refactored out ALFRED/FRED into datavendorfred.py
   * Starting to add Databento Historical API
+  * Fixed deprecation error in calculations.py for 
 * 27 Apr 2024
   * Removed additional list typecheck (to make code Python 3.8 compatible)
 * 09 Apr 2024
