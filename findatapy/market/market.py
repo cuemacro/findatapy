@@ -910,6 +910,13 @@ class Market(object):
             md_request_ind.as_of = copy.deepcopy(md_request_default.as_of)
             md_request_ind.arcticdb_dict = copy.deepcopy(
                 md_request_default.arcticdb_dict)
+            md_request_ind.quandl_api_key = copy.deepcopy(
+                md_request_default.quandl_api_key)
+            md_request_ind.fred_api_key = copy.deepcopy(
+                md_request_default.fred_api_key)
+            md_request_ind.eikon_api_key = copy.deepcopy(
+                md_request_default.eikon_api_key)
+
 
         return md_request_ind
 
