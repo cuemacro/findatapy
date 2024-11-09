@@ -42,6 +42,7 @@ from datetime import timedelta
 import time as time_library
 import re
 import concurrent.futures
+import certifi
 
 import requests
 
@@ -3099,4 +3100,136 @@ class DataVendorFXCMPY(DataVendor):
         if trials == 5:
             logger.error("Couldn't download from FXCM after several attempts!")
 
+        return data_frame
+
+
+class DataVendorFMP(DataVendor):
+    """Reads in data from FMP into findatapy library
+
+    """
+    API_KEY="2NX5IA2Xwruol77lVVt9DDAUnOhwzZRJ"
+    url = ("https://financialmodelingprep.com/api/v3/search?query=AA&apikey"+API_KEY)
+
+    def __init__(self):
+        super(DataVendorFMP, self).__init__()
+
+    def get_jsonparsed_data(url):
+        response = urlopen(url, cafile=certifi.where())
+        data = response.read().decode("utf-8")
+        return json.loads(data)
+    
+
+# try:
+#     import 
+# except:
+#     pass
+from dotenv import load_dotenv
+
+load_dotenv()
+class DataVendorAlphaVantage(DataVendor):
+    """Reads in data from AlphaVantage into findatapy library"""
+    
+    def __init__(self):
+        super(DataVendorAlphaVantage, self).__init__()
+        self.base_url = "https://www.alphavantage.co/query"
+        self.api_key = os.getenv('ALPHAVANTAGE_API_KEY')
+        if not self.api_key:
+            raise ValueError("ALPHAVANTAGE_API_KEY not found in environment variables")
+    
+        
+    def load_ticker(self, md_request):
+        logger = LoggerManager().getLogger(__name__)
+        
+        md_request_vendor = self.construct_vendor_md_request(md_request)
+        
+        logger.info("Request AlphaVantage data")
+        
+        data_frame = self.download_daily(md_request_vendor)
+        
+        if data_frame is None or data_frame.empty:
+            return None
+            
+        # Convert from vendor to findatapy tickers/fields
+        if data_frame is not None:
+            # Map AlphaVantage fields to standard names
+            field_mapping = {
+                '1. open': 'open',
+                '2. high': 'high',
+                '3. low': 'low',
+                '4. close': 'close',
+                '5. volume': 'volume'
+            }
+            
+            # Rename columns using our mapping
+            data_frame.rename(columns=field_mapping, inplace=True)
+            
+            # Create combined ticker.field names
+            ticker = md_request.tickers[0]  # Assuming single ticker for now
+            ticker_combined = [f"{ticker}.{field}" for field in data_frame.columns]
+            
+            data_frame.columns = ticker_combined
+            data_frame.index.name = 'Date'
+            
+        logger.info(f"Completed request from AlphaVantage for {ticker_combined}")
+        
+        return data_frame
+    
+    def download_daily(self, md_request):
+        logger = LoggerManager().getLogger(__name__)
+        
+        trials = 0
+        data_frame = None
+        
+        while trials < 5:
+            try:
+                params = {
+                    'function': 'TIME_SERIES_DAILY',
+                    'symbol': md_request.tickers[0],  # Assuming single ticker
+                    'outputsize': 'full' if md_request.start_date else 'compact',
+                    'datatype': 'json',
+                    'apikey': self.api_key
+                }
+                
+                response = requests.get(self.base_url, params=params)
+                response.raise_for_status()  # Raise exception for bad status codes
+                
+                data = response.json()
+                
+                if 'Time Series (Daily)' not in data:
+                    logger.error(f"No data returned for {md_request.tickers[0]}")
+                    return None
+                    
+                # Convert to DataFrame
+                data_frame = pd.DataFrame.from_dict(
+                    data['Time Series (Daily)'],
+                    orient='index'
+                )
+                
+                # Convert index to datetime
+                data_frame.index = pd.to_datetime(data_frame.index)
+                
+                # Filter by date range if provided
+                if md_request.start_date:
+                    data_frame = data_frame[data_frame.index >= md_request.start_date]
+                if md_request.finish_date:
+                    data_frame = data_frame[data_frame.index <= md_request.finish_date]
+                
+                break
+                
+            except requests.exceptions.RequestException as e:
+                trials += 1
+                logger.info(
+                    f"Attempting... {trials} request to download from AlphaVantage due to "
+                    f"following error: {str(e)}"
+                )
+            
+            except Exception as e:
+                trials += 1
+                logger.info(
+                    f"Unexpected error on attempt {trials}: {str(e)}"
+                )
+        
+        if trials == 5:
+            logger.error("Couldn't download from AlphaVantage after several attempts!")
+            
         return data_frame
