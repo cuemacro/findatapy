@@ -21,6 +21,7 @@ import datetime
 
 import pandas as pd
 
+from findatapy.market.datavendordatabento import DataVendorDatabento
 from findatapy.market.ioengine import IOEngine
 from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Filter, Calculations
@@ -127,6 +128,10 @@ class MarketDataGenerator(object):
             elif data_source == "yahoo":
                 from findatapy.market.datavendorweb import DataVendorYahoo
                 data_vendor = DataVendorYahoo()
+
+            elif data_source == "databento":
+                from findatapy.market.datavendordatabento import DataVendorDatabento
+                data_vendor = DataVendorDatabento()
 
             elif data_source in ["google", "fred", "oecd", "eurostat",
                                  "edgarindex"]:
