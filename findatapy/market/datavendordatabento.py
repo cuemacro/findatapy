@@ -85,6 +85,19 @@ class DataVendorDatabento(DataVendor):
                 trials = trials + 1
                 logger.info(f"Attempting... {str(trials)} request to download from Databento")
 
+        data_frame = data_frame.set_index('symbol', append=True).unstack(level='symbol')
+        fields = df.columns.levels[0]
+        tickers = df.columns.levels[1]
+
+        new_cols = []
+
+        for fi in fields:
+            for ti in tickers:
+                new_cols.append(ti + "." + fi)
+
+        data_frame.columns = new_cols
+        data_frame.index.name = "Date"
+
         if trials == 5:
             logger.error("Couldn't download from Databento after several attempts!")
 
