@@ -63,8 +63,7 @@ class DataVendorDatabento(DataVendor):
                 return None
             except:
                 trials = trials + 1
-                logger.info(f"Attempting... {str(
-                    trials)} request to download from Databento")
+                logger.info(f"Attempting... {str(trials)} request to download from Databento")
 
         if trials == 5:
             logger.error("Couldn't download from Databento after several attempts!")
