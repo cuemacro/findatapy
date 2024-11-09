@@ -1,5 +1,6 @@
 category,data_source,freq,cut,fields,startdate,revision_periods
 fx,quandl,daily,NYC,close,1-Jan-70,1D
+fx,alfred,daily,NYC,close,1-Jan-70,1D
 fx,dukascopy,tick,NYC,"bid,ask,bidv,askv,volume",1-Jan-03,1D
 fx,fxcm,tick,NYC,"bid,ask",1-Jan-15,1D
 fx,bloomberg,daily,BGN,"close,open,high,low",1-Jan-70,1D

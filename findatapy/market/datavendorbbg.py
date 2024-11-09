@@ -24,6 +24,7 @@ from findatapy.market.datavendor import DataVendor
 from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Calculations
 
+import time
 
 class DataVendorBBG(DataVendor):
     """Abstract class for download of Bloomberg daily, intraday data and 
@@ -548,8 +549,9 @@ class BBGLowLevelTemplate:  # in order that the init function works in
                             "Try reopening Bloomberg session... try " +
                             str(i))
                         self.kill_session(
-                            session)  # need to forcibly kill_session since
-                        # can't always reopen
+                            session)  # Need to forcibly kill_session since
+
+                        # Can't always reopen
                         session = self.start_bloomberg_session()
 
                         if session is not None:
@@ -706,8 +708,8 @@ class BBGLowLevelTemplate:  # in order that the init function works in
 
         logger = LoggerManager().getLogger(__name__)
 
-        # Try up to 5 times to start a session
-        while tries < 5:
+        # Try up to 10 times to start a session
+        while tries < 10:
             try:
                 # fill SessionOptions
                 sessionOptions = blpapi.SessionOptions()
@@ -726,14 +728,16 @@ class BBGLowLevelTemplate:  # in order that the init function works in
 
                 logger.info("Returning session...")
 
-                tries = 5
+                tries = 10
             except:
                 tries = tries + 1
+                logger.warning(f"Trying to get session again {str(tries)} again...")
+                time.sleep(1)
 
         # BBGLowLevelTemplate._session = session
 
         if session is None:
-            logger.error("Failed to start session.")
+            logger.error("Failed to start session after many attempts!")
             return
 
         return session
