@@ -217,6 +217,9 @@ class DataVendor(object):
         # Otherwise used stored configuration files (every field needs to be
         # defined!)
         else:
+            if "-" in data_source:
+                data_source = data_source.split("-")[0]
+
             for vendor_field in vendor_fields_list:
                 try:
                     v = self.config.convert_vendor_to_library_field(
