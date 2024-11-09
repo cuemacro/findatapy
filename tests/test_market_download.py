@@ -80,8 +80,14 @@ class MarketFetchTestRunner:
         df = self.get_market_df(md_request, data_source_overwrite)
         first_tick = df.index.tolist()[0]
         first_tick = first_tick.replace(tzinfo=None)
-        assert first_tick > md_request.start_date
+        assert first_tick >= md_request.start_date
 
+    def test_finish_time_pre_given_finish_time(self, md_request: MarketDataRequest, data_source_overwrite: Optional[str]=None):
+        df = self.get_market_df(md_request, data_source_overwrite)
+        first_tick = df.index.tolist()[-1]
+        first_tick = first_tick.replace(tzinfo=None)
+        assert first_tick <= md_request.finish_date
+ 
     def test_valid_prices(self, md_request: MarketDataRequest, data_source_overwrite: Optional[str]=None):
         df = self.get_market_df(md_request, data_source_overwrite)
         quarter_null_fields = []
@@ -103,23 +109,7 @@ class MarketFetchTestRunner:
         return fields
 
 md_requests = [
-    # Not sure if these 2 still work
-    # MarketDataRequest(start_date="05 Dec 2016", 
-    #     finish_date="07 Dec 2016",
-    #     fields=["bid"], vendor_fields=["bid"],
-    #     freq="tick", data_source="dukascopy",
-    #     tickers=["EURUSD"], 
-    #     vendor_tickers=["EURUSD"],
-    # ),
-    # MarketDataRequest(
-    #     start_date="week",  # start date
-    #     data_source="bloomberg",  # use Bloomberg as data source
-    #     freq="tick",
-    #     tickers=["S&P 500", "EURUSD"],  # ticker (findatapy)
-    #     fields=["close"],  # which fields to download
-    #     vendor_tickers=["SPX Index", "EURUSD Curncy"],  # ticker (Yahoo)
-    #     vendor_fields=["PX_LAST"]  # which Bloomberg fields to download)
-    # ),             
+    # I dont have bloomberg or other keys to test...            
     MarketDataRequest(  
         start_date="year",  # start date
         data_source="yahoo",  # use Bloomberg as data source
@@ -148,6 +138,10 @@ def test_df_columns(md_request: MarketDataRequest):
 @pytest.mark.parametrize("md_request", md_requests)
 def test_start_dates(md_request: MarketDataRequest):
     fetch_runner.test_start_time_post_given_start_time(md_request)
+
+@pytest.mark.parametrize("md_request", md_requests)
+def test_finish_dates(md_request: MarketDataRequest):
+    fetch_runner.test_finish_time_pre_given_finish_time(md_request)
 
 @pytest.mark.parametrize("md_request", md_requests)
 def test_price_fields_not_quarter_null(md_request: MarketDataRequest):
