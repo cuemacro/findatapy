@@ -774,10 +774,6 @@ class DataVendorYahoo(DataVendor):
         data_frame = None
 
         ticker_list = ' '.join(md_request.tickers)
-        # data_frame = yf.download(ticker_list,
-        #                         start=md_request.start_date,
-        #                         end=md_request.finish_date)
-
         while (trials < 5):
 
             try:
@@ -799,25 +795,18 @@ class DataVendorYahoo(DataVendor):
             logger.error("Couldn't download from Yahoo after several attempts!")
 
         if data_frame is not None:
-            if len(md_request.tickers) == 1:
-                data_frame.columns = [md_request.tickers[0] + "." + x for
-                                      x in data_frame.columns]
-            else:
-                fields = data_frame.columns.levels[0]
-                tickers = data_frame.columns.levels[1]
 
-                new_cols = []
+            fields = data_frame.columns.levels[0]
+            tickers = data_frame.columns.levels[1]
 
-                for fi in fields:
-                    for ti in tickers:
-                        new_cols.append(ti + "." + fi)
+            new_cols = []
 
-                data_frame.columns = new_cols
+            for fi in fields:
+                for ti in tickers:
+                    new_cols.append(ti + "." + fi)
 
+            data_frame.columns = new_cols
 
-        # if len(md_request.tickers) == 1:
-        #    data_frame.columns = [x + '/' + md_request.tickers[0] for
-        #                          x in data_frame.columns]
 
         return data_frame
 
