@@ -529,15 +529,12 @@ class DataVendorYahoo(DataVendor):
         data_frame = None
 
         ticker_list = ' '.join(md_request.tickers)
-        # data_frame = yf.download(ticker_list,
-        #                         start=md_request.start_date,
-        #                         end=md_request.finish_date)
 
         if md_request.freq == "daily":
             interval = "1d"
         elif md_request.freq == "intraday":
             interval = "1m"
-
+            
         while (trials < 5):
 
             try:
@@ -575,10 +572,6 @@ class DataVendorYahoo(DataVendor):
 
                 data_frame.columns = new_cols
 
-
-        # if len(md_request.tickers) == 1:
-        #    data_frame.columns = [x + '/' + md_request.tickers[0] for
-        #                          x in data_frame.columns]
 
         return data_frame
 
