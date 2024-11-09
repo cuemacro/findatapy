@@ -231,7 +231,7 @@ if __name__ == "__main__":
         print(df.tail(n=60))
 
         # Now daily data (the history is longer)
-        md_request = MarketDataRequest(start_date="year", freq="intraday",
+        md_request = MarketDataRequest(start_date="year", freq="daily",
                                        data_source="yahoo",
                                        tickers=["AUDJPY"],
                                        vendor_tickers=["AUDJPY=X"],
