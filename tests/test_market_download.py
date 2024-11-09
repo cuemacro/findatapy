@@ -84,9 +84,9 @@ class MarketFetchTestRunner:
 
     def test_finish_time_pre_given_finish_time(self, md_request: MarketDataRequest, data_source_overwrite: Optional[str]=None):
         df = self.get_market_df(md_request, data_source_overwrite)
-        first_tick = df.index.tolist()[-1]
-        first_tick = first_tick.replace(tzinfo=None)
-        assert first_tick <= md_request.finish_date
+        last_tick = df.index.tolist()[-1]
+        last_tick = last_tick.replace(tzinfo=None)
+        assert last_tick <= md_request.finish_date
  
     def test_valid_prices(self, md_request: MarketDataRequest, data_source_overwrite: Optional[str]=None):
         df = self.get_market_df(md_request, data_source_overwrite)
