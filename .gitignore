@@ -70,3 +70,8 @@ target/
 
 # Output Files
 
+#Enviroments
+venv/
+
+#ide
+.vscode
