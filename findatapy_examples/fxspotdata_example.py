@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # run_example = 4 - download FX data from Bloomberg
     # run_example = 5 - download second FX data from Bloomberg
 
-    run_example = 2
+    run_example = 0
 
     if run_example == 1 or run_example == 0:
         ####### DukasCopy examples
