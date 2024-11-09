@@ -33,12 +33,13 @@ if __name__ == "__main__":
     # run_example = 3 - download FX data from FRED
     # run_example = 4 - download FX data from Bloomberg
     # run_example = 5 - download second FX data from Bloomberg
+    # run_example = 6 - download 1 minute FX data from Yahoo
 
-    run_example = 0
+    run_example = 6
 
     if run_example == 1 or run_example == 0:
         ####### DukasCopy examples
-        # let"s download data for 14 Jun 2016 for EUR/USD - the raw data has
+        # let's download data for 14 Jun 2016 for EUR/USD - the raw data has
         # bid/ask, if we specify close, we calculate
         # it as the average
 
@@ -210,5 +211,21 @@ if __name__ == "__main__":
 
         df = market.fetch_market(md_request)
         df = df.resample("1s").mean()
+
+        print(df.tail(n=60))
+
+    if run_example == 6 or run_example == 0:
+        ####### Yahoo Finance
+
+        # Let's now try downloading 1 minute data from Yahoo Finance
+        # Usually we can only intraday download recent data from Yahoo Finance
+        md_request = MarketDataRequest(start_date="week", freq="intraday",
+                                       data_source="yahoo",
+                                       tickers=["AUDJPY"],
+                                       vendor_tickers=["AUDJPY=X"],
+                                       fields=["close"],
+                                       vendor_fields=["close"])
+
+        df = market.fetch_market(md_request)
 
         print(df.tail(n=60))
