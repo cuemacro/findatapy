@@ -4,7 +4,7 @@
 
 [![Downloads](https://pepy.tech/badge/findatapy)](https://pepy.tech/project/findatapy)
 
-findatapy creates an easy to use Python API to download market data from many sources including Quandl, Bloomberg, Yahoo, Google etc. using
+findatapy creates an easy to use Python API to download market data from many sources including ALFRED/FRED, Bloomberg, Yahoo, Google etc. using
 a unified high level interface. Users can also define their own custom tickers, using configuration files. There is also functionality which
 is particularly useful for those downloading FX market data. Below example shows how to download AUDJPY data from Quandl (and automatically 
 calculates this via USD crosses).
@@ -16,7 +16,11 @@ from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
 
 market = Market(market_data_generator=MarketDataGenerator())
 
-md_request = MarketDataRequest(start_date='year', category='fx', data_source='quandl', tickers=['AUDJPY'])
+# Get you FRED API key from https://fred.stlouisfed.org/docs/api/api_key.html
+fred_api_key = "WRITE YOUR KEY HERE" 
+
+md_request = MarketDataRequest(start_date='year', category='fx', data_source='alfred', tickers=['AUDJPY'],
+                               fred_api_key=fred_api_key)
 
 df = market.fetch_market(md_request)
 print(df.tail(n=10))
@@ -143,6 +147,13 @@ individual data providers)
 
 # Coding log
 
+* 09 Nov 2024
+  * Added ALFRED/FRED FX tickers to time series mapping CSV files
+  * Fixed bug when downloading ALFRED/FRED FX tickers
+  * Added intraday downloading for Yahoo (and example for FX)
+  * Refactored out crypto downloaders into datavendorcrypto.py
+  * Refactored out ALFRED/FRED into datavendorfred.py
+  * Starting to add Databento Historical API
 * 27 Apr 2024
   * Removed additional list typecheck (to make code Python 3.8 compatible)
 * 09 Apr 2024

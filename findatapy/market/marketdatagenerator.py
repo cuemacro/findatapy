@@ -21,6 +21,7 @@ import datetime
 
 import pandas as pd
 
+from findatapy.market.datavendordatabento import DataVendorDatabento
 from findatapy.market.ioengine import IOEngine
 from findatapy.market.marketdatarequest import MarketDataRequest
 from findatapy.timeseries import Filter, Calculations
@@ -121,46 +122,50 @@ class MarketDataGenerator(object):
                 data_vendor = DataVendorFXCM()
 
             elif data_source == "alfred":
-                from findatapy.market.datavendorweb import DataVendorALFRED
+                from findatapy.market.datavendorfred import DataVendorALFRED
                 data_vendor = DataVendorALFRED()
 
             elif data_source == "yahoo":
                 from findatapy.market.datavendorweb import DataVendorYahoo
                 data_vendor = DataVendorYahoo()
 
+            elif data_source == "databento":
+                from findatapy.market.datavendordatabento import DataVendorDatabento
+                data_vendor = DataVendorDatabento()
+
             elif data_source in ["google", "fred", "oecd", "eurostat",
-                                 "edgar-index"]:
+                                 "edgarindex"]:
                 from findatapy.market.datavendorweb import DataVendorPandasWeb
                 data_vendor = DataVendorPandasWeb()
 
             elif data_source == "bitcoincharts":
-                from findatapy.market.datavendorweb import \
+                from findatapy.market.datavendorcrypto import \
                     DataVendorBitcoincharts
                 data_vendor = DataVendorBitcoincharts()
             elif data_source == "poloniex":
-                from findatapy.market.datavendorweb import DataVendorPoloniex
+                from findatapy.market.datavendorcrypto import DataVendorPoloniex
                 data_vendor = DataVendorPoloniex()
             elif data_source == "binance":
-                from findatapy.market.datavendorweb import DataVendorBinance
+                from findatapy.market.datavendorcrypto import DataVendorBinance
                 data_vendor = DataVendorBinance()
             elif data_source == "bitfinex":
-                from findatapy.market.datavendorweb import DataVendorBitfinex
+                from findatapy.market.datavendorcrypto import DataVendorBitfinex
                 data_vendor = DataVendorBitfinex()
             elif data_source == "gdax":
-                from findatapy.market.datavendorweb import DataVendorGdax
+                from findatapy.market.datavendorcrypto import DataVendorGdax
                 data_vendor = DataVendorGdax()
             elif data_source == "kraken":
-                from findatapy.market.datavendorweb import DataVendorKraken
+                from findatapy.market.datavendorcrypto import DataVendorKraken
                 data_vendor = DataVendorKraken()
             elif data_source == "bitmex":
-                from findatapy.market.datavendorweb import DataVendorBitmex
+                from findatapy.market.datavendorcrypto import DataVendorBitmex
                 data_vendor = DataVendorBitmex()
             elif data_source == "alphavantage":
-                from findatapy.market.datavendorweb import \
+                from findatapy.market.datavendorcrypto import \
                     DataVendorAlphaVantage
                 data_vendor = DataVendorAlphaVantage()
             elif data_source == "huobi":
-                from findatapy.market.datavendorweb import DataVendorHuobi
+                from findatapy.market.datavendorcrypto import DataVendorHuobi
                 data_vendor = DataVendorHuobi()
             elif data_source in self._data_vendor_dict:
                 data_vendor = self._data_vendor_dict[data_source]

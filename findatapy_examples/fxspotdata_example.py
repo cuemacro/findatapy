@@ -29,16 +29,17 @@ if __name__ == "__main__":
 
     # choose run_example = 0 for everything
     # run_example = 1 - download free tick data from DukasCopy example
-    # run_example = 2 - download free FX daily data from Quandl
+    # run_example = 2 - download free FX daily data from FRED
     # run_example = 3 - download FX data from FRED
     # run_example = 4 - download FX data from Bloomberg
     # run_example = 5 - download second FX data from Bloomberg
+    # run_example = 6 - download 1 minute FX data from Yahoo
 
     run_example = 0
 
     if run_example == 1 or run_example == 0:
         ####### DukasCopy examples
-        # let"s download data for 14 Jun 2016 for EUR/USD - the raw data has
+        # let's download data for 14 Jun 2016 for EUR/USD - the raw data has
         # bid/ask, if we specify close, we calculate
         # it as the average
 
@@ -77,10 +78,15 @@ if __name__ == "__main__":
         print(df.tail(n=10))
 
     if run_example == 2 or run_example == 0:
-        ####### Quandl data examples
+        ####### ALFRED/FRED data examples
 
-        # for this to work make sure you edit the Quandl API key in
+        # for this to work make sure you edit the FRED API key in
         # DataConstants file
+        from findatapy.util.dataconstants import DataConstants
+
+        # You will likely need to change this!
+        # Get an API key from the FRED website https://fred.stlouisfed.org/docs/api/api_key.html
+        fred_api_key = DataConstants().fred_api_key
 
         # already defined for us are the tickers for G10 USD FX in various
         # CSV files in conf folder
@@ -89,8 +95,9 @@ if __name__ == "__main__":
         # we can use keywords, "month" and "year" to specify the last year of
         # data, alternatively, we can put a specific date
         md_request = MarketDataRequest(start_date="year", category="fx",
-                                       data_source="quandl",
-                                       tickers=["EURUSD"])
+                                       data_source="alfred",
+                                       tickers=["EURUSD"],
+                                       fred_api_key=fred_api_key)
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
@@ -100,8 +107,10 @@ if __name__ == "__main__":
         # this might be ok for daily data, but should not be used for tick data
         # eg. AUD/JPY
         md_request = MarketDataRequest(start_date="year", category="fx",
-                                       data_source="quandl",
-                                       tickers=["AUDJPY"])
+                                       data_source="alfred",
+                                       tickers=["AUDJPY"],
+                                       fred_api_key=fred_api_key
+                                       )
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
@@ -110,30 +119,39 @@ if __name__ == "__main__":
         # that data_source.freq.category.cut combination
         # ie. quandl.daily.fx.NYC (all G10 USD crosses)
         md_request = MarketDataRequest(start_date="month", category="fx",
-                                       data_source="quandl", cut="NYC")
+                                       data_source="alfred", cut="NYC",
+                                       fred_api_key=fred_api_key)
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
 
     if run_example == 3 or run_example == 0:
-        ####### Quandl example (Quandl vendor tickers may have changed?)
+        ####### ALFRED/FRED example
+
+        from findatapy.util.dataconstants import DataConstants
+
+        # You will likely need to change this!
+        # Get an API key from the FRED website https://fred.stlouisfed.org/docs/api/api_key.html
+        fred_api_key = DataConstants().fred_api_key
 
         # if we give it a cross which doesn"t exist in the database directly,
         # it will try to synthesis from the USD rates
         # this might be ok for daily data, but should not be used for tick data
         # eg. AUD/JPY
         md_request = MarketDataRequest(start_date="year", category="fx",
-                                       data_source="quandl",
-                                       tickers=["AUDJPY"])
+                                       data_source="alfred",
+                                       tickers=["AUDJPY"],
+                                       fred_api_key=fred_api_key)
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
 
         # if you don"t specify tickers, it will download all the tickers in
         # that data_source.freq.category.cut combination
-        # ie. quandl.daily.fx.NYC (all G10 USD crosses)
+        # ie. alfred.daily.fx.NYC (all G10 USD crosses)
         md_request = MarketDataRequest(start_date="month", category="fx",
-                                       data_source="quandl", cut="NYC")
+                                       data_source="alfred", cut="NYC",
+                                       fred_api_key=fred_api_key)
 
         df = market.fetch_market(md_request)
         print(df.tail(n=10))
@@ -193,5 +211,33 @@ if __name__ == "__main__":
 
         df = market.fetch_market(md_request)
         df = df.resample("1s").mean()
+
+        print(df.tail(n=60))
+
+    if run_example == 6 or run_example == 0:
+        ####### Yahoo Finance
+
+        # Let's now try downloading 1 minute data from Yahoo Finance
+        # Usually we can only intraday download recent data from Yahoo Finance
+        md_request = MarketDataRequest(start_date="week", freq="intraday",
+                                       data_source="yahoo",
+                                       tickers=["AUDJPY"],
+                                       vendor_tickers=["AUDJPY=X"],
+                                       fields=["close"],
+                                       vendor_fields=["close"])
+
+        df = market.fetch_market(md_request)
+
+        print(df.tail(n=60))
+
+        # Now daily data (the history is longer)
+        md_request = MarketDataRequest(start_date="year", freq="daily",
+                                       data_source="yahoo",
+                                       tickers=["AUDJPY"],
+                                       vendor_tickers=["AUDJPY=X"],
+                                       fields=["close"],
+                                       vendor_fields=["close"])
+
+        df = market.fetch_market(md_request)
 
         print(df.tail(n=60))
