@@ -150,6 +150,7 @@ individual data providers)
 * 09 Nov 2024
   * Added ALFRED/FRED FX tickers to time series mapping CSV files
   * Fixed bug when downloading ALFRED/FRED FX tickers
+  * Added intraday downloading for Yahoo (and example for FX)
 * 27 Apr 2024
   * Removed additional list typecheck (to make code Python 3.8 compatible)
 * 09 Apr 2024

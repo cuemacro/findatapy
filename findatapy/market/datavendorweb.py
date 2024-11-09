@@ -778,10 +778,16 @@ class DataVendorYahoo(DataVendor):
         #                         start=md_request.start_date,
         #                         end=md_request.finish_date)
 
+        if md_request.freq == "daily":
+            interval = "1d"
+        elif md_request.freq == "intraday":
+            interval = "1m"
+
         while (trials < 5):
 
             try:
                 data_frame = yf.download(ticker_list,
+                                         interval=interval,
                                          start=md_request.start_date,
                                          end=md_request.finish_date)
 
