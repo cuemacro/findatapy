@@ -17,6 +17,12 @@ __author__ = "saeedamen"  # Saeed Amen
 
 from findatapy.market.datavendor import DataVendor
 
+# Databento is an optional dependency
+try:
+    import databento as db
+except:
+    pass
+
 class DataVendorDatabento(DataVendor):
 
     def __init__(self):
@@ -57,13 +63,40 @@ class DataVendorDatabento(DataVendor):
 
         data_frame = None
 
-        while (trials < 5):
+        if md_request.freq == "daily":
+            schema ="ohlcv-1d"
+        elif md_request.freq == "intraday":
+            schema = "ohlcv-1m"
+
+        while trials < 5:
             try:
-                # TODO
-                return None
+                client = db.Historical(databento_api_key)
+
+                data = client.timeseries.get_range(
+                    dataset=md_request.data_source.split("-")[1],
+                    symbols=md_request.vendor_tickers,
+                    schema=schema,
+                    start=pd.Timestamp(md_request.start_date),
+                    end=pd.Timestamp(md_request.finish_date),
+                    # limit=1,
+                )
+                data_frame = data.to_df()
             except:
                 trials = trials + 1
                 logger.info(f"Attempting... {str(trials)} request to download from Databento")
+
+        data_frame = data_frame.set_index('symbol', append=True).unstack(level='symbol')
+        fields = df.columns.levels[0]
+        tickers = df.columns.levels[1]
+
+        new_cols = []
+
+        for fi in fields:
+            for ti in tickers:
+                new_cols.append(ti + "." + fi)
+
+        data_frame.columns = new_cols
+        data_frame.index.name = "Date"
 
         if trials == 5:
             logger.error("Couldn't download from Databento after several attempts!")
