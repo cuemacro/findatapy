@@ -28,7 +28,6 @@ class DataVendorDatabento(DataVendor):
     def __init__(self):
         super(DataVendorDatabento, self).__init__()
 
-    # implement method in abstract superclass
     def load_ticker(self, md_request):
         logger = LoggerManager().getLogger(__name__)
         md_request_vendor = self.construct_vendor_md_request(
@@ -41,7 +40,7 @@ class DataVendorDatabento(DataVendor):
         if data_frame is None or data_frame.index is []:
             return None
 
-        # convert from vendor to findatapy tickers/fields
+        # Convert from vendor to findatapy tickers/fields
         if data_frame is not None:
             if len(md_request.fields) == 1:
                 data_frame.columns = data_frame.columns.str.cat(
@@ -70,7 +69,7 @@ class DataVendorDatabento(DataVendor):
 
         while trials < 5:
             try:
-                client = db.Historical(databento_api_key)
+                client = db.Historical(md_request.databento_api_key)
 
                 data = client.timeseries.get_range(
                     dataset=md_request.data_source.split("-")[1],
