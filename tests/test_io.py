@@ -27,7 +27,6 @@ data_constants = DataConstants()
 redis_server = data_constants.db_cache_server
 redis_port = data_constants.db_cache_port
 
-
 def test_redis_caching():
     # Note: you need to install Redis in order for this to work!
 

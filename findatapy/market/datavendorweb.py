@@ -941,11 +941,13 @@ class DataVendorDukasCopy(DataVendor):
         time_library.sleep(
             constants.dukascopy_try_time * try_time / 2.0)  # constants.market_thread_no['dukascopy'])
 
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"}
+
         # Try up to 20 times to download
         while download_counter < constants.dukascopy_retries:
             try:
                 tick_request = requests.get(
-                    tick_url, timeout=constants.dukascopy_mini_timeout_seconds)
+                    tick_url, headers=headers, timeout=constants.dukascopy_mini_timeout_seconds)
 
                 # If URL has not been found try again
                 if tick_request.status_code == 404:
@@ -994,7 +996,7 @@ class DataVendorDukasCopy(DataVendor):
             # Sleep a bit, so don't overload server with retries
             time_library.sleep((try_time / 2.0))
 
-        if (tick_request_content is None):
+        if tick_request_content is None:
             logger.warning("Failed to download from " + tick_url)
 
             return None

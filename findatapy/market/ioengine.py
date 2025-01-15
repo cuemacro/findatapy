@@ -90,8 +90,8 @@ class IOEngine(object):
     interfaces such as SQL etc.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, cloud_credentials: dict = constants.cloud_credentials):
+        self.cloud_credentials = self._convert_cred(cloud_credentials)
 
     @staticmethod
 
@@ -359,9 +359,6 @@ class IOEngine(object):
         """
 
         logger = LoggerManager().getLogger(__name__)
-
-        if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
 
         if md_request is not None:
             if fname is None:
@@ -1135,8 +1132,6 @@ class IOEngine(object):
         -------
         DataFrame
         """
-        if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
 
         if "s3://" in path:
             storage_options = self._convert_cred(cloud_credentials,
@@ -1153,7 +1148,8 @@ class IOEngine(object):
                                  cloud_credentials: dict,
                                  filesystem_type: str):
 
-        cloud_credentials = self._convert_cred(cloud_credentials)
+        cloud_credentials = self._convert_cred(cloud_credentials,
+                                               convert_to_s3fs=False)
 
         # os.environ["AWS_ACCESS_KEY_ID"] = cloud_credentials["aws_access_key"]
         # os.environ["AWS_SECRET_ACCESS_KEY"] = cloud_credentials["aws_secret_key"]
@@ -1174,10 +1170,14 @@ class IOEngine(object):
                                 secret=cloud_credentials["aws_secret_key"],
                                 token=cloud_credentials["aws_session_token"])
 
-    def _convert_cred(self, cloud_credentials: dict,
-                      convert_to_s3fs: bool = False):
+    def _convert_cred(self,
+                      cloud_credentials: dict,
+                      convert_to_s3fs: bool = False) -> dict:
         """Backfills the credential dictionary (usually for AWS login)
         """
+
+        if cloud_credentials is None:
+            cloud_credentials = self.cloud_credentials
 
         cloud_credentials = copy.copy(cloud_credentials)
 
@@ -1265,7 +1265,8 @@ class IOEngine(object):
         except:
             pass
 
-        cloud_credentials_ = self._convert_cred(cloud_credentials)
+        cloud_credentials_ = self._convert_cred(cloud_credentials,
+                                                convert_to_s3fs=False)
 
         # Tends to be slower than using pandas/pyarrow directly, but for very
         # large files, we might have to split before writing to disk
@@ -1447,14 +1448,13 @@ class IOEngine(object):
 
         return obj_list
 
-    def read_csv(self, path,
+    def read_csv(self,
+                 path: str,
                  columns: List[str] = None,
                  cloud_credentials: str = None,
                  encoding: str = "utf-8",
                  encoding_errors: str =None,
                  errors: str = "ignore"):
-        if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
@@ -1481,7 +1481,7 @@ class IOEngine(object):
                                    usecols=columns)
 
     def to_csv_parquet(self,
-                       df,
+                       df: pd.DataFrame,
                        path: str,
                        filename: str = None,
                        cloud_credentials: dict = None,
@@ -1497,11 +1497,13 @@ class IOEngine(object):
                         parquet_compression=parquet_compression,
                         use_pyarrow_directly=use_pyarrow_directly)
 
-    def _get_cloud_path(self, path: str,
+    def _get_cloud_path(self,
+                        path: str,
                         filename: str = None,
                         cloud_credentials: str = None):
+
         if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
+            cloud_credentials = self.cloud_credentials
 
         if isinstance(path, list):
             pass
@@ -1518,7 +1520,8 @@ class IOEngine(object):
 
         return path, cloud_credentials
 
-    def to_csv(self, df: pd.DataFrame,
+    def to_csv(self,
+               df: pd.DataFrame,
                path: str,
                filename: str = None,
                cloud_credentials: dict = None):
@@ -1539,7 +1542,12 @@ class IOEngine(object):
             else:
                 df.to_csv(p)
 
-    def to_json(self, dictionary, path, filename=None, cloud_credentials=None):
+    def to_json(self,
+                dictionary: dict,
+                path: str,
+                filename: str = None,
+                encoding: str = "utf-8",
+                cloud_credentials: dict = None):
 
         path, cloud_credentials = self._get_cloud_path(
             path, filename=filename, cloud_credentials=cloud_credentials)
@@ -1552,21 +1560,99 @@ class IOEngine(object):
                 path_in_s3 = self.sanitize_path(p).replace("s3://", "")
 
                 # Use "w" for py3, "wb" for py2
-                with s3.open(path_in_s3, "w") as f:
+                with s3.open(path_in_s3, "w", encoding=encoding) as f:
                     if isinstance(dictionary, dict):
-                        json.dump(dictionary, f, indent=4)
+                        json.dump(dictionary, f, ensure_ascii=False, indent=4)
                     else:
                         dictionary.to_json(f)
             else:
                 if isinstance(dictionary, dict):
-                    json.dump(dictionary, p, indent=4)
+                    with open(p, "w", encoding=encoding) as f:
+                        json.dump(dictionary, f, ensure_ascii=False, indent=4)
                 elif isinstance(dictionary, pd.DataFrame):
                     dictionary.to_json(p)
 
-    def path_exists(self, path: str,
-                    cloud_credentials: dict = None):
-        if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
+    def to_text(self,
+                text: str,
+                path: str,
+                filename: str = None,
+                encoding: str = "utf-8",
+                cloud_credentials: dict = None):
+
+        path, cloud_credentials = self._get_cloud_path(
+            path, filename=filename, cloud_credentials=cloud_credentials)
+
+        for p in path:
+            if "s3://" in p:
+                s3 = self._create_cloud_filesystem(
+                    cloud_credentials,"s3_filesystem")
+
+                path_in_s3 = self.sanitize_path(p).replace("s3://", "")
+
+                # Use "w" for py3, "wb" for py2
+                with s3.open(path_in_s3, "w", encoding=encoding) as f:
+                    f.write(text)
+            else:
+                with open(p, "w", encoding=encoding) as f:
+                    f.write(text)
+
+    def read_json(self,
+                  path: str,
+                  filename: str = None,
+                  cloud_credentials: dict = None):
+        path, cloud_credentials = self._get_cloud_path(
+            path, filename=filename, cloud_credentials=cloud_credentials)
+
+        json_dict = None
+
+        p = path[0]
+        if "s3://" in p:
+            s3 = self._create_cloud_filesystem(cloud_credentials,
+                                               "s3_filesystem")
+
+            path_in_s3 = self.sanitize_path(p).replace("s3://", "")
+
+            with s3.open(path_in_s3, "r") as file:
+                json_dict = json.load(file)
+        else:
+            with open(p, "r") as file:
+                json_dict = json.load(file)
+
+        return json_dict
+
+    def read_text(self,
+                  path: str,
+                  filename: str = None,
+                  errors: str = "ignore",
+                  encoding: str = "utf-8",
+                  cloud_credentials: dict = None):
+
+        path, cloud_credentials = self._get_cloud_path(
+            path, filename=filename, cloud_credentials=cloud_credentials)
+
+        text = None
+
+        p = path[0]
+        if "s3://" in p:
+            s3 = self._create_cloud_filesystem(cloud_credentials,
+                                               "s3_filesystem")
+
+            path_in_s3 = self.sanitize_path(p).replace("s3://", "")
+
+            # Use "w" for py3, "wb" for py2
+            with s3.open(path_in_s3, "r", encoding=encoding, errors=errors) as f:
+                text = f.read()
+        else:
+            with open(p, "r", encoding=encoding, errors=errors) as f:
+                text = f.read()
+
+        return text
+
+    def path_exists(self,
+                    path: str,
+                    cloud_credentials: dict = None) -> bool:
+
+        cloud_credentials = self._convert_cred(cloud_credentials)
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
@@ -1606,8 +1692,8 @@ class IOEngine(object):
 
     def list_files(self, path: str,
                    cloud_credentials: dict = None):
-        if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
+
+        cloud_credentials = self._convert_cred(cloud_credentials)
 
         if "s3://" in path:
             s3 = self._create_cloud_filesystem(cloud_credentials,
@@ -1631,8 +1717,8 @@ class IOEngine(object):
 
     def delete(self, path: str,
                cloud_credentials: dict = None):
-        if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
+
+        cloud_credentials = self._convert_cred(cloud_credentials)
 
         if not (isinstance(path, list)):
             path = [path]
@@ -1643,9 +1729,10 @@ class IOEngine(object):
                                                    "s3_filesystem")
 
                 path_in_s3 = self.sanitize_path(p).replace("s3://", "")
+                path_exc = self.sanitize_path(p)
 
-                if self.path_exists(path, cloud_credentials=cloud_credentials):
-                    s3.delete(path_in_s3)
+                if self.path_exists(path_exc, cloud_credentials=cloud_credentials):
+                    s3.rm(path_in_s3)
             else:
                 if self.path_exists(p, cloud_credentials=cloud_credentials):
                     os.remove(p)
@@ -1654,8 +1741,8 @@ class IOEngine(object):
              destination: str,
              cloud_credentials: dict = None,
              infer_dest_filename: bool = False):
-        if cloud_credentials is None:
-            cloud_credentials = constants.cloud_credentials
+
+        cloud_credentials = self._convert_cred(cloud_credentials)
 
         if destination is None:
             destination = ""
