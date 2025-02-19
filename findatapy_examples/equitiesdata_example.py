@@ -51,7 +51,7 @@ if __name__ == "__main__":
         tickers=["Apple", "Citigroup"],  # ticker (findatapy)
         fields=["close"],  # which fields to download
         vendor_tickers=["aapl", "c"],  # ticker (Yahoo)
-        vendor_fields=["Close"])  # which Bloomberg fields to download)
+        vendor_fields=["Close"])  # which Yahoo fields to download)
 
     df = market.fetch_market(md_request)
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         tickers=["Apple", "S&P500-ETF"],  # ticker (findatapy)
         fields=["close"],  # which fields to download
         vendor_tickers=["aapl", "spy"],  # ticker (Yahoo)
-        vendor_fields=["Close"])  # which Bloomberg fields to download)
+        vendor_fields=["Close"])  # which Yahoo fields to download)
 
     df = market.fetch_market(md_request)
 

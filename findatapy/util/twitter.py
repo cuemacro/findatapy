@@ -15,7 +15,11 @@ __author__ = "saeedamen"  # Saeed Amen
 # limitations under the License.
 #
 
-from twython import Twython
+# Twython is optional for findatapy, so we don't want to force users to install it
+try:
+    from twython import Twython
+except:
+    pass
 
 from findatapy.util import DataConstants, LoggerManager
 
