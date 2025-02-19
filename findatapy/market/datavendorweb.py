@@ -560,7 +560,7 @@ class DataVendorYahoo(DataVendor):
             logger.error("Couldn't download from Yahoo after several attempts!")
 
         if data_frame is not None:
-            if len(md_request.tickers) == 1:
+            if len(data_frame.columns) == 1:
                 data_frame.columns = [md_request.tickers[0] + "." + x for
                                       x in data_frame.columns]
             else:

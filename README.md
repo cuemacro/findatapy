@@ -119,6 +119,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.38 - findatapy (19 Feb 2025)
 * 0.1.37 - findatapy (15 Jan 2025)
 * 0.1.36 - findatapy (27 Apr 2024)
 * 0.1.35 - findatapy (10 Apr 2024)
@@ -148,6 +149,8 @@ individual data providers)
 
 # Coding log
 
+* 19 Feb 2025
+  * Fixed bug with Yahoo
 * 15 Jan 2024
   * Fixed various issues accessing data on s3 related to credentials
 * 09 Nov 2024

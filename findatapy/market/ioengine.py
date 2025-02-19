@@ -51,6 +51,12 @@ try:
 except:
     pass
 
+# For Polars support
+try:
+    import polars as pl
+except:
+    pass
+
 # pyarrow necessary for caching
 try:
     import pyarrow as pa
@@ -1117,6 +1123,7 @@ class IOEngine(object):
 
     def read_parquet(self, path: str,
                      columns: List[str] = None,
+                     engine: str = "pandas",
                      cloud_credentials: dict = None):
         """Reads a Pandas DataFrame from a local or s3 path
 
@@ -1136,13 +1143,24 @@ class IOEngine(object):
         if "s3://" in path:
             storage_options = self._convert_cred(cloud_credentials,
                                                  convert_to_s3fs=True)
+            path = self.sanitize_path(path)
 
-            return pd.read_parquet(self.sanitize_path(path),
-                                   storage_options=storage_options,
-                                   columns=columns
-                                   )
+            if engine == "pandas":
+                return pd.read_parquet(path,
+                                       storage_options=storage_options,
+                                       columns=columns
+                                       )
+            elif engine == "polars":
+                return pl.read_parquet(path,
+                                       storage_options=storage_options,
+                                       columns=columns
+                                       )
+
         else:
-            return pd.read_parquet(path, columns=columns)
+            if engine == "pandas":
+                return pd.read_parquet(path, columns=columns)
+            elif engine == "polars":
+                return pl.read_parquet(path, columns=columns)
 
     def _create_cloud_filesystem(self,
                                  cloud_credentials: dict,
@@ -1215,6 +1233,7 @@ class IOEngine(object):
                    filename: str = None,
                    cloud_credentials: str = None,
                    parquet_compression: str = constants.parquet_compression,
+                   engine: str = "pandas",
                    use_pyarrow_directly: bool = False):
         """Write a DataFrame to a local or s3 path as a Parquet file
 
@@ -1339,9 +1358,9 @@ class IOEngine(object):
 
                     # df.to_parquet(path, compression=parquet_compression)
 
-        if use_pyarrow_directly:
+        if engine == "pyarrow_chunked" or use_pyarrow_directly:
             pyarrow_dump(df, path)
-        else:
+        elif engine == "pandas" or engine == "polars":
             # First try to use Pandas/pyarrow, if fails, which can occur with
             # large DataFrames use chunked write
             try:
@@ -1352,17 +1371,18 @@ class IOEngine(object):
                         storage_options = self._convert_cred(cloud_credentials,
                                                              convert_to_s3fs=True)
 
-                        df.to_parquet(
-                            p, compression=parquet_compression,
-                            coerce_timestamps=constants.default_time_units,
-                            allow_truncated_timestamps=True,
-                            storage_options=storage_options)
+                        if engine == "pandas":
+                            df.to_parquet(
+                                p, compression=parquet_compression,
+                                coerce_timestamps=constants.default_time_units,
+                                allow_truncated_timestamps=True,
+                                storage_options=storage_options)
                     else:
-
-                        df.to_parquet(
-                            p, compression=parquet_compression,
-                            coerce_timestamps=constants.default_time_units,
-                            allow_truncated_timestamps=True)
+                        if engine == "pandas":
+                            df.to_parquet(
+                                p, compression=parquet_compression,
+                                coerce_timestamps=constants.default_time_units,
+                                allow_truncated_timestamps=True)
 
             except pyarrow.lib.ArrowMemoryError as e:
                 logger.warning(
@@ -1742,6 +1762,8 @@ class IOEngine(object):
              cloud_credentials: dict = None,
              infer_dest_filename: bool = False):
 
+        logger = LoggerManager().getLogger(__name__)
+
         cloud_credentials = self._convert_cred(cloud_credentials)
 
         if destination is None:
@@ -1768,6 +1790,8 @@ class IOEngine(object):
             else:
                 if infer_dest_filename:
                     dest = self.path_join(destination, os.path.basename(so))
+
+                logger.info(f"Copying {so} to {dest}")
 
                 if "s3://" not in dest and "s3://" not in so:
                     shutil.copy(so, dest)
