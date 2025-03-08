@@ -1389,23 +1389,25 @@ class FXVolFactory(object):
                     how='all')  # Only have limited ON 10am cut data
 
             # Now get LDN and TOK vol data to fill any gaps
-            vol_data_LDN = self.get_fx_implied_vol(start=start, end=end,
-                                                   cross=cross, tenor=tenor,
-                                                   data_source=data_source,
-                                                   cut='LDN', part=part,
-                                                   cache_algo=cache_algo,
-                                                   field=field,
-                                                   data_engine=data_engine,
-                                                   md_request=md_request)
+            vol_data_LDN = self.get_fx_implied_vol(
+                start=start, end=end,
+                cross=cross, tenor=tenor,
+                data_source=data_source,
+                cut='LDN', part=part,
+                cache_algo=cache_algo,
+                field=field,
+                data_engine=data_engine,
+                md_request_default=md_request_ind)
 
-            vol_data_TOK = self.get_fx_implied_vol(start=start, end=end,
-                                                   cross=cross, tenor=tenor,
-                                                   data_source=data_source,
-                                                   cut='TOK', part=part,
-                                                   cache_algo=cache_algo,
-                                                   field=field,
-                                                   data_engine=data_engine,
-                                                   md_request=md_request)
+            vol_data_TOK = self.get_fx_implied_vol(
+                start=start, end=end,
+                cross=cross, tenor=tenor,
+                data_source=data_source,
+                cut='TOK', part=part,
+                cache_algo=cache_algo,
+                field=field,
+                data_engine=data_engine,
+                md_request_default=md_request_ind)
 
             # vol_data_LDN.index = pandas.DatetimeIndex(vol_data_LDN.index)
             # vol_data_TOK.index = pandas.DatetimeIndex(vol_data_TOK.index)
@@ -1439,8 +1441,9 @@ class FXVolFactory(object):
                     post_vol_data = data_frame[
                         data_frame.index > vol_data_10am.index[-1]]
 
-                    data_frame = (pre_vol_data.append(vol_data_10am)).append(
-                        post_vol_data)
+                    data_frame = pd.concat([pre_vol_data,
+                                            vol_data_10am,
+                                            post_vol_data])
 
             # data_frame.index = pandas.to_datetime(data_frame.index)
 
@@ -1509,19 +1512,19 @@ class FXVolFactory(object):
 
         for ten in tenor:
             for d in delta:
-                df_surf[ten][str(d) + "DP"] = \
-                df[cross + "V" + ten + "." + field][date_index] \
-                - (df[cross + str(d) + "R" + ten + "." + field][
+                df_surf.loc[str(d) + "DP", ten] = \
+                df[cross + "V" + ten + "." + field].iloc[date_index] \
+                - (df[cross + str(d) + "R" + ten + "." + field].iloc[
                        date_index] / 2.0) \
-                + (df[cross + str(d) + "B" + ten + "." + field][date_index])
+                + (df[cross + str(d) + "B" + ten + "." + field].iloc[date_index])
 
-                df_surf[ten][str(d) + "DC"] = \
-                df[cross + "V" + ten + "." + field][date_index] \
-                + (df[cross + str(d) + "R" + ten + "." + field][
+                df_surf.loc[str(d) + "DC", ten] = \
+                df[cross + "V" + ten + "." + field].iloc[date_index] \
+                + (df[cross + str(d) + "R" + ten + "." + field].iloc[
                        date_index] / 2.0) \
-                + (df[cross + str(d) + "B" + ten + "." + field][date_index])
+                + (df[cross + str(d) + "B" + ten + "." + field].iloc[date_index])
 
-            df_surf[ten]["ATM"] = df[cross + "V" + ten + "." + field][
+            df_surf.loc["ATM", ten] = df[cross + "V" + ten + "." + field].iloc[
                 date_index]
 
         return df_surf

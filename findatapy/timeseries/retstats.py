@@ -124,8 +124,9 @@ class RetStats(object):
 
         dd2here = index_df / max2here - 1
 
+        print(index_df)
         self._dd = dd2here.min()
-        self._yoy_rets = index_df.resample('Y').last().pct_change()
+        self._yoy_rets = index_df.resample('YE').last().pct_change()
 
         return self
 
@@ -211,10 +212,10 @@ class RetStats(object):
 
         for i in range(0, len(self._rets.index)):
             stat_list.append(self._rets.index[i] + " Ret = " + str(
-                round(self._rets[i] * 100, 1))
-                             + "% Vol = " + str(round(self._vol[i] * 100, 1))
-                             + "% IR = " + str(round(self._inforatio[i], 2))
-                             + " Dr = " + str(round(self._dd[i] * 100, 1))
+                round(self._rets.iloc[i] * 100, 1))
+                             + "% Vol = " + str(round(self._vol.iloc[i] * 100, 1))
+                             + "% IR = " + str(round(self._inforatio.iloc[i], 2))
+                             + " Dr = " + str(round(self._dd.iloc[i] * 100, 1))
                              + "%")  # Kurt = " + str(round(self._kurtosis[i], 2)))
 
         return stat_list
