@@ -27,6 +27,12 @@ if __name__ == "__main__":
 
     market = Market(market_data_generator=MarketDataGenerator())
 
+    from findatapy.util import DataConstants
+
+    # We can either define our API key in the DataCred class, or we can set it
+    # globally using the below code (or in every MarketDataRequest)
+    # DataConstants({"fred_api_key": "TYPE_YOUR_FRED_API_KEY_HERE"})
+
     # We can grab market data, by using MarketDataRequest objects
     # However, sometimes we might wish to create more freeform requests
     #   eg. if we have tickers stored in a spreadsheet)
@@ -132,7 +138,7 @@ if __name__ == "__main__":
     # choose the default environment
     # which is backtest (in this case, we have included it)
     print(market.fetch_market("backtest.fx.bloomberg.daily.NYC.EURUSD.close"))
-    print(market.fetch_market("backtest.fx.quandl.daily.NYC.EURUSD.close"))
+    print(market.fetch_market("backtest.fx.alfred.daily.NYC.EURUSD.close"))
 
     # We can also pass in a MarketDataRequest which can contain many more
     # parameters, which we can"t specify

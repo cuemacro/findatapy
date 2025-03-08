@@ -374,7 +374,7 @@ class DataVendorBBG(DataVendor):
                         if not (is_date):
                             try:
                                 data_frame[c] = pd.to_numeric(data_frame[c],
-                                                              errors='ignore')
+                                                              errors='coerce')
                             except:
                                 pass
 

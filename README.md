@@ -60,11 +60,10 @@ To appear
 # Requirements
 
 Major requirements
-* Required: Python 3.8 (Python 2 is not supported)
+* Required: Python 3.10 (Python 2 is not supported)
 * Required: pandas, numpy etc.
-* Recommended: blpapi - Bloomberg Python Open API
+* Recommended: blpapi - Bloomberg Python Open API - install by separately running `pip install --index-url=https://blpapi.bloomberg.com/repository/releases/python/simple blpapi`
 * Recommended: chartpy - for funky interactive plots ([https://github.com/cuemacro/chartpy](https://github.com/cuemacro/chartpy)) and
-* Recommended: arctic - AHL library for managing time series in MongoDB
 
 # Installation
 
@@ -119,7 +118,7 @@ individual data providers)
 
 # Release Notes
 
-* 0.1.39 - findatapy (20 Feb 2025)
+* 0.1.39 - findatapy (08 Mar 2025)
 * 0.1.38 - findatapy (19 Feb 2025)
 * 0.1.37 - findatapy (15 Jan 2025)
 * 0.1.36 - findatapy (27 Apr 2024)
@@ -150,6 +149,8 @@ individual data providers)
 
 # Coding log
 
+* 08 Mar 2025
+  * Fixed various deprecation warnings for Pandas
 * 19 Feb 2025
   * Fixed bug with Yahoo
 * 15 Jan 2024

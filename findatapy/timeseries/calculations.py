@@ -145,14 +145,14 @@ class Calculations(object):
         # signal need to be aligned to NEXT period for returns
         # signal_data_frame_pushed = signal_data_frame.shift(1)
 
-        # find all the trade points
+        # Find all the trade points
         trade_points = ((signal_data_frame - signal_data_frame.shift(1)).abs())
         cumulative = self.create_mult_index(strategy_returns_data_frame)
 
         indices = trade_points > 0
         indices.columns = cumulative.columns
 
-        # get P&L for every trade (from the end point - start point)
+        # Get P&L for every trade (from the end point - start point)
         trade_returns = numpy.nan * cumulative
         trade_points_cumulative = cumulative[indices]
 
@@ -170,7 +170,10 @@ class Calculations(object):
             # trade_returns[col_name][val] = col[val]
 
             date_indices = trade_returns.index.searchsorted(col.index)
-            trade_returns[col_name][date_indices] = col
+            # trade_returns[col_name][date_indices] = col
+
+            # For Pandas > 3
+            trade_returns.iloc[date_indices, trade_returns.columns.get_loc(col_name)] = col
 
         return trade_returns
 
