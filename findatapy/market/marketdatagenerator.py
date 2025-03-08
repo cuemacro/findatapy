@@ -161,7 +161,7 @@ class MarketDataGenerator(object):
                 from findatapy.market.datavendorcrypto import DataVendorBitmex
                 data_vendor = DataVendorBitmex()
             elif data_source == "alphavantage":
-                from findatapy.market.datavendorcrypto import \
+                from findatapy.market.datavendorweb import \
                     DataVendorAlphaVantage
                 data_vendor = DataVendorAlphaVantage()
             elif data_source == "huobi":

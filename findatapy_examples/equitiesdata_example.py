@@ -48,9 +48,9 @@ if __name__ == "__main__":
     md_request = MarketDataRequest(
         start_date="decade",  # start date
         data_source="yahoo",  # use Bloomberg as data source
-        tickers=["Apple", "Citigroup"],  # ticker (findatapy)
+        tickers=["Apple"],  # ticker (findatapy)
         fields=["close"],  # which fields to download
-        vendor_tickers=["aapl", "c"],  # ticker (Yahoo)
+        vendor_tickers=["aapl"],  # ticker (Yahoo)
         vendor_fields=["Close"])  # which Yahoo fields to download)
 
     df = market.fetch_market(md_request)
