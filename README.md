@@ -119,6 +119,7 @@ individual data providers)
 
 # Release Notes
 
+* 0.1.39 - findatapy (20 Feb 2025)
 * 0.1.38 - findatapy (19 Feb 2025)
 * 0.1.37 - findatapy (15 Jan 2025)
 * 0.1.36 - findatapy (27 Apr 2024)
