@@ -124,7 +124,6 @@ class RetStats(object):
 
         dd2here = index_df / max2here - 1
 
-        print(index_df)
         self._dd = dd2here.min()
 
         try:
