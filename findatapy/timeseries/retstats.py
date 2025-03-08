@@ -126,7 +126,11 @@ class RetStats(object):
 
         print(index_df)
         self._dd = dd2here.min()
-        self._yoy_rets = index_df.resample('YE').last().pct_change()
+
+        try:
+            self._yoy_rets = index_df.resample('YE').last().pct_change()
+        except:
+            self._yoy_rets = index_df.resample('Y').last().pct_change()
 
         return self
 
