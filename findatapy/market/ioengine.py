@@ -1234,7 +1234,8 @@ class IOEngine(object):
                    cloud_credentials: str = None,
                    parquet_compression: str = constants.parquet_compression,
                    engine: str = "pandas",
-                   use_pyarrow_directly: bool = False):
+                   use_pyarrow_directly: bool = False,
+                   convert_index_to_datetime: bool = True):
         """Write a DataFrame to a local or s3 path as a Parquet file
 
         Parameters
@@ -1278,11 +1279,12 @@ class IOEngine(object):
         #         except:
         #             pass
 
-        try:
-            df.index = pd.to_datetime(df.index,
-                                      unit=constants.default_time_units)
-        except:
-            pass
+        if convert_index_to_datetime:
+            try:
+                df.index = pd.to_datetime(df.index,
+                                          unit=constants.default_time_units)
+            except:
+                pass
 
         cloud_credentials_ = self._convert_cred(cloud_credentials,
                                                 convert_to_s3fs=False)
