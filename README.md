@@ -17,7 +17,7 @@ from findatapy.market import Market, MarketDataRequest, MarketDataGenerator
 market = Market(market_data_generator=MarketDataGenerator())
 
 # Get you FRED API key from https://fred.stlouisfed.org/docs/api/api_key.html
-fred_api_key = "WRITE YOUR KEY HERE" 
+fred_api_key = "8574cc033f043caa9c0b68b40763f22a" 
 
 md_request = MarketDataRequest(start_date='year', category='fx', data_source='alfred', tickers=['AUDJPY'],
                                fred_api_key=fred_api_key)
