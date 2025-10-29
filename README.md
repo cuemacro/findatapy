@@ -150,6 +150,10 @@ individual data providers)
 
 # Coding log
 
+* 29 Oct 2025
+  * Added flag for conversion of datetime in IOEngine
+* 18 Jul 2025
+  * Speeded up Redis read/write of DataFrames
 * 08 Mar 2025
   * Fixed various deprecation warnings for Pandas
 * 19 Feb 2025

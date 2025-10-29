@@ -407,14 +407,14 @@ class IOEngine(object):
 
                                 if use_cache_compression:
                                     ser = io.BytesIO()
-                                    data_frame.to_pickle(ser,
+                                    data_frame.to_parquet(ser,
                                                          compression="gzip")
                                     ser.seek(0)
 
                                     r.set("comp_" + fname, ser.read())
                                 else:
                                     ser = io.BytesIO()
-                                    data_frame.to_pickle(ser)
+                                    data_frame.to_parquet(ser)
                                     ser.seek(0)
 
                                     r.set(fname, ser.read())
@@ -793,10 +793,10 @@ class IOEngine(object):
 
                         msg = r.get(k)
                         msg = io.BytesIO(msg)
-                        msg = pd.read_pickle(msg, compression="gzip")
+                        msg = pd.read_parquet(msg)
                     else:
                         msg = r.get(fname_single)
-                        msg = pd.read_pickle(msg.read())
+                        msg = pd.read_parquet(msg.read())
 
                 except Exception as e:
                     logger.info(
