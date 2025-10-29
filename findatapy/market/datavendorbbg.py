@@ -681,7 +681,7 @@ class BBGLowLevelTemplate:  # in order that the init function works in
                 data_frame_list.append(data_frame_slice)
 
         if data_frame_list == []:
-            logger.warn("No elements for ticker.")
+            logger.warning("No elements for ticker.")
             return None
         else:
             return pd.concat(data_frame_list)
