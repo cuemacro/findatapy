@@ -117,6 +117,7 @@ class MarketDataRequest:
                  eikon_api_key: str = None,
                  pretransformation: str = None,
                  vintage_as_index: bool = None,
+                 vintage_download: dict = None,
                  push_to_cache: bool = True,
                  overrides: dict = {},
                  freeform_md_request: dict = {},
@@ -155,6 +156,8 @@ class MarketDataRequest:
             data_vendor_custom = data_constants.data_vendor_custom
         if arcticdb_dict is None:
             arcticdb_dict = data_constants.arcticdb_dict
+        if vintage_download is None:
+            vintage_download = data_constants.vintage_download
 
         # Can deep copy MarketDataRequest (use a lock, so can be used with 
         # threading when downloading time series)
@@ -218,6 +221,7 @@ class MarketDataRequest:
                 
                 self.pretransformation = copy.deepcopy(md_request.pretransformation)
                 self.vintage_as_index = copy.deepcopy(md_request.vintage_as_index)
+                self.vintage_download = copy.deepcopy(md_request.vintage_download)
 
                 self.overrides = copy.deepcopy(md_request.overrides)
                 self.push_to_cache = copy.deepcopy(md_request.push_to_cache)
@@ -275,6 +279,8 @@ class MarketDataRequest:
             
             self.pretransformation = pretransformation
             self.vintage_as_index = vintage_as_index
+
+            self.vintage_download = vintage_download
 
             self.overrides = overrides
             self.push_to_cache = push_to_cache
@@ -841,6 +847,14 @@ class MarketDataRequest:
     @vintage_as_index.setter
     def vintage_as_index(self, vintage_as_index):
         self.__vintage_as_index = vintage_as_index
+
+    @property
+    def vintage_download(self):
+        return self.__vintage_download
+
+    @vintage_download.setter
+    def vintage_download(self, vintage_download):
+        self.__vintage_download = vintage_download
         
     @property
     def overrides(self):
