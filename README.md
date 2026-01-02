@@ -150,6 +150,8 @@ individual data providers)
 
 # Coding log
 
+* 02 Jan 2026
+  * Refactored ConfigManager so it can take DataFrames as input (not just CSVs)
 * 29 Oct 2025
   * Added flag for conversion of datetime in IOEngine
 * 18 Jul 2025

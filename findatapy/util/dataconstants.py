@@ -126,6 +126,17 @@ class DataConstants(object):
 
     time_series_fields_list = path_join(config_root_folder, "time_series_fields_list.csv")
 
+    # We can also specify the tickers, fields and categories as dataframes directly
+    time_series_tickers_data_frames_list = None
+    time_series_fields_data_frames_list = None
+    time_series_categories_fields_data_frames_list = None
+
+    # Some providers might allow for vintages to be downloaded
+    vintage_download = {
+                "start_date": None,
+                "point_in_time": True
+                       }
+
     # Config file for long term econ data
     all_econ_tickers = path_join(config_root_folder, "all_econ_tickers.csv")
     econ_country_codes = path_join(config_root_folder, "econ_country_codes.csv")
