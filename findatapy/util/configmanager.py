@@ -159,7 +159,10 @@ class ConfigManager(object):
         for file in file_paths:
             if os.path.isfile(file):
                 # reader = csv.DictReader(open(tickers_list_file))
-                df = pd.read_csv(file)
+                if ".parquet" in file:
+                    df = pd.read_parquet(file)
+                else:
+                    df = pd.read_csv(file)
                 df = df.dropna(how="all")
 
                 df_list.append(df)
@@ -234,73 +237,98 @@ class ConfigManager(object):
             ["category", "data_source", "freq", "tickers", "vendor_tickers", "cut"],
             "Tickers mappings")
 
-        for index, line in df.iterrows():
-            category = line["category"]
-            data_source = line["data_source"]
+        # Pre-process dataframe for vectorized operations
+        # Convert vendor_tickers to string and strip whitespace
+        df_work = df.copy()
+        df_work['vendor_tickers'] = df_work['vendor_tickers'].astype(str).str.strip()
+        df_work['vendor_tickers_lower'] = df_work['vendor_tickers'].str.lower()
 
-            freq_list = line["freq"].split(",")
+        # Filter out invalid vendor_tickers (keeping only valid rows)
+        # Note: original condition has OR which means it keeps almost everything except edge cases
+        valid_mask = (df_work['vendor_tickers_lower'] != 'nan') | \
+                     (df_work['vendor_tickers'] != '') | \
+                     (df_work['vendor_tickers_lower'] != 'none')
+        df_work = df_work[valid_mask & (df_work['category'] != '')]
 
-            if isinstance(freq_list, str):
-                freq_list = [freq_list]
+        if len(df_work) == 0:
+            return
 
-            for freq in freq_list:
-                tickers = line["tickers"]
-                cut = line["cut"]
-                vendor_tickers = str(line["vendor_tickers"])
-                expiry = None
+        # Handle expiry column if it exists
+        has_expiry = 'expiry' in df_work.columns
+        if has_expiry:
+            def safe_parse_expiry(val):
+                try:
+                    if pd.notna(val) and str(val).strip() != "":
+                        return parse(str(val))
+                except:
+                    pass
+                return None
+            df_work['expiry_parsed'] = df_work['expiry'].apply(safe_parse_expiry)
+        else:
+            df_work['expiry_parsed'] = None
 
-                # Skip row where the vendor ticker hasn't been
-                # specified
-                if vendor_tickers.strip().lower() != "nan" \
-                        or vendor_tickers.strip() != "" \
-                        or vendor_tickers.strip().lower() != "none":
+        # Explode freq column to handle comma-separated values
+        df_work['freq_list'] = df_work['freq'].str.split(',')
+        df_exploded = df_work.explode('freq_list').reset_index(drop=True)
+        df_exploded['freq'] = df_exploded['freq_list']
 
-                    if "expiry" in line.keys():
-                        expiry = line["expiry"]
+        # Create all the key combinations using vectorized string operations
+        df_exploded['key_base'] = (df_exploded['category'] + '.' +
+                                    df_exploded['data_source'] + '.' +
+                                    df_exploded['freq'] + '.' +
+                                    df_exploded['cut'])
 
-                    if category != "":
-                        # Conversion from library tickers to vendor vendor_tickers
-                        ConfigManager. \
-                            _dict_time_series_tickers_list_library_to_vendor[
-                            category + "." +
-                            data_source + "." +
-                            freq + "." +
-                            cut + "." +
-                            tickers] = vendor_tickers
+        df_exploded['library_to_vendor_key'] = (df_exploded['key_base'] + '.' +
+                                                 df_exploded['tickers'])
 
-                        try:
-                            if expiry != "":
-                                expiry = parse(expiry)
-                            else:
-                                expiry = None
-                        except:
-                            pass
+        df_exploded['vendor_to_library_key'] = (df_exploded['key_base'] + '.' +
+                                                 df_exploded['vendor_tickers'])
 
-                        # Library of tickers by category
-                        key = category + "." + data_source + "." + freq \
-                              + "." + cut
+        df_exploded['expiry_key'] = (df_exploded['data_source'] + '.' +
+                                      df_exploded['tickers'])
 
-                        # Conversion from library tickers to library expiry date
-                        ConfigManager._dict_time_series_ticker_expiry_date_library_to_library[
-                            data_source + "." +
-                            tickers] = expiry
+        # Populate dictionaries using vectorized operations
+        # Conversion from library tickers to vendor tickers
+        library_to_vendor_dict = dict(zip(df_exploded['library_to_vendor_key'],
+                                          df_exploded['vendor_tickers']))
+        ConfigManager._dict_time_series_tickers_list_library_to_vendor.update(library_to_vendor_dict)
 
-                        # Conversion from vendor vendor_tickers to library tickers
-                        try:
-                            ConfigManager._dict_time_series_tickers_list_vendor_to_library[
-                                key + "." + vendor_tickers] = tickers
-                        except:
-                            LoggerManager.getLogger(__name__).warning(
-                                "Ticker not specified correctly (is some "
-                                "of this missing?) " + str(
-                                    key) + "." + str(vendor_tickers))
+        # Conversion from library tickers to library expiry date
+        expiry_dict = dict(zip(df_exploded['expiry_key'],
+                               df_exploded['expiry_parsed']))
+        ConfigManager._dict_time_series_ticker_expiry_date_library_to_library.update(expiry_dict)
 
-                        if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
-                            ConfigManager._dict_time_series_category_tickers_library_to_library[
-                                key].append(tickers)
-                        else:
-                            ConfigManager._dict_time_series_category_tickers_library_to_library[
-                                key] = [tickers]
+        # Conversion from vendor tickers to library tickers (with error handling)
+        # Bulk update should work for all valid entries
+        vendor_to_library_dict = dict(zip(df_exploded['vendor_to_library_key'],
+                                          df_exploded['tickers']))
+
+        # Check for any problematic keys before updating
+        # (In practice, dict update with string keys rarely fails unless keys are malformed)
+        try:
+            ConfigManager._dict_time_series_tickers_list_vendor_to_library.update(vendor_to_library_dict)
+        except Exception as e:
+            # If bulk update fails, fall back to row-by-row with error handling
+            LoggerManager.getLogger(__name__).warning(f"Bulk update failed: {e}. Falling back to row-by-row processing.")
+            for vendor_key, ticker in vendor_to_library_dict.items():
+                try:
+                    ConfigManager._dict_time_series_tickers_list_vendor_to_library[vendor_key] = ticker
+                except:
+                    # Extract components for error message
+                    key_idx = df_exploded[df_exploded['vendor_to_library_key'] == vendor_key].index[0]
+                    key_base = df_exploded.loc[key_idx, 'key_base']
+                    vendor_ticker = df_exploded.loc[key_idx, 'vendor_tickers']
+                    LoggerManager.getLogger(__name__).warning(
+                        "Ticker not specified correctly (is some of this missing?) " +
+                        str(key_base) + "." + str(vendor_ticker))
+
+        # Build category tickers dictionary
+        grouped = df_exploded.groupby('key_base')['tickers'].apply(list).to_dict()
+        for key, ticker_list in grouped.items():
+            if key in ConfigManager._dict_time_series_category_tickers_library_to_library:
+                ConfigManager._dict_time_series_category_tickers_library_to_library[key].extend(ticker_list)
+            else:
+                ConfigManager._dict_time_series_category_tickers_library_to_library[key] = ticker_list
 
     def free_form_tickers_regex_query(self, category=None, data_source=None,
                                       freq=None, cut=None, tickers=None,
