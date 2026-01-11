@@ -151,6 +151,8 @@ individual data providers)
 
 # Coding log
 
+* 11 Jan 2026
+  * Speeding up ticker parsing in ConfigManager
 * 02 Jan 2026
   * Refactored ConfigManager so it can take DataFrames as input (not just CSVs)
 * 29 Oct 2025
