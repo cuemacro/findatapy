@@ -14,7 +14,7 @@ __author__ = "saeedamen"  # Saeed Amen
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from datetime import timedelta
+from datetime import timedelta, timezone
 import datetime
 
 from typing import List
@@ -82,7 +82,7 @@ class MarketDataRequest:
               "_MarketDataRequest__data_vendor_custom"]) + "_df"
 
     def __init__(self, data_source: str = None,
-                 start_date="year", finish_date=datetime.datetime.utcnow(),
+                 start_date="year", finish_date=datetime.datetime.now(timezone.utc),
                  tickers: str =None,
                  category: str = None, freq_mult: int = 1, freq: str = "daily",
                  dataset: str = None,
@@ -584,7 +584,7 @@ class MarketDataRequest:
     def date_parser(self, date):
         if isinstance(date, str):
 
-            date1 = datetime.datetime.utcnow()
+            date1 = datetime.datetime.now(timezone.utc)
 
             if date == "midnight":
                 date1 = datetime.datetime(date1.year, date1.month, 
