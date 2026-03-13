@@ -270,7 +270,7 @@ class DataVendorBBG(DataVendor):
 
         constants = DataConstants()
 
-        end = datetime.utcnow()
+        end = datetime.now(datetime.timezone.utc)
 
         from datetime import timedelta
         end = end + timedelta(

@@ -100,7 +100,7 @@ if __name__ == '__main__':
             "stocks", df_to_write, engine=arcticdb_conn_str,
             arcticdb_dict=arcticdb_dict)
 
-        current_time = datetime.datetime.now().utcnow()
+        current_time = datetime.datetime.now(datetime.timezone.utc)
         current_time_list.append(current_time)
         time.sleep(5)
 
