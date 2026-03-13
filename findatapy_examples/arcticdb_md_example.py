@@ -98,7 +98,7 @@ if __name__ == '__main__':
     IOEngine().write_time_series_cache_to_disk(data_frame=df_tick_earlier,
                                                engine=arcticdb_conn_str,
                                                md_request=md_request_download)
-    earlier_download_time = datetime.datetime.now().utcnow()
+    earlier_download_time = datetime.datetime.now(datetime.timezone.utc)
 
     # Let's read directly from ArcticDB without the Market wrapper using IOEngine
     # This would also be the symbol you can use if you want to directly
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
     # This time we use the Market wrapper to download data
     # Given we don't specify an "as_of" property, we'll get the later version
-    later_download_time = datetime.datetime.now().utcnow()
+    later_download_time = datetime.datetime.now(datetime.timezone.utc)
 
     md_request_local_cache = MarketDataRequest(
         md_request=md_request_download

@@ -39,7 +39,7 @@ def test_huobi():
     assert not df.empty
 
     # test historical tick (second) data, last 5 mins from 1 min ago
-    finish_dt = dt.datetime.utcnow() - dt.timedelta(minutes=1)
+    finish_dt = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)
     start_dt = finish_dt - dt.timedelta(minutes=5)
     md_request = MarketDataRequest(start_date=start_dt, finish_date=finish_dt, cut='LOC',
                                    freq='tick', data_source='huobi', category='crypto',

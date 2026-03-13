@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     # Get recent tick data for FX tick data
     md_request = MarketDataRequest(
-        start_date=datetime.datetime.utcnow() - timedelta(hours=1),
+        start_date=datetime.datetime.now(datetime.timezone.utc) - timedelta(hours=1),
         # Start date (download data over past decade)
         freq='tick',
         data_source='eikon',  # Use Eikon as data source
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     # Get 1 minute intraday data for FX
     md_request = MarketDataRequest(
-        start_date=datetime.datetime.utcnow() - timedelta(days=5),
+        start_date=datetime.datetime.now(datetime.timezone.utc) - timedelta(days=5),
         # Start date (download data over past decade)
         freq='intraday',
         data_source='eikon',  # use Eikon as data source
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     # You can add your own customized tickers by editing the various conf
     # CSV files
     md_request = MarketDataRequest(
-        start_date=datetime.datetime.utcnow() - timedelta(days=5),
+        start_date=datetime.datetime.now(datetime.timezone.utc) - timedelta(days=5),
         # Start date (download data over past decade)
         freq='intraday',
         category='fx',

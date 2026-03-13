@@ -402,7 +402,7 @@ class MarketDataGenerator(object):
         # Only includes those tickers have not expired yet!
         start_date = pd.Timestamp(md_request.start_date).date()
 
-        current_date = pd.Timestamp(datetime.datetime.utcnow().date())
+        current_date = pd.Timestamp(datetime.datetime.now(datetime.timezone.utc).date())
 
         tickers = md_request.tickers
         vendor_tickers = md_request.vendor_tickers

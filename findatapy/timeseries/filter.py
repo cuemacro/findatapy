@@ -20,7 +20,7 @@ import pandas as pd
 import pytz
 
 import datetime
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from findatapy.timeseries.calendar import Calendar
 
@@ -199,7 +199,7 @@ class Filter(object):
         """
         offset = 0  # inclusive
 
-        finish_date = datetime.datetime.utcnow()
+        finish_date = datetime.datetime.now(timezone.utc)
         start_date = finish_date - timedelta(days=days)
 
         return self.filter_time_series_by_date_offset(start_date, finish_date,
