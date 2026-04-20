@@ -21,6 +21,7 @@ __author__ = "saeedamen"  # Saeed Amen
 if __name__ == "__main__":
     ###### below line CRUCIAL when running Windows, otherwise multiprocessing 
     # doesn"t work! (not necessary on Linux)
+
     from findatapy.util import SwimPool;
 
     SwimPool()
@@ -51,13 +52,13 @@ if __name__ == "__main__":
         # fields contains ["close","volume"]
         # return tick data
 
-        md_request = MarketDataRequest(start_date="11 Jan 2018",
-                                       finish_date="02 Feb 2018", cut="LOC",
+        md_request = MarketDataRequest(start_date="09 Sep 2024",
+                                       finish_date="10 Oct 2024", cut="LOC",
                                        freq="tick",
                                        data_source="bitcoincharts",
                                        category="crypto",
                                        fields=["close", "volume"],
-                                       tickers=["XBTUSD_itbit"])
+                                       tickers=["XBT"])
 
         df = market.fetch_market(md_request)
         print(df.head(5))
