@@ -16,9 +16,12 @@ __author__ = "shihhau"  # Shih Hau
 #
 
 import pandas
-
+from pandas import json_normalize
+import requests
+from requests import get
 from findatapy.market.datavendor import DataVendor
 from findatapy.util import LoggerManager
+import datetime
 
 
 class DataVendorBitcoincharts(DataVendor):
@@ -31,31 +34,28 @@ class DataVendorBitcoincharts(DataVendor):
 
     # implement method in abstract superclass
     def load_ticker(self, md_request):
+
         logger = LoggerManager().getLogger(__name__)
         md_request_vendor = self.construct_vendor_md_request(
             md_request)
-
         logger.info("Request data from Bitcoincharts")
-
-        data_website = 'http://api.bitcoincharts.com/v1/csv/' + \
-                       md_request_vendor.tickers[0] + '.csv.gz'
-        data_frame = pandas.read_csv(data_website,
-                                     names=['datetime', 'close', 'volume'])
-        data_frame = data_frame.set_index('datetime')
-        data_frame.index = pandas.to_datetime(data_frame.index, unit='s')
+        data_website = 'https://www.bitmex.com/api/v1/trade/bucketed?binSize=1d&partial=false&symbol=XBT&count=1000&reverse=false'
+        response = requests.get(data_website)
+        data_frame = json_normalize(response.json())
+        data_frame['timestamp'] = data_frame['timestamp'].apply(datetime.fromisoformat)
+        # data_frame = pandas.read_csv(data_website,
+        #                             names=['datetime', 'close', 'volume'])
+        data_frame = data_frame.set_index('timestamp')
+        data_frame = data_frame[['close', 'volume']]
+        # data_frame.index = pandas.to_datetime(data_frame.index, unit='s')
         data_frame.index.name = 'Date'
         data_frame = data_frame[
-            (data_frame.index >= md_request_vendor.start_date) & (
-                    data_frame.index <= md_request_vendor.finish_date)]
+            (data_frame.index >= md_request_vendor.start_date.tz_localize("UTC")) & (
+                    data_frame.index <= md_request_vendor.finish_date.tz_localize("UTC"))]
         #        data_frame = df[~df.index.duplicated(keep='last')]
-        if len(data_frame) == 0:
-            logger.warning(
-                "Warning: No data. Please change the start_date and finish_date.")
-
         data_frame.columns = [md_request.tickers[0] + '.close',
                               md_request.tickers[0] + '.volume']
         logger.info("Completed request from Bitcoincharts.")
-
         return data_frame
 
 
