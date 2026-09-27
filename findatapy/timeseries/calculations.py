@@ -751,7 +751,7 @@ class Calculations(object):
         -------
         DataFrame
         """
-        return math.log(data_frame / data_frame.shift(period_shift))
+        return numpy.log(data_frame / data_frame.shift(period_shift))
 
     def create_mult_index(self, df_rets):
         """ Calculates a multiplicative index for a time series of returns starting from 100
