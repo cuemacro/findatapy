@@ -82,7 +82,7 @@ class MarketDataRequest:
               "_MarketDataRequest__data_vendor_custom"]) + "_df"
 
     def __init__(self, data_source: str = None,
-                 start_date="year", finish_date=datetime.datetime.utcnow(),
+                 start_date="year", finish_date=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
                  tickers: str =None,
                  category: str = None, freq_mult: int = 1, freq: str = "daily",
                  dataset: str = None,
@@ -586,7 +586,7 @@ class MarketDataRequest:
     def date_parser(self, date):
         if isinstance(date, str):
 
-            date1 = datetime.datetime.utcnow()
+            date1 = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
             if date == "midnight":
                 date1 = datetime.datetime(date1.year, date1.month, 
