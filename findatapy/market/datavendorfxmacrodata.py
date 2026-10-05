@@ -88,18 +88,24 @@ class DataVendorFXMacroData(DataVendor):
             "offset": 0,
         }
 
+        api_key = (md_request.fxmacrodata_api_key or "").strip()
+        if any(char.isspace() or ord(char) < 32 for char in api_key):
+            raise ValueError("FXMacroData API key contains invalid characters")
         headers = {}
-        if md_request.fxmacrodata_api_key:
-            headers["X-API-Key"] = md_request.fxmacrodata_api_key
+        if api_key:
+            headers["X-API-Key"] = api_key
 
         rows = []
         while True:
             try:
+                # Redirects are not followed, so the key never reaches
+                # another host.
                 response = requests.get(
-                    url, params=params, headers=headers, timeout=30)
+                    url, params=params, headers=headers, timeout=30,
+                    allow_redirects=False)
             except requests.RequestException as exc:
                 raise RuntimeError("FXMacroData request failed") from exc
-            if not response.ok:
+            if not response.ok or 300 <= response.status_code < 400:
                 raise RuntimeError(
                     "FXMacroData returned HTTP " + str(response.status_code)
                 )

@@ -5,10 +5,10 @@ from findatapy.market.marketdatarequest import MarketDataRequest
 
 
 class _FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200):
         self._payload = payload
-        self.ok = True
-        self.status_code = 200
+        self.ok = status_code < 400
+        self.status_code = status_code
 
     def json(self):
         return self._payload
@@ -17,7 +17,8 @@ class _FakeResponse:
 def test_fxmacrodata_vendor_builds_daily_fx_dataframe(monkeypatch):
     calls = {}
 
-    def fake_get(url, params=None, headers=None, timeout=None):
+    def fake_get(url, params=None, headers=None, timeout=None,
+                 allow_redirects=True):
         calls["url"] = url
         calls["params"] = dict(params)
         calls["headers"] = headers
@@ -59,7 +60,8 @@ def test_fxmacrodata_vendor_builds_daily_fx_dataframe(monkeypatch):
 def test_fxmacrodata_vendor_preserves_reference_ohlc(monkeypatch):
     calls = {}
 
-    def fake_get(url, params=None, headers=None, timeout=None):
+    def fake_get(url, params=None, headers=None, timeout=None,
+                 allow_redirects=True):
         calls["headers"] = headers
         return _FakeResponse({
             "data": [{
@@ -94,6 +96,54 @@ def test_fxmacrodata_vendor_preserves_reference_ohlc(monkeypatch):
         "EURUSD.low": 1.08,
         "EURUSD.close": 1.11,
     }
+
+
+def _md_request(api_key):
+    return MarketDataRequest(
+        data_source="fxmacrodata",
+        category="fx",
+        start_date="2026-01-01",
+        finish_date="2026-01-04",
+        tickers=["EURUSD"],
+        fields=["close"],
+        fxmacrodata_api_key=api_key,
+    )
+
+
+def test_fxmacrodata_vendor_does_not_follow_redirects(monkeypatch):
+    calls = {}
+
+    def fake_get(url, params=None, headers=None, timeout=None,
+                 allow_redirects=True):
+        calls["allow_redirects"] = allow_redirects
+        return _FakeResponse(None, status_code=302)
+
+    monkeypatch.setattr(
+        "findatapy.market.datavendorfxmacrodata.requests.get", fake_get)
+
+    try:
+        DataVendorFXMacroData().load_ticker(_md_request("test-key"))
+    except RuntimeError as exc:
+        assert "302" in str(exc)
+        assert "test-key" not in str(exc)
+    else:
+        raise AssertionError("redirect response was accepted")
+    assert calls["allow_redirects"] is False
+
+
+def test_fxmacrodata_vendor_rejects_malformed_key_without_echo(monkeypatch):
+    def fake_get(*args, **kwargs):
+        raise AssertionError("request should not be sent")
+
+    monkeypatch.setattr(
+        "findatapy.market.datavendorfxmacrodata.requests.get", fake_get)
+
+    try:
+        DataVendorFXMacroData().load_ticker(_md_request("test-key\r\nX: y"))
+    except ValueError as exc:
+        assert "test-key" not in str(exc)
+    else:
+        raise AssertionError("malformed key was accepted")
 
 
 def test_fxmacrodata_vendor_rejects_invalid_pair():
