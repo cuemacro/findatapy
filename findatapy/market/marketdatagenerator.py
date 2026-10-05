@@ -121,6 +121,11 @@ class MarketDataGenerator(object):
                 from findatapy.market.datavendorweb import DataVendorFXCM
                 data_vendor = DataVendorFXCM()
 
+            elif data_source == "fxmacrodata":
+                from findatapy.market.datavendorfxmacrodata import \
+                    DataVendorFXMacroData
+                data_vendor = DataVendorFXMacroData()
+
             elif data_source == "alfred":
                 from findatapy.market.datavendorfred import DataVendorALFRED
                 data_vendor = DataVendorALFRED()
