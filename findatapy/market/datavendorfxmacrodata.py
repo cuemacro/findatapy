@@ -103,20 +103,37 @@ class DataVendorFXMacroData(DataVendor):
                 response = requests.get(
                     url, params=params, headers=headers, timeout=30,
                     allow_redirects=False)
-            except requests.RequestException as exc:
-                raise RuntimeError("FXMacroData request failed") from exc
+            except requests.RequestException:
+                raise RuntimeError("FXMacroData request failed") from None
             if not response.ok or 300 <= response.status_code < 400:
                 raise RuntimeError(
                     "FXMacroData returned HTTP " + str(response.status_code)
                 )
             try:
                 payload = response.json()
-            except ValueError as exc:
-                raise ValueError("FXMacroData returned invalid JSON") from exc
-            page = payload.get("data", []) if isinstance(payload, dict) else []
+            except ValueError:
+                raise ValueError("FXMacroData returned invalid JSON") from None
+            if not isinstance(payload, dict) or "detail" in payload or "error" in payload:
+                raise ValueError("FXMacroData returned an error or invalid response")
+            page = payload.get("data")
             if not isinstance(page, list):
                 raise ValueError("FXMacroData response data must be a list")
             rows.extend(row for row in page if isinstance(row, dict))
+            pagination = payload.get("pagination")
+            if pagination is not None:
+                if not isinstance(pagination, dict) or not isinstance(pagination.get("has_more", False), bool):
+                    raise ValueError("FXMacroData returned invalid pagination metadata")
+                if not pagination.get("has_more"):
+                    break
+                if not page:
+                    raise ValueError("FXMacroData returned an inconsistent empty page")
+                next_offset = pagination.get("next_offset")
+                if next_offset is None:
+                    next_offset = params["offset"] + len(page)
+                if isinstance(next_offset, bool) or not isinstance(next_offset, int) or next_offset <= params["offset"]:
+                    raise ValueError("FXMacroData returned a non-advancing offset")
+                params["offset"] = next_offset
+                continue
             if len(page) < params["limit"]:
                 break
             params["offset"] += params["limit"]
