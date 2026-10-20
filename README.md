@@ -26,6 +26,30 @@ df = market.fetch_market(md_request)
 print(df.tail(n=10))
 ```
 
+Daily official FX reference rates can also be requested through FXMacroData's
+native `MarketDataRequest` vendor:
+
+```python
+md_request = MarketDataRequest(
+    start_date='2026-01-01',
+    finish_date='2026-03-31',
+    category='fx',
+    data_source='fxmacrodata',
+    tickers=['EURUSD'],
+    fields=['open', 'high', 'low', 'close'],
+)
+
+df = market.fetch_market(md_request)
+```
+
+FX history normally requires authentication. Supply `fxmacrodata_api_key` on
+`MarketDataRequest`, a keyring entry named `FXMacroData`, or the
+`FXMACRODATA_API_KEY`/`FXMD_API_KEY` environment variables. FXMacroData's
+reference-observation OHLC is preserved when
+available; otherwise the daily reference value fills the requested OHLC
+fields. This vendor supports FX rates only, not the catalogue, macro history,
+calendar, forecasts, COT, commodities, sessions, news, or seasonality APIs.
+
 Here we see how to download tick data from DukasCopy, wih the same API calls and minimal changes in the code.
 
 ```

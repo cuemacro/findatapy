@@ -190,7 +190,8 @@ class DataConstants(object):
                         'yahoo'       : 1, # yfinance already threads requests, so don't do it twice!
                         'other'       : 4,
                         'dukascopy'   : 3, # do not do too many!
-                        'fxcm'        : 4}
+                        'fxcm'        : 4,
+                        'fxmacrodata' : 1}
 
     # Seconds for timeout
     timeout_downloader = {'dukascopy' : 120}
@@ -274,6 +275,12 @@ class DataConstants(object):
 
     #######  FXCM API (contact FXCM to get this)
     fxcm_api_key = "x"
+
+    #######  FXMacroData settings
+    fxmacrodata_base_url = "https://api.fxmacrodata.com/v1"
+    fxmacrodata_api_key = (key_store("FXMacroData") or
+                           os.environ.get("FXMACRODATA_API_KEY") or
+                           os.environ.get("FXMD_API_KEY"))
 
     #######  Eikon settings
     eikon_api_key = key_store("Eikon")

@@ -115,6 +115,7 @@ class MarketDataRequest:
                  fred_api_key: str = None,
                  alpha_vantage_api_key: str = None,
                  eikon_api_key: str = None,
+                 fxmacrodata_api_key: str = None,
                  pretransformation: str = None,
                  vintage_as_index: bool = None,
                  vintage_download: dict = None,
@@ -152,6 +153,8 @@ class MarketDataRequest:
             alpha_vantage_api_key = data_constants.alpha_vantage_api_key
         if eikon_api_key is None:
             eikon_api_key = data_constants.eikon_api_key
+        if fxmacrodata_api_key is None:
+            fxmacrodata_api_key = data_constants.fxmacrodata_api_key
         if data_vendor_custom is None:
             data_vendor_custom = data_constants.data_vendor_custom
         if arcticdb_dict is None:
@@ -220,6 +223,8 @@ class MarketDataRequest:
                 self.alpha_vantage_api_key = \
                     copy.deepcopy(md_request.alpha_vantage_api_key)
                 self.eikon_api_key = copy.deepcopy(md_request.eikon_api_key)
+                self.fxmacrodata_api_key = \
+                    copy.deepcopy(md_request.fxmacrodata_api_key)
                 
                 self.pretransformation = copy.deepcopy(md_request.pretransformation)
                 self.vintage_as_index = copy.deepcopy(md_request.vintage_as_index)
@@ -278,6 +283,7 @@ class MarketDataRequest:
             self.fred_api_key = fred_api_key
             self.alpha_vantage_api_key = alpha_vantage_api_key
             self.eikon_api_key = eikon_api_key
+            self.fxmacrodata_api_key = fxmacrodata_api_key
             
             self.pretransformation = pretransformation
             self.vintage_as_index = vintage_as_index
@@ -354,7 +360,7 @@ class MarketDataRequest:
         try:
             valid_data_source = ["ats", "bloomberg", "dukascopy", "fred", 
                                  "gain", "google", "quandl", "yahoo",
-                                 "boe", "eikon"]
+                                 "boe", "eikon", "fxmacrodata"]
 
             if not data_source in valid_data_source:
                 LoggerManager().getLogger(__name__).warning(
@@ -664,6 +670,12 @@ class MarketDataRequest:
                 except:
                     # logger.warning("Attempted to parse date")
                     pass
+
+                try:
+                    date1 = datetime.datetime.strptime(date, "%Y-%m-%d")
+                except:
+                    # logger.warning("Attempted to parse date")
+                    pass
         else:
             import pandas
 
@@ -830,6 +842,14 @@ class MarketDataRequest:
     @eikon_api_key.setter
     def eikon_api_key(self, eikon_api_key):
         self.__eikon_api_key = eikon_api_key
+
+    @property
+    def fxmacrodata_api_key(self):
+        return self.__fxmacrodata_api_key
+
+    @fxmacrodata_api_key.setter
+    def fxmacrodata_api_key(self, fxmacrodata_api_key):
+        self.__fxmacrodata_api_key = fxmacrodata_api_key
 
     @property
     def pretransformation(self):
