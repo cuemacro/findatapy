@@ -116,6 +116,66 @@ for some such as Bloomberg or Eikon, you'll need to have a licence/subscription 
 certain limits of the history you can download for intraday data from certain sources (you will need to check with
 individual data providers)
 
+## Optional Adanos daily sentiment
+
+The [Adanos example](findatapy_examples/adanos_example.py) registers
+`DataVendorAdanos` through `MarketDataGenerator(data_vendor_dict={'adanos': vendor})`.
+It does not change built-in price vendors or require additional dependencies.
+Use your own [Adanos API key](https://adanos.com/register), never a shared key:
+
+```bash
+export ADANOS_API_KEY='YOUR_OWN_KEY'
+export ADANOS_SOURCE='adanos-news-stocks'
+export ADANOS_SYMBOL='AAPL'
+export ADANOS_FROM='2026-11-10'
+export ADANOS_TO='2026-11-12'
+python -m findatapy_examples.adanos_example
+```
+
+Set the source and dates explicitly. `ADANOS_FROM` and `ADANOS_TO` are inclusive
+UTC calendar dates (`YYYY-MM-DD`), sent as `from` and `to`, not `days`.
+Choose dates within your account's history allowance and the source's available
+history. The [API contract](https://api.adanos.com/openapi.json) documents history
+errors and quota headers. Each symbol costs one request; authentication, history,
+quota and transport failures propagate, with no synthetic-data fallback or
+automatic retry. On HTTP 429, respect `Retry-After` before running again.
+
+| `data_source` | Symbols | Daily activity field |
+| --- | --- | --- |
+| `adanos-reddit-stocks` | Stock/ETF ticker | `mentions` |
+| `adanos-x-stocks` | Stock/ETF ticker | `mentions` |
+| `adanos-news-stocks` | News company key, e.g. AAPL or BRK | `mentions` |
+| `adanos-polymarket-stocks` | Stock/ETF ticker | `trade_count` |
+| `adanos-reddit-crypto` | Crypto symbol, e.g. BTC | `mentions` |
+
+News keys identify companies, not arbitrary listing or share-class tickers.
+Use `BRK`, not `BRK.A`, `BRK.B` or `BRK-B`; documented venue suffixes such as
+`ABX.DE` resolve only when assigned to that issuer. ETFs remain separate issuers.
+The News endpoint returns 422 for invalid key forms, 404 for unsupported keys,
+and 200 with `found: false` for a supported key with no data in the window.
+
+All sources also support `sentiment_score`, `buzz_score`, `bullish_pct` and
+`bearish_pct`. Pass matching `tickers`/`vendor_tickers` and `fields`/`vendor_fields`
+in `MarketDataRequest` to bypass CSV mappings, as in the example. Use
+the example's explicit `pd.Timestamp` conversion for ISO input dates because
+`MarketDataRequest`'s legacy string parser does not accept `YYYY-MM-DD`.
+Programmatic bounds must be tz-naive midnight timestamps representing UTC dates;
+intraday times, relative defaults such as `year`, and timezone-aware bounds are
+rejected to prevent findatapy's downstream timestamp filter truncating a UTC day.
+Output follows findatapy's `ticker.field` columns and tz-naive midnight index representing UTC
+dates. Only `daily_trend` values are used, not period totals. Nulls remain missing;
+absent dates are not filled or forward-filled. Polymarket implied sentiment and
+trade counts are not social mentions. Buzz scores measure source-specific
+attention, not prices or returns, and are not directly comparable across sources.
+
+These are the historical aggregates available at retrieval time, not
+point-in-time observations: corrections can change past values and today's data
+is incomplete. Do not assume a date index means a signal was available to trade
+on that date. Keep this separate from price data and apply your own availability
+and leakage controls before any backtest. The example disables cache writes.
+For offline snapshot ETL instead, [tap-adanos](https://github.com/adanos-software/tap-adanos)
+offers four Singer snapshot streams, not a point-in-time daily price feed.
+
 # Release Notes
 
 * 0.1.42 - findatapy (20 Mar 2026)
